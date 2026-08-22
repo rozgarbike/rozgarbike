@@ -53,7 +53,6 @@
     </div>
   </div>
 
-  <!-- contribute modal: step 1, choose amount -->
   <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
     <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -68,17 +67,23 @@
     </div>
   </div>
 
-  <!-- contribute modal: step 2, payment instructions -->
   <div id="paymentOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
+    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div class="disp" style="font-size:18px;">SEND YOUR PAYMENT</div>
         <button onclick="closePaymentModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
       </div>
-      <div class="muted" style="margin-bottom:10px;">Send <span id="payAmountText" class="mono" style="color:var(--ink);font-weight:700;"></span> to any one of these, then tap confirm below.</div>
+      <div class="muted" style="margin-bottom:10px;">Send <span id="payAmountText" class="mono" style="color:var(--ink);font-weight:700;"></span> to any one of these:</div>
       <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
-      <div class="muted" style="line-height:1.5;">After you send the payment, tap confirm — an admin will verify and approve it, then it'll show up in your investments.</div>
-      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="confirmContribute()">I've sent the payment</button>
+
+      <div class="muted" style="margin-bottom:6px;">Transaction / receipt ID (required)</div>
+      <input id="transactionId" placeholder="e.g. TRX123456789" style="margin-bottom:12px;" />
+
+      <div class="muted" style="margin-bottom:6px;">Upload a screenshot of your payment (required)</div>
+      <input id="receiptFile" type="file" accept="image/*" style="margin-bottom:12px;" />
+
+      <div class="muted" style="line-height:1.5;">An admin will check this and approve it — then it'll show up in your investments.</div>
+      <button class="btn btn-primary" id="submitBtn" style="width:100%;margin-top:14px;" onclick="confirmContribute()">Submit for approval</button>
     </div>
   </div>
 
@@ -217,13 +222,46 @@
         listEl.appendChild(row);
       });
       document.getElementById("payAmountText").textContent = pkr(amt);
+      document.getElementById("transactionId").value = "";
+      document.getElementById("receiptFile").value = "";
       document.getElementById("paymentOverlay").style.display = "flex";
     }
 
     async function confirmContribute() {
+      const transactionId = document.getElementById("transactionId").value.trim();
+      const fileInput = document.getElementById("receiptFile");
+      const file = fileInput.files[0];
+
+      if (!transactionId) return toast("Enter your transaction / receipt ID");
+      if (!file) return toast("Please upload a screenshot of your payment");
+
+      const submitBtn = document.getElementById("submitBtn");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading...";
+
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${profile.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
+      if (uploadError) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Submit for approval";
+        return toast(uploadError.message);
+      }
+
+      const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
+      const receiptUrl = urlData.publicUrl;
+
       const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
-        p_campaign_id: activeCampaignId, p_amount: pendingAmount,
+        p_campaign_id: activeCampaignId,
+        p_amount: pendingAmount,
+        p_receipt_url: receiptUrl,
+        p_transaction_id: transactionId,
       });
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit for approval";
+
       if (error) return toast(error.message);
       toast("Submitted — waiting for admin to confirm your payment");
       closePaymentModal();
