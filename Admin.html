@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin — MadadNow</title>
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="header-row">
+      <div class="brand"><span class="brand-badge">🚲</span> MadadNow</div>
+      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;" onclick="logout()">Log out</button>
+    </div>
+    <div class="nav">
+      <a href="index.html">Bikes</a>
+      <a href="dashboard.html">My Dashboard</a>
+      <a href="admin.html" class="active">Admin</a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card" style="background:#FBF1DD;border-color:var(--mustard);margin-bottom:16px;">
+      <div class="muted" style="line-height:1.5;">
+        Enter what a rider hands you today (capped per campaign). The system splits it across every investor
+        automatically by their share — no investor sees the rider's identity, and vice versa.
+      </div>
+    </div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">CREATE A CAMPAIGN</div>
+    <div class="card" style="margin-bottom:20px;">
+      <input id="newName" placeholder="Bike name, e.g. Bike #14" style="margin-bottom:8px;" />
+      <input id="newTarget" type="number" placeholder="Target amount (Rs)" style="margin-bottom:8px;" />
+      <input id="newMargin" type="number" placeholder="Margin on top of target (Rs)" style="margin-bottom:8px;" />
+      <input id="newDailyCap" type="number" placeholder="Daily payment cap from rider (Rs)" style="margin-bottom:8px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="createCampaign()">Create campaign</button>
+    </div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">DISTRIBUTE RIDER PAYMENTS</div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    let profile = null;
+
+    async function init() {
+      profile = await requireSession(true);
+      if (!profile) return;
+      await loadCampaigns();
+    }
+
+    async function createCampaign() {
+      const name = document.getElementById("newName").value;
+      const target = Number(document.getElementById("newTarget").value);
+      const margin = Number(document.getElementById("newMargin").value || 0);
+      const daily_cap = Number(document.getElementById("newDailyCap").value || 350);
+      if (!name || !target) return toast("Name and target are required");
+      const { error } = await supabaseClient.from("campaigns").insert({ name, target, margin, daily_cap });
+      if (error) return toast(error.message);
+      toast("Campaign created");
+      document.getElementById("newName").value = "";
+      document.getElementById("newTarget").value = "";
+      document.getElementById("newMargin").value = "";
+      document.getElementById("newDailyCap").value = "";
+      await loadCampaigns();
+    }
+
+    async function loadCampaigns() {
+      const { data: campaigns } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
+      const listEl = document.getElementById("campaignsList");
+      listEl.innerHTML = "";
+      for (const c of campaigns || []) {
+        const { data: investors } = await supabaseClient
+          .from("investments").select("amount, received, investor_id").eq("campaign_id", c.id);
+        const cap = c.target + c.margin;
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="font-weight:700;font-size:14px;">${c.name}
+            <span class="muted" style="font-weight:400;font-size:11.5px;"> · cap Rs ${c.daily_cap}/day · status: ${c.status}</span>
+          </div>
+          <div class="muted" style="margin-top:4px;">${pkr(c.total_received)} repaid of ${pkr(cap)} cap</div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input id="sim-${c.id}" type="number" placeholder="Rider payment today (Rs)" />
+            <button class="btn btn-dark" onclick="distribute('${c.id}')">Distribute</button>
+          </div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;" id="investorList-${c.id}"></div>
+        `;
+        listEl.appendChild(div);
+        const invListEl = div.querySelector(`#investorList-${c.id}`);
+        (investors || []).forEach((inv, i) => {
+          const row = document.createElement("div");
+          row.style.cssText = "display:flex;justify-content:space-between;font-size:12px;";
+          row.innerHTML = `<span class="muted">Investor ${i + 1} (Rs ${Number(inv.amount).toLocaleString()} in)</span><span class="mono">${pkr(inv.received)} received</span>`;
+          invListEl.appendChild(row);
+        });
+      }
+    }
+
+    async function distribute(campaignId) {
+      const input = document.getElementById(`sim-${campaignId}`);
+      const amount = Number(input.value);
+      if (!amount) return toast("Enter an amount first");
+      const { error } = await supabaseClient.rpc("distribute_rider_payment", {
+        p_campaign_id: campaignId, p_amount: amount,
+      });
+      if (error) return toast(error.message);
+      toast("Payment split across all investors");
+      input.value = "";
+      await loadCampaigns();
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "index.html";
+    }
+
+    init();
+  </script>
+</body>
+</html>
