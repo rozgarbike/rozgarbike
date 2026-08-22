@@ -25,6 +25,9 @@
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS</div>
     <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
+    <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
     <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
     <div class="card" style="margin-bottom:24px;">
@@ -59,6 +62,7 @@
       profile = await requireSession(true);
       if (!profile) return;
       await loadPending();
+      await loadWithdrawals();
       await loadMethods();
       await loadCampaigns();
     }
@@ -93,6 +97,36 @@
       toast("Payment approved");
       await loadPending();
       await loadCampaigns();
+    }
+
+    async function loadWithdrawals() {
+      const { data: reqs } = await supabaseClient
+        .from("withdrawal_requests").select("*, profiles(full_name)")
+        .eq("status", "pending").order("created_at", { ascending: true });
+      const listEl = document.getElementById("withdrawList");
+      if (!reqs || !reqs.length) {
+        listEl.innerHTML = `<p class="muted">No withdrawal requests right now.</p>`;
+        return;
+      }
+      listEl.innerHTML = "";
+      reqs.forEach(r => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="font-weight:700;font-size:14px;">${pkr(r.amount)}</div>
+          <div class="muted" style="margin-top:2px;">${r.profiles?.full_name || "Investor"}</div>
+          <div class="muted" style="margin-top:6px;">${r.method}: <span class="mono" style="color:var(--ink);">${r.account_number}</span></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="markPaid('${r.id}')">Mark as paid</button>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    async function markPaid(requestId) {
+      const { error } = await supabaseClient.rpc("mark_withdrawal_paid", { p_request_id: requestId });
+      if (error) return toast(error.message);
+      toast("Marked as paid");
+      await loadWithdrawals();
     }
 
     async function loadMethods() {
