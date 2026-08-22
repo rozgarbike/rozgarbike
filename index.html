@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MadadNow — Fund a bike, change a livelihood</title>
+<link rel="stylesheet" href="assets/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="header">
+    <div class="header-row">
+      <div class="brand"><span class="brand-badge">🚲</span> MadadNow</div>
+      <div id="authArea" style="font-size:13px;"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <p class="muted" style="line-height:1.5;margin-bottom:18px;">
+      Fund a real delivery bike for a verified rider, starting at Rs 1,000. As the rider earns and repays,
+      your share comes back to your wallet automatically — proportional to what you put in, nothing guaranteed or fixed.
+    </p>
+
+    <div id="authBox" class="card" style="margin-bottom:20px; display:none;">
+      <div id="authTitle" class="disp" style="font-size:18px;margin-bottom:10px;">SIGN UP</div>
+      <input id="fullName" placeholder="Full name" style="margin-bottom:8px;" />
+      <input id="email" placeholder="Email" type="email" style="margin-bottom:8px;" />
+      <input id="password" placeholder="Password" type="password" style="margin-bottom:8px;" />
+      <button class="btn btn-primary" style="width:100%;" onclick="doSignUp()">Create account</button>
+      <div style="text-align:center;margin:10px 0;font-size:12px;" class="muted">— or —</div>
+      <button class="btn btn-outline" style="width:100%;" onclick="doSignIn()">Log in instead</button>
+      <div id="authMsg" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    let currentSession = null;
+
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      currentSession = session;
+      renderAuthArea();
+      if (!session) {
+        document.getElementById("authBox").style.display = "block";
+        const refCode = getReferralCodeFromURL();
+        if (refCode) toast("Referral code applied: " + refCode);
+      }
+      await loadCampaigns();
+    }
+
+    function renderAuthArea() {
+      const el = document.getElementById("authArea");
+      if (currentSession) {
+        el.innerHTML = `<a href="dashboard.html" style="color:#fff;">My Dashboard</a>`;
+      } else {
+        el.innerHTML = `<span>Not logged in</span>`;
+      }
+    }
+
+    async function doSignUp() {
+      const full_name = document.getElementById("fullName").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      if (!email || !password) return toast("Email and password required");
+      const refCode = getReferralCodeFromURL();
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password, options: { data: { full_name } },
+      });
+      if (error) return toast(error.message);
+
+      if (refCode && data.user) {
+        const { data: refProfile } = await supabaseClient.from("profiles").select("id").eq("referral_code", refCode).single();
+        if (refProfile) {
+          await supabaseClient.from("profiles").update({ referred_by: refProfile.id }).eq("id", data.user.id);
+          await supabaseClient.from("referrals").insert({ referrer_id: refProfile.id, referred_id: data.user.id });
+        }
+      }
+      document.getElementById("authMsg").textContent = "Check your email to confirm, then log in.";
+    }
+
+    async function doSignIn() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) return toast(error.message);
+      window.location.href = "dashboard.html";
+    }
+
+    async function loadCampaigns() {
+      const { data: campaigns, error } = await supabaseClient
+        .from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false });
+      const listEl = document.getElementById("campaignsList");
+      if (error) { listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; return; }
+      if (!campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
+
+      listEl.innerHTML = "";
+      for (const c of campaigns) {
+        const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id);
+        const funded = (invSum || []).reduce((s, i) => s + Number(i.amount), 0);
+        const pct = (funded / c.target) * 100;
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="disp" style="font-size:20px;">${c.name}</div>
+              <div class="muted" style="margin-top:2px;">${c.rider_tag}</div>
+              <div style="margin-top:10px;font-size:12.5px;"><span class="mono" style="font-weight:600;">${pkr(funded)}</span><span class="muted"> raised of ${pkr(c.target)} target</span></div>
+            </div>
+            <div class="gauge-wrap">${gaugeSVG(pct)}</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="startContribute('${c.id}','${c.name}',${c.target},${funded})">
+            ${funded >= c.target ? "Fully funded" : "Contribute"}
+          </button>
+        `;
+        listEl.appendChild(div);
+      }
+    }
+
+    function startContribute(id, name, target, funded) {
+      if (!currentSession) { document.getElementById("authBox").scrollIntoView({behavior:"smooth"}); toast("Log in or sign up first"); return; }
+      if (funded >= target) return;
+      window.location.href = `dashboard.html?contribute=${id}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
