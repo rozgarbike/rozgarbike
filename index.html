@@ -3,19 +3,35 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MadadNow — Fund a bike, change a livelihood</title>
+<title>RozgarBike — Fund a bike, change a livelihood</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="header">
     <div class="header-row">
-      <div class="brand"><span class="brand-badge">🚲</span> MadadNow</div>
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
       <div id="authArea" style="font-size:13px;"></div>
     </div>
   </div>
 
   <div class="wrap">
+    <div class="disp" style="font-size:26px;line-height:1.2;color:var(--petrol);margin-bottom:6px;">
+      Ghar baithay hissedar banein
+    </div>
+    <p class="muted" style="line-height:1.5;margin-bottom:6px;">
+      Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.
+    </p>
+
+    <div style="display:flex;gap:8px;margin:10px 0 18px;flex-wrap:wrap;">
+      <a id="whatsappChatBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:#25D366;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
+        <span style="font-size:15px;">💬</span> WhatsApp Chat
+      </a>
+      <a id="whatsappChannelBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:var(--petrol);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
+        <span style="font-size:15px;">📢</span> Channel Follow Karein
+      </a>
+    </div>
+
     <p class="muted" style="line-height:1.5;margin-bottom:18px;">
       Fund a real delivery bike for a verified rider, starting at Rs 1,000. As the rider earns and repays,
       your share comes back to your wallet automatically — proportional to what you put in, nothing guaranteed or fixed.
@@ -35,12 +51,62 @@
     <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
   </div>
 
+  <div id="introOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.55);align-items:center;justify-content:center;z-index:30;padding:20px;">
+    <div class="card" style="max-width:380px;width:100%;text-align:center;">
+      <div class="disp" style="font-size:20px;margin-bottom:4px;">YE KAISE KAAM KARTA HAI</div>
+      <div class="muted" style="margin-bottom:18px;">3 simple steps</div>
+
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
+        <div style="font-size:28px;">🪙</div>
+        <div style="font-size:13px;">Aap ek bike fund karte hain, Rs 1,000 se shuru</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
+        <div style="font-size:28px;">🏍️</div>
+        <div style="font-size:13px;">Rider us bike se delivery kaam kar ke kamata hai</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:20px;">
+        <div style="font-size:28px;">💰</div>
+        <div style="font-size:13px;">Rider jitna wapis kare, aapko uska share milta hai — transparent, koi fix promise nahi</div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="closeIntro()">Bikes Dekhein</button>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
     let currentSession = null;
+
+    async function loadWhatsAppLinks() {
+      const { data } = await supabaseClient.from("site_settings").select("*");
+      const map = {};
+      (data || []).forEach(row => map[row.key] = row.value);
+
+      if (map["whatsapp_number"]) {
+        const btn = document.getElementById("whatsappChatBtn");
+        btn.href = `https://wa.me/${map["whatsapp_number"]}`;
+        btn.style.display = "inline-flex";
+      }
+      if (map["whatsapp_channel"]) {
+        const btn = document.getElementById("whatsappChannelBtn");
+        btn.href = map["whatsapp_channel"];
+        btn.style.display = "inline-flex";
+      }
+    }
+
+    if (!sessionStorage.getItem("introSeen")) {
+      window.addEventListener("load", () => {
+        setTimeout(() => { document.getElementById("introOverlay").style.display = "flex"; }, 600);
+      });
+    }
+    function closeIntro() {
+      document.getElementById("introOverlay").style.display = "none";
+      sessionStorage.setItem("introSeen", "1");
+      document.getElementById("campaignsList")?.scrollIntoView({ behavior: "smooth" });
+    }
 
     async function init() {
       const { data: { session } } = await supabaseClient.auth.getSession();
@@ -51,6 +117,7 @@
         const refCode = getReferralCodeFromURL();
         if (refCode) toast("Referral code applied: " + refCode);
       }
+      await loadWhatsAppLinks();
       await loadCampaigns();
     }
 
@@ -102,7 +169,7 @@
 
       listEl.innerHTML = "";
       for (const c of campaigns) {
-        const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id);
+        const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id).eq("status", "approved");
         const funded = (invSum || []).reduce((s, i) => s + Number(i.amount), 0);
         const pct = (funded / c.target) * 100;
         const div = document.createElement("div");
