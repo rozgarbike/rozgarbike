@@ -128,6 +128,12 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(() => {
+        console.log("Service Worker Registered");
+      }).catch(err => console.log("SW Error:", err));
+    }
+
     let profile = null;
     let activeCampaignId = null;
     let pendingAmount = null;
@@ -378,5 +384,4 @@
     init();
   </script>
 </body>
-  </html>
-  
+</html>
