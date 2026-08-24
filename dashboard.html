@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>My Dashboard — MadadNow</title>
+<title>My Dashboard — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="header">
     <div class="header-row">
-      <div class="brand"><span class="brand-badge">🚲</span> MadadNow</div>
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
       <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;" onclick="logout()">Log out</button>
     </div>
     <div class="nav">
@@ -165,6 +165,16 @@
               <span style="background:#FBF1DD;color:var(--mustard-deep);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
             </div>
           `;
+        } else if (inv.status === "declined") {
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-weight:700;font-size:14px;">${inv.campaigns.name}</div>
+                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
+              </div>
+              <span style="background:#FBE0DC;color:var(--rust);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
+            </div>
+          `;
         } else {
           const cap = inv.campaigns.target + inv.campaigns.margin;
           const totalFunded = await totalFundedFor(inv.campaign_id);
@@ -265,33 +275,36 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Uploading...";
 
-      const fileExt = file.name.split(".").pop();
-      const filePath = `${profile.id}-${Date.now()}.${fileExt}`;
+      try {
+        const fileExt = file.name.split(".").pop();
+        const uniqueId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+        const filePath = `${profile.id}-${uniqueId}.${fileExt}`;
 
-      const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
-      if (uploadError) {
+        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
+        if (uploadError) {
+          return toast("Upload failed: " + uploadError.message + " — please try again");
+        }
+
+        const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
+        const receiptUrl = urlData.publicUrl;
+
+        const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
+          p_campaign_id: activeCampaignId,
+          p_amount: pendingAmount,
+          p_receipt_url: receiptUrl,
+          p_transaction_id: transactionId,
+        });
+
+        if (error) return toast(error.message);
+        toast("Submitted — waiting for admin to confirm your payment");
+        closePaymentModal();
+        await loadInvestments();
+      } catch (err) {
+        toast("Something went wrong — please check your connection and try again");
+      } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "Submit for approval";
-        return toast(uploadError.message);
       }
-
-      const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-      const receiptUrl = urlData.publicUrl;
-
-      const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
-        p_campaign_id: activeCampaignId,
-        p_amount: pendingAmount,
-        p_receipt_url: receiptUrl,
-        p_transaction_id: transactionId,
-      });
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Submit for approval";
-
-      if (error) return toast(error.message);
-      toast("Submitted — waiting for admin to confirm your payment");
-      closePaymentModal();
-      await loadInvestments();
     }
 
     function requestWithdraw() {
