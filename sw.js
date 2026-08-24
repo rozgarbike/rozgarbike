@@ -1,5 +1,3 @@
-const CACHE_NAME = 'rozgarbike-v1';
-
 self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
@@ -10,7 +8,8 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request).catch(() => {
+      return caches.match(e.request);
+    })
   );
 });
-
