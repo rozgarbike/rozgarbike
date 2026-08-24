@@ -10,7 +10,7 @@
 </head>
 <body>
 
-  <!-- SAB SE TOP PAR URDU BANNER AD (FIXED Z-INDEX & POINTER EVENTS) -->
+  <!-- TOP BANNER AD -->
   <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; font-family: inherit; z-index: 999; pointer-events: none;">
     <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; z-index: 1000;">✕</button>
     <div style="max-width: 600px; margin: 0 auto; padding-left: 30px; pointer-events: auto;">
@@ -56,12 +56,14 @@
     </div>
 
     <!-- DIRECT APK DOWNLOAD BUTTON -->
-    <a href="rozgarbike.apk" download class="app-download-btn" style="margin-bottom: 20px;">
+    <a href="rozgarbike.apk" download class="app-download-btn" style="margin-bottom: 20px; display: block; text-decoration: none; text-align: center;">
       📲 Download RozgarBike App (APK)
     </a>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
-    <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+    <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+      <p class="muted" style="text-align:center;padding:10px;">Loading investments...</p>
+    </div>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRALS</div>
     <div class="card">
@@ -86,6 +88,7 @@
     </div>
   </div>
 
+  <!-- MODALS -->
   <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:3000;">
     <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -115,7 +118,6 @@
       <div class="muted" style="margin-bottom:6px;">Upload a screenshot of your payment (required)</div>
       <input id="receiptFile" type="file" accept="image/*" style="margin-bottom:12px;" />
 
-      <div class="muted" style="line-height:1.5;">An admin will check this and approve it — then it'll show up in your investments.</div>
       <button class="btn btn-primary" id="submitBtn" style="width:100%;margin-top:14px;" onclick="confirmContribute()">Submit for approval</button>
     </div>
   </div>
@@ -145,7 +147,6 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    // Promo Ad Close Logic
     function closePromoAd() {
       const adBox = document.getElementById('promoUrduAd');
       if (adBox) {
@@ -159,48 +160,72 @@
       if (adBox) adBox.style.display = 'none';
     }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').then(() => {
-        console.log("Service Worker Registered");
-      }).catch(err => console.log("SW Error:", err));
-    }
-
     let profile = null;
     let activeCampaignId = null;
     let pendingAmount = null;
     let currentWalletBalance = 0;
 
     async function init() {
-      profile = await requireSession(false);
-      if (!profile) return;
-      if (profile.role === "admin") document.getElementById("adminLink").style.display = "inline-block";
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "index.html";
+          return;
+        }
 
-      document.getElementById("refLinkText").textContent = `madadnow.app?ref=${profile.referral_code}`;
+        const { data: userProfile, error } = await supabaseClient
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
 
-      await loadWallet();
-      await loadInvestments();
-      await loadReferrals();
+        if (error || !userProfile) {
+          toast("User profile not found");
+          return;
+        }
 
-      const params = new URLSearchParams(window.location.search);
-      const contributeId = params.get("contribute");
-      if (contributeId) openModalFor(contributeId);
+        profile = userProfile;
+        if (profile.role === "admin") {
+          document.getElementById("adminLink").style.display = "inline-block";
+        }
+
+        const refText = document.getElementById("refLinkText");
+        if (refText && profile.referral_code) {
+          refText.textContent = `madadnow.app?ref=${profile.referral_code}`;
+        }
+
+        await Promise.all([loadWallet(), loadInvestments(), loadReferrals()]);
+
+        const params = new URLSearchParams(window.location.search);
+        const contributeId = params.get("contribute");
+        if (contributeId) openModalFor(contributeId);
+      } catch (e) {
+        console.error("Initialization error:", e);
+        toast("Failed to load dashboard data.");
+      }
     }
 
     async function loadWallet() {
       const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
-      const earned = (txns || []).reduce((s, t) => s + Number(t.amount), 0);
+      const earned = (txns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
+      
       const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
-      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount), 0);
+      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
+      
       const available = earned - withdrawn;
       document.getElementById("walletBalance").textContent = pkr(available);
       currentWalletBalance = available;
     }
 
     async function loadInvestments() {
-      const { data: myInv } = await supabaseClient
-        .from("investments").select("*, campaigns(*)").eq("investor_id", profile.id).order("created_at", { ascending: false });
       const listEl = document.getElementById("investmentsList");
-      if (!myInv || !myInv.length) {
+      const { data: myInv, error } = await supabaseClient
+        .from("investments")
+        .select("*, campaigns(*)")
+        .eq("investor_id", profile.id)
+        .order("created_at", { ascending: false });
+
+      if (error || !myInv || !myInv.length) {
         listEl.innerHTML = `<p class="muted" style="text-align:center;padding:20px;">No investments yet — fund a bike from the homepage.</p>`;
         return;
       }
@@ -208,11 +233,13 @@
       for (const inv of myInv) {
         const div = document.createElement("div");
         div.className = "card";
+        const campaignName = inv.campaigns ? inv.campaigns.name : "Bike Campaign";
+        
         if (inv.status === "pending") {
           div.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns.name}</div>
+                <div style="font-weight:700;font-size:14px;">${campaignName}</div>
                 <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
               </div>
               <span style="background:#FBF1DD;color:var(--mustard-deep);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
@@ -222,25 +249,25 @@
           div.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns.name}</div>
+                <div style="font-weight:700;font-size:14px;">${campaignName}</div>
                 <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
               </div>
               <span style="background:#FBE0DC;color:var(--rust);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
             </div>
           `;
         } else {
-          const cap = inv.campaigns.target + inv.campaigns.margin;
+          const cap = (inv.campaigns?.target || 0) + (inv.campaigns?.margin || 0);
           const totalFunded = await totalFundedFor(inv.campaign_id);
-          const myShareOfCap = cap * (inv.amount / totalFunded);
-          const pct = (inv.received / myShareOfCap) * 100;
+          const myShareOfCap = totalFunded > 0 ? cap * (inv.amount / totalFunded) : 1;
+          const pct = Math.min(100, ((inv.received || 0) / myShareOfCap) * 100);
           div.style.cssText = "display:flex;justify-content:space-between;align-items:center;";
           div.innerHTML = `
             <div>
-              <div style="font-weight:700;font-size:14px;">${inv.campaigns.name}</div>
+              <div style="font-weight:700;font-size:14px;">${campaignName}</div>
               <div class="muted" style="margin-top:2px;">You put in ${pkr(inv.amount)}</div>
-              <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">+${pkr(inv.received)} received so far</div>
+              <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">+${pkr(inv.received || 0)} received so far</div>
             </div>
-            <div class="gauge-wrap">${gaugeSVG(pct, 78, "#4C7A57")}</div>
+            <div class="gauge-wrap">${typeof gaugeSVG === 'function' ? gaugeSVG(pct, 78, "#4C7A57") : ''}</div>
           `;
         }
         listEl.appendChild(div);
@@ -249,7 +276,7 @@
 
     async function totalFundedFor(campaignId) {
       const { data } = await supabaseClient.from("investments").select("amount").eq("campaign_id", campaignId).eq("status", "approved");
-      return (data || []).reduce((s, i) => s + Number(i.amount), 0);
+      return (data || []).reduce((s, i) => s + Number(i.amount || 0), 0);
     }
 
     async function loadReferrals() {
@@ -257,7 +284,7 @@
       const count = (refs || []).filter(r => r.bonus_paid).length;
       const { data: bonusTxns } = await supabaseClient.from("wallet_transactions")
         .select("amount").eq("investor_id", profile.id).in("type", ["referral_bonus", "milestone_bonus"]);
-      const bonusTotal = (bonusTxns || []).reduce((s, t) => s + Number(t.amount), 0);
+      const bonusTotal = (bonusTxns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
 
       document.getElementById("refCount").textContent = count;
       document.getElementById("refBonus").textContent = pkr(bonusTotal);
@@ -266,7 +293,7 @@
       document.getElementById("milestoneBar").style.width = (within / 10) * 100 + "%";
     }
 
-    async function openModalFor(campaignId) {
+    function openModalFor(campaignId) {
       activeCampaignId = campaignId;
       const tierRow = document.getElementById("tierRow");
       tierRow.innerHTML = "";
@@ -334,9 +361,7 @@
         const filePath = `${profile.id}-${uniqueId}.${fileExt}`;
 
         const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
-        if (uploadError) {
-          return toast("Upload failed: " + uploadError.message + " — please try again");
-        }
+        if (uploadError) return toast("Upload failed: " + uploadError.message);
 
         const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
         const receiptUrl = urlData.publicUrl;
@@ -353,7 +378,7 @@
         closePaymentModal();
         await loadInvestments();
       } catch (err) {
-        toast("Something went wrong — please check your connection and try again");
+        toast("Something went wrong — please try again");
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "Submit for approval";
@@ -366,14 +391,4 @@
       }
       document.getElementById("withdrawAmount").value = "";
       document.getElementById("withdrawMethod").value = "JazzCash";
-      document.getElementById("withdrawAccount").value = "";
-      document.getElementById("withdrawOverlay").style.display = "flex";
-    }
-
-    async function submitWithdraw() {
-      const amount = Number(document.getElementById("withdrawAmount").value);
-      const method = document.getElementById("withdrawMethod").value;
-      const account_number = document.getElementById("withdrawAccount").value.trim();
-      if (!amount) return toast("Enter an amount");
-      if (!account_number) return toast("Enter your account number");
-      const { error } = await supabaseClient.rpc("request_withdrawal", { p_amount: amoun
+      document.getElemen
