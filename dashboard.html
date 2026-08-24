@@ -166,8 +166,18 @@
     let pendingAmount = null;
     let currentWalletBalance = 0;
 
+    document.addEventListener("DOMContentLoaded", function() {
+      setTimeout(init, 300);
+    });
+
     async function init() {
+      const listEl = document.getElementById("investmentsList");
       try {
+        if (typeof supabaseClient === "undefined") {
+          if (listEl) listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Connection error. Please refresh.</p>`;
+          return;
+        }
+
         const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) {
           window.location.href = "index.html";
@@ -194,10 +204,9 @@
             }
           }
         } catch(pe) {
-          console.log("Profile load fallback");
+          console.log("Profile fallback");
         }
 
-        // Run independently so one error doesn't block the rest
         loadWallet();
         loadInvestments();
         loadReferrals();
@@ -206,7 +215,8 @@
         const contributeId = params.get("contribute");
         if (contributeId) openModalFor(contributeId);
       } catch (e) {
-        console.error("Initialization error:", e);
+        console.error("Init error:", e);
+        if (listEl) listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
       }
     }
 
@@ -232,15 +242,15 @@
       const listEl = document.getElementById("investmentsList");
       if (!listEl) return;
 
-      try {
-        if (!userId) {
-          listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
-          return;
-        }
+      if (!userId) {
+        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
+        return;
+      }
 
+      try {
         const { data: myInv, error } = await supabaseClient
           .from("investments")
-          .select("*")
+          .select("id, amount, received, status, campaign_id, created_at")
           .eq("investor_id", userId)
           .order("created_at", { ascending: false });
 
@@ -251,24 +261,12 @@
 
         listEl.innerHTML = "";
 
-        for (let i = 0; i < myInv.length; i++) {
-          const inv = myInv[i];
+        myInv.forEach(inv => {
           const div = document.createElement("div");
           div.className = "card";
           div.style.marginBottom = "8px";
 
           let campaignName = "Bike Campaign";
-          if (inv.campaign_id) {
-            try {
-              const { data: camp } = await supabaseClient
-                .from("campaigns")
-                .select("name")
-                .eq("id", inv.campaign_id)
-                .maybeSingle();
-              if (camp && camp.name) campaignName = camp.name;
-            } catch(ce) {}
-          }
-
           const amt = `Rs ${Number(inv.amount || 0).toLocaleString()}`;
           const rec = `Rs ${Number(inv.received || 0).toLocaleString()}`;
 
@@ -305,7 +303,7 @@
             `;
           }
           listEl.appendChild(div);
-        }
+        });
       } catch (err) {
         console.error("Investment load error:", err);
         listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
@@ -404,6 +402,4 @@
         const filePath = `${userId}-${uniqueId}.${fileExt}`;
 
         const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
-        if (uploadError) return toast("Upload failed: " + uploadError.message);
-
-        cons
+        i
