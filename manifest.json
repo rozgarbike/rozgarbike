@@ -1,9 +1,8 @@
 {
   "name": "RozgarBike",
   "short_name": "RozgarBike",
-  "description": "RozgarBike Investment Platform",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/rozgarbike/",
+  "scope": "/rozgarbike/",
   "display": "standalone",
   "background_color": "#123D3D",
   "theme_color": "#123D3D",
@@ -12,14 +11,12 @@
     {
       "src": "assets/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "assets/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
