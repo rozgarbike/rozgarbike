@@ -3,139 +3,114 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>My Dashboard — RozgarBike</title>
+<title>Dashboard — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
-  <!-- TOP BANNER AD -->
-  <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; z-index: 999;">
-    <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer;">✕</button>
-    <div style="max-width: 600px; margin: 0 auto; padding-left: 30px;">
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-        <span style="font-size: 18px;">🔥</span>
-        <span style="font-size: 17px; font-weight: 800; color: #ffc107;">شاندار موقع!</span>
-      </div>
-      <div style="font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 8px; line-height: 1.4;">
-        بائیک خریدیں اور گھر بیٹھے پیسے کمائیں! 🚲💰
-      </div>
-      <div style="background: rgba(0, 0, 0, 0.25); padding: 10px 12px; border-radius: 8px; border-right: 3px solid #ffc107;">
-        <div style="font-size: 13px; color: #e0f2f1; margin-bottom: 6px; line-height: 1.5;">
-          • <b>Rs 1,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 50 سے 60</b>
-        </div>
-        <div style="font-size: 13px; color: #e0f2f1; line-height: 1.5;">
-          • <b>Rs 5,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 300 سے 350</b>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="logout()">Log out</button>
+      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;" onclick="logout()">Log out</button>
     </div>
     <div class="nav">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink">Admin</a>
+      <a href="admin.html">Admin</a>
     </div>
   </div>
 
   <div class="wrap">
-    <!-- WALLET BALANCE CARD -->
-    <div class="card" style="background:var(--petrol);color:#fff;margin-bottom:16px;border:none;">
-      <div class="muted" style="color:#CFE3DD;">Wallet balance</div>
-      <div id="walletBalance" class="mono" style="font-size:30px;font-weight:600;margin-top:4px;">Rs 0</div>
-      <button class="btn btn-primary" style="margin-top:12px;" onclick="requestWithdraw()">Withdraw</button>
+    <div id="promoBanner" class="card" style="background:linear-gradient(135deg, #0d3b36, #052420);color:#fff;margin-bottom:20px;display:none;">
+      <div style="color:#f59e0b;font-weight:700;font-size:16px;margin-bottom:6px;">🔥 شاندار موقع!</div>
+      <div style="font-size:13.5px;line-height:1.5;">
+        بائیک خریدیں اور گھر بیٹھے پیسے کمائیں! 🚲💰<br/>
+        • <b>Rs 1,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 50 سے 60</b><br/>
+        • <b>Rs 5,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 300 سے 350</b>
+      </div>
     </div>
 
-    <!-- DIRECT APK DOWNLOAD BUTTON -->
-    <a href="rozgarbike.apk" download class="app-download-btn" style="margin-bottom: 20px; display: block; text-decoration: none; text-align: center;">
-      📲 Download RozgarBike App (APK)
-    </a>
-
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
-    <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-      <p class="muted" style="text-align:center;padding:15px;">Loading investments...</p>
+    <div class="card" style="margin-bottom:20px;">
+      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Welcome back</div>
+      <div id="userName" style="font-size:20px;font-weight:800;margin-top:2px;">—</div>
+      <div id="userPhone" class="mono" style="font-size:13px;color:var(--muted);margin-top:2px;">—</div>
     </div>
 
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRALS</div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;font-size:13px;">
-        <span class="muted">People you referred</span>
-        <span id="refCount" class="mono" style="font-weight:600;">0</span>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+      <div class="card">
+        <div class="muted" style="font-size:12px;">TOTAL INVESTED</div>
+        <div id="totalInvested" style="font-size:20px;font-weight:800;color:var(--brand);margin-top:4px;">Rs 0</div>
       </div>
-      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:6px;">
-        <span class="muted">Total referral + milestone bonus</span>
-        <span id="refBonus" class="mono" style="font-weight:600;color:var(--success);">Rs 0</span>
+      <div class="card">
+        <div class="muted" style="font-size:12px;">TOTAL RECEIVED</div>
+        <div id="totalReceived" style="font-size:20px;font-weight:800;color:var(--brand);margin-top:4px;">Rs 0</div>
       </div>
-      <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">
-        <div style="display:flex;justify-content:space-between;">
-          <span style="font-size:12px;font-weight:700;color:var(--mustard-deep);">10-referral bonus</span>
-          <span id="milestoneProgressText" class="mono muted" style="font-size:12px;">0/10</span>
-        </div>
-        <div class="progress-track" style="margin-top:6px;"><div id="milestoneBar" class="progress-fill" style="width:0%;"></div></div>
-      </div>
-      <button class="btn btn-outline" style="width:100%;margin-top:12px;" onclick="copyRef()">
-        <span id="refLinkText">Copy your referral link</span>
-      </button>
     </div>
-  </div>
 
-  <!-- PAYMENT & FUND MODAL -->
-  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:3000;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div id="modalTitle" class="disp" style="font-size:18px;">FUND BIKE</div>
-        <button onclick="closeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:6px;">Choose your amount</div>
-      <div class="tier-row" id="tierRow" style="display:flex;gap:8px;margin-bottom:10px;"></div>
-      <div class="muted" style="margin-top:12px;margin-bottom:6px;">Or enter custom amount (min Rs 1,000)</div>
-      <input id="customAmount" type="number" placeholder="1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;" />
-      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="goToPaymentStep()">Continue</button>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-bottom:24px;" onclick="openInvestModal()">+ Invest in a Bike</button>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">MY ACTIVE INVESTMENTS</div>
+    <div id="myInvestments" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:6px;">Available for Withdrawal</div>
+      <div id="withdrawableBalance" style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:12px;">Rs 0</div>
+      <button class="btn btn-dark" style="width:100%;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
   </div>
 
-  <div id="paymentOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:3000;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="disp" style="font-size:18px;">SEND YOUR PAYMENT</div>
-        <button onclick="closePaymentModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+  <!-- INVEST MODAL STEP 1: AMOUNT -->
+  <div id="investOverlay" class="overlay">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-weight:800;font-size:16px;">INVEST IN ROZGARBIKE</div>
+        <span style="cursor:pointer;font-size:20px;" onclick="closeModal()">✕</span>
       </div>
-      <div class="muted" style="margin-bottom:10px;">Send <span id="payAmountText" class="mono" style="color:var(--ink);font-weight:700;"></span> to any one of these:</div>
+      <div class="muted" style="margin-bottom:8px;">Select a bike campaign:</div>
+      <select id="campaignSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;"></select>
+      <div class="muted" style="margin-bottom:6px;">Investment Amount (Min Rs 1,000)</div>
+      <input id="customAmount" type="number" placeholder="e.g. 1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
+      <button class="btn btn-primary" style="width:100%;" onclick="goToPaymentStep()">Continue to Payment</button>
+    </div>
+  </div>
+
+  <!-- INVEST MODAL STEP 2: PAYMENT DETAILS -->
+  <div id="paymentOverlay" class="overlay">
+    <div class="modal">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-weight:800;font-size:16px;">SEND YOUR PAYMENT</div>
+        <span style="cursor:pointer;font-size:20px;" onclick="closePaymentModal()">✕</span>
+      </div>
+      <p style="font-size:13px;margin-bottom:10px;">Send <b id="payAmountText">Rs 0</b> to any one of these accounts:</p>
+      
+      <!-- Dynamic Accounts list will render here -->
       <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
 
-      <div class="muted" style="margin-bottom:6px;">Transaction / receipt ID (required)</div>
-      <input id="transactionId" placeholder="e.g. TRX123456789" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
+      <div class="muted" style="margin-bottom:4px;">Transaction / receipt ID (required)</div>
+      <input id="txIdInput" placeholder="e.g. TRX123456789" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;" />
 
-      <div class="muted" style="margin-bottom:6px;">Upload payment screenshot</div>
-      <input id="receiptFile" type="file" accept="image/*" style="margin-bottom:12px;" />
+      <div class="muted" style="margin-bottom:4px;">Upload payment screenshot</div>
+      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
 
-      <button class="btn btn-primary" id="submitBtn" style="width:100%;margin-top:14px;" onclick="confirmContribute()">Submit for approval</button>
+      <button class="btn btn-primary" style="width:100%;" onclick="submitInvestment()">Submit for approval</button>
     </div>
   </div>
 
   <!-- WITHDRAW MODAL -->
-  <div id="withdrawOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:3000;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
+  <div id="withdrawOverlay" class="overlay">
+    <div class="modal">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="disp" style="font-size:18px;">WITHDRAW</div>
-        <button onclick="closeWithdrawModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
+        <div style="font-weight:800;font-size:16px;">WITHDRAW FUNDS</div>
+        <span style="cursor:pointer;font-size:20px;" onclick="closeWithdrawModal()">✕</span>
       </div>
-      <div class="muted" style="margin-bottom:6px;">Amount (min Rs 100)</div>
-      <input id="withdrawAmount" type="number" placeholder="1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
-      <div class="muted" style="margin-bottom:6px;">Method</div>
-      <select id="withdrawMethod" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;">
-        <option value="JazzCash">JazzCash</option>
-        <option value="Easypaisa">Easypaisa</option>
-        <option value="Bank">Bank Account</option>
-      </select>
-      <div class="muted" style="margin-bottom:6px;">Your account / phone number</div>
-      <input id="withdrawAccount" placeholder="03xxxxxxxxx or account number" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
-      <button class="btn btn-primary" style="width:100%;" onclick="submitWithdraw()">Submit request</button>
+      <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs)</div>
+      <input id="wAmount" type="number" placeholder="Amount" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
+      <div class="muted" style="margin-bottom:6px;">Payment Method (Easypaisa / JazzCash / Bank)</div>
+      <input id="wMethod" placeholder="e.g. JazzCash" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
+      <div class="muted" style="margin-bottom:6px;">Account Number / Title</div>
+      <input id="wAccount" placeholder="03xxxxxxxxx" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
+      <button class="btn btn-primary" style="width:100%;" onclick="submitWithdrawal()">Request Withdrawal</button>
     </div>
   </div>
 
@@ -144,186 +119,215 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    function closePromoAd() {
-      document.getElementById('promoUrduAd').style.display = 'none';
-    }
-
-    let userId = null;
-    let activeCampaignId = null;
+    let userProfile = null;
     let pendingAmount = 0;
-    let currentWalletBalance = 0;
+    let selectedCampaignId = null;
 
-    document.addEventListener("DOMContentLoaded", async function() {
-      const listEl = document.getElementById("investmentsList");
-      
+    async function initDashboard() {
       try {
-        if (typeof supabaseClient === "undefined") {
-          listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
-          return;
+        if (typeof requireSession === "function") {
+          userProfile = await requireSession();
+        } else if (typeof supabaseClient !== "undefined") {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (!session) { window.location.href = "index.html"; return; }
+          userProfile = session.user;
         }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-          window.location.href = "index.html";
-          return;
+        if (userProfile) {
+          document.getElementById("userName").textContent = userProfile.user_metadata?.full_name || userProfile.email || "User";
+          document.getElementById("userPhone").textContent = userProfile.email || "";
         }
 
-        userId = session.user.id;
-        
-        loadWallet();
-        loadInvestments();
-        loadReferrals();
-
-        const params = new URLSearchParams(window.location.search);
-        const contributeId = params.get("contribute");
-        if (contributeId) openModalFor(contributeId);
-
+        await loadMyData();
+        await loadCampaignsSelect();
       } catch (err) {
-        console.error(err);
-        if (listEl) listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
-      }
-    });
-
-    async function loadWallet() {
-      try {
-        if (!userId) return;
-        const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", userId);
-        const earned = (txns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
-        
-        const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", userId).in("status", ["pending", "paid"]);
-        const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
-        
-        currentWalletBalance = earned - withdrawn;
-        document.getElementById("walletBalance").textContent = `Rs ${currentWalletBalance.toLocaleString()}`;
-      } catch(e) {}
-    }
-
-    async function loadInvestments() {
-      const listEl = document.getElementById("investmentsList");
-      if (!listEl) return;
-
-      try {
-        const { data: myInv, error } = await supabaseClient
-          .from("investments")
-          .select("*")
-          .eq("investor_id", userId);
-
-        if (error || !myInv || myInv.length === 0) {
-          listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
-          return;
-        }
-
-        listEl.innerHTML = "";
-        myInv.forEach(inv => {
-          const div = document.createElement("div");
-          div.className = "card";
-          div.style.marginBottom = "8px";
-          const amt = `Rs ${Number(inv.amount || 0).toLocaleString()}`;
-          const rec = `Rs ${Number(inv.received || 0).toLocaleString()}`;
-
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-weight:700;font-size:14px;">Bike Investment</div>
-                <div class="muted" style="margin-top:2px;">Amount: ${amt}</div>
-                ${inv.status === 'active' ? `<div class="mono" style="color:#15803d;margin-top:4px;font-size:12.5px;">+${rec} mil chuke hain</div>` : ''}
-              </div>
-              <span style="background:${inv.status === 'active' ? '#dcfce7' : '#FBF1DD'};color:${inv.status === 'active' ? '#15803d' : '#b45309'};font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">${inv.status}</span>
-            </div>
-          `;
-          listEl.appendChild(div);
-        });
-      } catch (err) {
-        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
+        console.error("Dashboard error:", err);
       }
     }
 
-    async function loadReferrals() {
-      try {
-        if (!userId) return;
-        const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", userId);
-        document.getElementById("refCount").textContent = (refs || []).length;
-      } catch(e) {}
+    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg;
+        t.className = "toast show";
+        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+      } else { alert(msg); }
     }
 
-    function openModalFor(campaignId) {
-      activeCampaignId = campaignId;
-      const tierRow = document.getElementById("tierRow");
-      tierRow.innerHTML = "";
-      [1000, 2000, 4000].forEach(t => {
-        const b = document.createElement("button");
-        b.className = "btn btn-outline"; b.textContent = "Rs " + t;
-        b.onclick = () => document.getElementById("customAmount").value = t;
-        tierRow.appendChild(b);
+    async function loadMyData() {
+      const { data: investments } = await supabaseClient
+        .from("investments")
+        .select("*, campaigns(name)")
+        .eq("investor_id", userProfile.id);
+
+      let totalInv = 0;
+      let totalRec = 0;
+      const listEl = document.getElementById("myInvestments");
+      listEl.innerHTML = "";
+
+      (investments || []).forEach(inv => {
+        if (inv.status === "approved" || inv.status === "active") {
+          totalInv += Number(inv.amount || 0);
+          totalRec += Number(inv.received || 0);
+        }
+
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="font-weight:700;">${inv.campaigns?.name || "Bike Campaign"}</div>
+          <div class="muted" style="font-size:12px;margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
+          <div style="font-size:11px;margin-top:4px;font-weight:600;color:${inv.status === 'approved' || inv.status === 'active' ? '#10b981' : '#f59e0b'};">
+            STATUS: ${inv.status.toUpperCase()}
+          </div>
+        `;
+        listEl.appendChild(div);
       });
-      document.getElementById("modalOverlay").style.display = "flex";
+
+      if (!investments || investments.length === 0) {
+        listEl.innerHTML = `<p class="muted">You have no active investments yet.</p>`;
+      }
+
+      document.getElementById("totalInvested").textContent = pkr(totalInv);
+      document.getElementById("totalReceived").textContent = pkr(totalRec);
+      
+      const available = Math.max(0, totalRec);
+      document.getElementById("withdrawableBalance").textContent = pkr(available);
     }
 
-    function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
-    function closePaymentModal() { document.getElementById("paymentOverlay").style.display = "none"; }
-    function closeWithdrawModal() { document.getElementById("withdrawOverlay").style.display = "none"; }
+    async function loadCampaignsSelect() {
+      const select = document.getElementById("campaignSelect");
+      const { data: campaigns } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
+      select.innerHTML = "";
+      (campaigns || []).forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function openInvestModal() {
+      document.getElementById("investOverlay").style.display = "flex";
+    }
+    function closeModal() {
+      document.getElementById("investOverlay").style.display = "none";
+    }
+    function closePaymentModal() {
+      document.getElementById("paymentOverlay").style.display = "none";
+    }
 
     async function goToPaymentStep() {
       const amt = Number(document.getElementById("customAmount").value);
-      if (!amt || amt < 1000) return alert("Minimum amount is Rs 1,000");
+      if (!amt || amt < 1000) return toast("Minimum amount is Rs 1,000");
+      
       pendingAmount = amt;
+      selectedCampaignId = document.getElementById("campaignSelect").value;
       closeModal();
 
+      document.getElementById("payAmountText").textContent = pkr(amt);
       const listEl = document.getElementById("paymentMethodsList");
-      listEl.innerHTML = `
-        <div class="card" style="padding:10px;"><b>JazzCash:</b> 03001234567 (RozgarBike)</div>
-        <div class="card" style="padding:10px;"><b>Easypaisa:</b> 03001234567 (RozgarBike)</div>
-      `;
-      document.getElementById("payAmountText").textContent = `Rs ${amt.toLocaleString()}`;
+      listEl.innerHTML = `<p class="muted">Loading payment accounts...</p>`;
       document.getElementById("paymentOverlay").style.display = "flex";
+
+      // Fetch dynamic active accounts from DB
+      const { data: methods, error } = await supabaseClient
+        .from("payment_methods")
+        .select("*")
+        .eq("active", true);
+
+      if (error || !methods || methods.length === 0) {
+        listEl.innerHTML = `<p class="muted">No payment accounts found. Please contact admin.</p>`;
+        return;
+      }
+
+      listEl.innerHTML = "";
+      methods.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.style.padding = "10px 12px";
+        div.style.border = "1px solid #e2e8f0";
+        div.style.borderRadius = "8px";
+        div.innerHTML = `<b>${m.label}:</b> <span class="mono">${m.account_number}</span> (${m.account_title})`;
+        listEl.appendChild(div);
+      });
     }
 
-    async function confirmContribute() {
-      const transactionId = document.getElementById("transactionId").value.trim();
-      if (!transactionId) return alert("Enter transaction ID");
+    async function submitInvestment() {
+      const txId = document.getElementById("txIdInput").value.trim();
+      const fileInput = document.getElementById("receiptFileInput");
+      
+      if (!txId) return toast("Please enter Transaction / Receipt ID");
 
-      const { error } = await supabaseClient.from("investments").insert([{
-        investor_id: userId,
-        campaign_id: activeCampaignId,
+      let receiptUrl = null;
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const filePath = `receipts/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
+        if (!uploadError) {
+          const { data: publicData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
+          receiptUrl = publicData.publicUrl;
+        }
+      }
+
+      const { error } = await supabaseClient.from("investments").insert({
+        investor_id: userProfile.id,
+        campaign_id: selectedCampaignId,
         amount: pendingAmount,
-        transaction_id: transactionId,
+        transaction_id: txId,
+        receipt_url: receiptUrl,
         status: "pending"
-      }]);
+      });
 
-      if (error) return alert("Error: " + error.message);
-      alert("Submitted! Waiting for admin approval.");
+      if (error) return toast(error.message);
+      
+      toast("Investment submitted for approval!");
       closePaymentModal();
-      loadInvestments();
+      document.getElementById("txIdInput").value = "";
+      document.getElementById("customAmount").value = "";
+      await loadMyData();
     }
 
-    function requestWithdraw() {
+    function openWithdrawModal() {
       document.getElementById("withdrawOverlay").style.display = "flex";
     }
+    function closeWithdrawModal() {
+      document.getElementById("withdrawOverlay").style.display = "none";
+    }
 
-    async function submitWithdraw() {
-      const amount = Number(document.getElementById("withdrawAmount").value);
-      const method = document.getElementById("withdrawMethod").value;
-      const account_number = document.getElementById("withdrawAccount").value.trim();
-      if (!amount || !account_number) return alert("Fill all fields");
+    async function submitWithdrawal() {
+      const amt = Number(document.getElementById("wAmount").value);
+      const method = document.getElementById("wMethod").value.trim();
+      const account = document.getElementById("wAccount").value.trim();
 
-      const { error } = await supabaseClient.from("withdrawal_requests").insert([{
-        investor_id: userId,
-        amount: amount,
+      if (!amt || !method || !account) return toast("Fill all withdrawal details");
+
+      const { error } = await supabaseClient.from("withdrawal_requests").insert({
+        investor_id: userProfile.id,
+        amount: amt,
         method: method,
-        account_number: account_number,
+        account_number: account,
         status: "pending"
-      }]);
+      });
 
-      if (error) return alert("Error: " + error.message);
-      alert("Withdrawal requested successfully!");
+      if (error) return toast(error.message);
+
+      toast("Withdrawal request submitted!");
       closeWithdrawModal();
-      loadWallet();
+      document.getElementById("wAmount").value = "";
+      document.getElementById("wMethod").value = "";
+      document.getElementById("wAccount").value = "";
     }
 
     async function logout() {
       await supabaseClient.auth.signOut();
       window.location.href = "index.html";
     }
+
+    document.addEventListener("DOMContentLoaded", initDashboard);
   </script>
 </body>
-</html>
+  </html>
+  
