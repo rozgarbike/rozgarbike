@@ -115,7 +115,10 @@
           <div class="muted" style="margin-top:2px;">${p.profiles?.full_name || "Investor"}</div>
           <div class="muted" style="margin-top:6px;">Transaction ID: <span class="mono" style="color:var(--ink);">${p.transaction_id || "—"}</span></div>
           ${p.receipt_url ? `<a href="${p.receipt_url}" target="_blank"><img src="${p.receipt_url}" style="width:100%;max-width:220px;border-radius:10px;margin-top:8px;border:1px solid var(--line);" /></a>` : ""}
-          <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="approve('${p.id}')">Approve</button>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn btn-primary" style="flex:1;" onclick="approve('${p.id}')">Approve</button>
+            <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="decline('${p.id}')">Decline</button>
+          </div>
         `;
         listEl.appendChild(div);
       });
@@ -127,6 +130,13 @@
       toast("Payment approved");
       await loadPending();
       await loadCampaigns();
+    }
+
+    async function decline(investmentId) {
+      const { error } = await supabaseClient.rpc("decline_investment", { p_investment_id: investmentId });
+      if (error) return toast(error.message);
+      toast("Payment declined");
+      await loadPending();
     }
 
     async function loadWithdrawals() {
