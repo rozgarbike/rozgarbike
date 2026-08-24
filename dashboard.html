@@ -161,6 +161,7 @@
     }
 
     let profile = null;
+    let userId = null;
     let activeCampaignId = null;
     let pendingAmount = null;
     let currentWalletBalance = 0;
@@ -173,27 +174,33 @@
           return;
         }
 
-        // Admin Link Visible by Default
+        userId = session.user.id;
+
         const adminBtn = document.getElementById("adminLink");
         if (adminBtn) adminBtn.style.display = "inline-block";
 
-        const { data: userProfile } = await supabaseClient
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .maybeSingle();
+        try {
+          const { data: userProfile } = await supabaseClient
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .maybeSingle();
 
-        if (userProfile) {
-          profile = userProfile;
-          const refText = document.getElementById("refLinkText");
-          if (refText && profile.referral_code) {
-            refText.textContent = `madadnow.app?ref=${profile.referral_code}`;
+          if (userProfile) {
+            profile = userProfile;
+            const refText = document.getElementById("refLinkText");
+            if (refText && profile.referral_code) {
+              refText.textContent = `madadnow.app?ref=${profile.referral_code}`;
+            }
           }
-        } else {
-          profile = { id: session.user.id };
+        } catch(pe) {
+          console.log("Profile load fallback");
         }
 
-        await Promise.all([loadWallet(), loadInvestments(), loadReferrals()]);
+        // Run independently so one error doesn't block the rest
+        loadWallet();
+        loadInvestments();
+        loadReferrals();
 
         const params = new URLSearchParams(window.location.search);
         const contributeId = params.get("contribute");
@@ -205,16 +212,16 @@
 
     async function loadWallet() {
       try {
-        if (!profile || !profile.id) return;
-        const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
+        if (!userId) return;
+        const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", userId);
         const earned = (txns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
         
-        const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
+        const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", userId).in("status", ["pending", "paid"]);
         const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
         
         const available = earned - withdrawn;
         const walletEl = document.getElementById("walletBalance");
-        if (walletEl) walletEl.textContent = typeof pkr === 'function' ? pkr(available) : `Rs ${available}`;
+        if (walletEl) walletEl.textContent = `Rs ${available.toLocaleString()}`;
         currentWalletBalance = available;
       } catch(err) {
         console.error("Wallet error:", err);
@@ -226,7 +233,7 @@
       if (!listEl) return;
 
       try {
-        if (!profile || !profile.id) {
+        if (!userId) {
           listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
           return;
         }
@@ -234,7 +241,7 @@
         const { data: myInv, error } = await supabaseClient
           .from("investments")
           .select("*")
-          .eq("investor_id", profile.id)
+          .eq("investor_id", userId)
           .order("created_at", { ascending: false });
 
         if (error || !myInv || myInv.length === 0) {
@@ -244,23 +251,26 @@
 
         listEl.innerHTML = "";
 
-        for (const inv of myInv) {
+        for (let i = 0; i < myInv.length; i++) {
+          const inv = myInv[i];
           const div = document.createElement("div");
           div.className = "card";
           div.style.marginBottom = "8px";
 
           let campaignName = "Bike Campaign";
           if (inv.campaign_id) {
-            const { data: camp } = await supabaseClient
-              .from("campaigns")
-              .select("name")
-              .eq("id", inv.campaign_id)
-              .maybeSingle();
-            if (camp && camp.name) campaignName = camp.name;
+            try {
+              const { data: camp } = await supabaseClient
+                .from("campaigns")
+                .select("name")
+                .eq("id", inv.campaign_id)
+                .maybeSingle();
+              if (camp && camp.name) campaignName = camp.name;
+            } catch(ce) {}
           }
 
-          const amt = typeof pkr === 'function' ? pkr(inv.amount || 0) : `Rs ${inv.amount || 0}`;
-          const rec = typeof pkr === 'function' ? pkr(inv.received || 0) : `Rs ${inv.received || 0}`;
+          const amt = `Rs ${Number(inv.amount || 0).toLocaleString()}`;
+          const rec = `Rs ${Number(inv.received || 0).toLocaleString()}`;
 
           if (inv.status === "pending") {
             div.innerHTML = `
@@ -304,17 +314,17 @@
 
     async function loadReferrals() {
       try {
-        if (!profile || !profile.id) return;
-        const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", profile.id);
+        if (!userId) return;
+        const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", userId);
         const count = (refs || []).filter(r => r.bonus_paid).length;
         const { data: bonusTxns } = await supabaseClient.from("wallet_transactions")
-          .select("amount").eq("investor_id", profile.id).in("type", ["referral_bonus", "milestone_bonus"]);
+          .select("amount").eq("investor_id", userId).in("type", ["referral_bonus", "milestone_bonus"]);
         const bonusTotal = (bonusTxns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
 
         const refCountEl = document.getElementById("refCount");
         const refBonusEl = document.getElementById("refBonus");
         if (refCountEl) refCountEl.textContent = count;
-        if (refBonusEl) refBonusEl.textContent = typeof pkr === 'function' ? pkr(bonusTotal) : `Rs ${bonusTotal}`;
+        if (refBonusEl) refBonusEl.textContent = `Rs ${bonusTotal.toLocaleString()}`;
         
         const within = count % 10;
         const mText = document.getElementById("milestoneProgressText");
@@ -370,7 +380,7 @@
         `;
         listEl.appendChild(row);
       });
-      document.getElementById("payAmountText").textContent = typeof pkr === 'function' ? pkr(amt) : `Rs ${amt}`;
+      document.getElementById("payAmountText").textContent = `Rs ${amt.toLocaleString()}`;
       document.getElementById("transactionId").value = "";
       document.getElementById("receiptFile").value = "";
       document.getElementById("paymentOverlay").style.display = "flex";
@@ -391,9 +401,9 @@
       try {
         const fileExt = file.name.split(".").pop();
         const uniqueId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        const filePath = `${profile.id}-${uniqueId}.${fileExt}`;
+        const filePath = `${userId}-${uniqueId}.${fileExt}`;
 
         const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
         if (uploadError) return toast("Upload failed: " + uploadError.message);
 
-        const { data: urlData } = 
+        cons
