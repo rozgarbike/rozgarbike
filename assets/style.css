@@ -31,4 +31,31 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid va
 .muted{color:var(--ink-soft);font-size:12.5px;}
 .progress-track{height:6px;border-radius:999px;background:var(--line);overflow:hidden;}
 .progress-fill{height:100%;background:var(--mustard);}
-a{color:var(--petrol);}
+a{color:var(--petrol);}/* Premium App Download Button */
+.app-download-btn {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #123D3D 0%, #206a6a 100%) !important;
+    color: #ffffff !important;
+    padding: 14px 24px !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    box-shadow: 0 4px 12px rgba(18, 61, 61, 0.35) !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+}
+
+.app-download-btn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 18px rgba(18, 61, 61, 0.5) !important;
+    background: linear-gradient(135deg, #0d2c2c 0%, #123D3D 100%) !important;
+}
+
+.app-download-btn:active {
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 6px rgba(18, 61, 61, 0.3) !important;
+}
+
