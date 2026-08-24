@@ -84,8 +84,18 @@
       </div>
       <p style="font-size:13px;margin-bottom:10px;">Send <b id="payAmountText">Rs 0</b> to any one of these accounts:</p>
       
-      <!-- Dynamic Accounts list will render here -->
-      <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+      <!-- DIRECT REAL ACCOUNTS LIST -->
+      <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <div class="card" style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;">
+          <b>JazzCash:</b> <span class="mono">03245380453</span> (Muhammad Safdar)
+        </div>
+        <div class="card" style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;">
+          <b>Meezan Bank:</b> <span class="mono">00300113025971</span> (Naveed Ahmed)
+        </div>
+        <div class="card" style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;">
+          <b>SadaPay:</b> <span class="mono">03245380453</span> (Muhammad Safdar)
+        </div>
+      </div>
 
       <div class="muted" style="margin-bottom:4px;">Transaction / receipt ID (required)</div>
       <input id="txIdInput" placeholder="e.g. TRX123456789" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;" />
@@ -106,7 +116,7 @@
       </div>
       <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs)</div>
       <input id="wAmount" type="number" placeholder="Amount" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
-      <div class="muted" style="margin-bottom:6px;">Payment Method (Easypaisa / JazzCash / Bank)</div>
+      <div class="muted" style="margin-bottom:6px;">Payment Method (Easypaisa / JazzCash / Bank / SadaPay)</div>
       <input id="wMethod" placeholder="e.g. JazzCash" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
       <div class="muted" style="margin-bottom:6px;">Account Number / Title</div>
       <input id="wAccount" placeholder="03xxxxxxxxx" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
@@ -217,7 +227,7 @@
       document.getElementById("paymentOverlay").style.display = "none";
     }
 
-    async function goToPaymentStep() {
+    function goToPaymentStep() {
       const amt = Number(document.getElementById("customAmount").value);
       if (!amt || amt < 1000) return toast("Minimum amount is Rs 1,000");
       
@@ -226,31 +236,7 @@
       closeModal();
 
       document.getElementById("payAmountText").textContent = pkr(amt);
-      const listEl = document.getElementById("paymentMethodsList");
-      listEl.innerHTML = `<p class="muted">Loading payment accounts...</p>`;
       document.getElementById("paymentOverlay").style.display = "flex";
-
-      // Fetch dynamic active accounts from DB
-      const { data: methods, error } = await supabaseClient
-        .from("payment_methods")
-        .select("*")
-        .eq("active", true);
-
-      if (error || !methods || methods.length === 0) {
-        listEl.innerHTML = `<p class="muted">No payment accounts found. Please contact admin.</p>`;
-        return;
-      }
-
-      listEl.innerHTML = "";
-      methods.forEach(m => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.style.padding = "10px 12px";
-        div.style.border = "1px solid #e2e8f0";
-        div.style.borderRadius = "8px";
-        div.innerHTML = `<b>${m.label}:</b> <span class="mono">${m.account_number}</span> (${m.account_title})`;
-        listEl.appendChild(div);
-      });
     }
 
     async function submitInvestment() {
