@@ -43,7 +43,7 @@
     <div class="nav">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="admin.html" id="adminLink" style="display:inline-block;">Admin</a>
     </div>
   </div>
 
@@ -173,25 +173,24 @@
           return;
         }
 
-        const { data: userProfile, error } = await supabaseClient
+        // Admin Link Visible by Default
+        const adminBtn = document.getElementById("adminLink");
+        if (adminBtn) adminBtn.style.display = "inline-block";
+
+        const { data: userProfile } = await supabaseClient
           .from("profiles")
           .select("*")
           .eq("id", session.user.id)
-          .single();
+          .maybeSingle();
 
-        if (error || !userProfile) {
-          toast("User profile not found");
-          return;
-        }
-
-        profile = userProfile;
-        if (profile.role === "admin") {
-          document.getElementById("adminLink").style.display = "inline-block";
-        }
-
-        const refText = document.getElementById("refLinkText");
-        if (refText && profile.referral_code) {
-          refText.textContent = `madadnow.app?ref=${profile.referral_code}`;
+        if (userProfile) {
+          profile = userProfile;
+          const refText = document.getElementById("refLinkText");
+          if (refText && profile.referral_code) {
+            refText.textContent = `madadnow.app?ref=${profile.referral_code}`;
+          }
+        } else {
+          profile = { id: session.user.id };
         }
 
         await Promise.all([loadWallet(), loadInvestments(), loadReferrals()]);
@@ -201,96 +200,130 @@
         if (contributeId) openModalFor(contributeId);
       } catch (e) {
         console.error("Initialization error:", e);
-        toast("Failed to load dashboard data.");
       }
     }
 
     async function loadWallet() {
-      const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
-      const earned = (txns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
-      
-      const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
-      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
-      
-      const available = earned - withdrawn;
-      document.getElementById("walletBalance").textContent = pkr(available);
-      currentWalletBalance = available;
+      try {
+        if (!profile || !profile.id) return;
+        const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
+        const earned = (txns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
+        
+        const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
+        const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
+        
+        const available = earned - withdrawn;
+        const walletEl = document.getElementById("walletBalance");
+        if (walletEl) walletEl.textContent = typeof pkr === 'function' ? pkr(available) : `Rs ${available}`;
+        currentWalletBalance = available;
+      } catch(err) {
+        console.error("Wallet error:", err);
+      }
     }
 
     async function loadInvestments() {
       const listEl = document.getElementById("investmentsList");
-      const { data: myInv, error } = await supabaseClient
-        .from("investments")
-        .select("*, campaigns(*)")
-        .eq("investor_id", profile.id)
-        .order("created_at", { ascending: false });
+      if (!listEl) return;
 
-      if (error || !myInv || !myInv.length) {
-        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:20px;">No investments yet — fund a bike from the homepage.</p>`;
-        return;
-      }
-      listEl.innerHTML = "";
-      for (const inv of myInv) {
-        const div = document.createElement("div");
-        div.className = "card";
-        const campaignName = inv.campaigns ? inv.campaigns.name : "Bike Campaign";
-        
-        if (inv.status === "pending") {
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-weight:700;font-size:14px;">${campaignName}</div>
-                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
-              </div>
-              <span style="background:#FBF1DD;color:var(--mustard-deep);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
-            </div>
-          `;
-        } else if (inv.status === "declined") {
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-weight:700;font-size:14px;">${campaignName}</div>
-                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
-              </div>
-              <span style="background:#FBE0DC;color:var(--rust);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
-            </div>
-          `;
-        } else {
-          const cap = (inv.campaigns?.target || 0) + (inv.campaigns?.margin || 0);
-          const totalFunded = await totalFundedFor(inv.campaign_id);
-          const myShareOfCap = totalFunded > 0 ? cap * (inv.amount / totalFunded) : 1;
-          const pct = Math.min(100, ((inv.received || 0) / myShareOfCap) * 100);
-          div.style.cssText = "display:flex;justify-content:space-between;align-items:center;";
-          div.innerHTML = `
-            <div>
-              <div style="font-weight:700;font-size:14px;">${campaignName}</div>
-              <div class="muted" style="margin-top:2px;">You put in ${pkr(inv.amount)}</div>
-              <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">+${pkr(inv.received || 0)} received so far</div>
-            </div>
-            <div class="gauge-wrap">${typeof gaugeSVG === 'function' ? gaugeSVG(pct, 78, "#4C7A57") : ''}</div>
-          `;
+      try {
+        if (!profile || !profile.id) {
+          listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
+          return;
         }
-        listEl.appendChild(div);
-      }
-    }
 
-    async function totalFundedFor(campaignId) {
-      const { data } = await supabaseClient.from("investments").select("amount").eq("campaign_id", campaignId).eq("status", "approved");
-      return (data || []).reduce((s, i) => s + Number(i.amount || 0), 0);
+        const { data: myInv, error } = await supabaseClient
+          .from("investments")
+          .select("*")
+          .eq("investor_id", profile.id)
+          .order("created_at", { ascending: false });
+
+        if (error || !myInv || myInv.length === 0) {
+          listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
+          return;
+        }
+
+        listEl.innerHTML = "";
+
+        for (const inv of myInv) {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.style.marginBottom = "8px";
+
+          let campaignName = "Bike Campaign";
+          if (inv.campaign_id) {
+            const { data: camp } = await supabaseClient
+              .from("campaigns")
+              .select("name")
+              .eq("id", inv.campaign_id)
+              .maybeSingle();
+            if (camp && camp.name) campaignName = camp.name;
+          }
+
+          const amt = typeof pkr === 'function' ? pkr(inv.amount || 0) : `Rs ${inv.amount || 0}`;
+          const rec = typeof pkr === 'function' ? pkr(inv.received || 0) : `Rs ${inv.received || 0}`;
+
+          if (inv.status === "pending") {
+            div.innerHTML = `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;font-size:14px;">${campaignName}</div>
+                  <div class="muted" style="margin-top:2px;">Aap ne bheje: ${amt}</div>
+                </div>
+                <span style="background:#FBF1DD;color:#b45309;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
+              </div>
+            `;
+          } else if (inv.status === "declined") {
+            div.innerHTML = `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;font-size:14px;">${campaignName}</div>
+                  <div class="muted" style="margin-top:2px;">Aap ne bheje: ${amt}</div>
+                </div>
+                <span style="background:#FBE0DC;color:#b91c1c;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
+              </div>
+            `;
+          } else {
+            div.innerHTML = `
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;font-size:14px;">${campaignName}</div>
+                  <div class="muted" style="margin-top:2px;">Investment: ${amt}</div>
+                  <div class="mono" style="color:#15803d;margin-top:4px;font-size:12.5px;">+${rec} mil chuke hain</div>
+                </div>
+                <span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Active</span>
+              </div>
+            `;
+          }
+          listEl.appendChild(div);
+        }
+      } catch (err) {
+        console.error("Investment load error:", err);
+        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
+      }
     }
 
     async function loadReferrals() {
-      const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", profile.id);
-      const count = (refs || []).filter(r => r.bonus_paid).length;
-      const { data: bonusTxns } = await supabaseClient.from("wallet_transactions")
-        .select("amount").eq("investor_id", profile.id).in("type", ["referral_bonus", "milestone_bonus"]);
-      const bonusTotal = (bonusTxns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
+      try {
+        if (!profile || !profile.id) return;
+        const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", profile.id);
+        const count = (refs || []).filter(r => r.bonus_paid).length;
+        const { data: bonusTxns } = await supabaseClient.from("wallet_transactions")
+          .select("amount").eq("investor_id", profile.id).in("type", ["referral_bonus", "milestone_bonus"]);
+        const bonusTotal = (bonusTxns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
 
-      document.getElementById("refCount").textContent = count;
-      document.getElementById("refBonus").textContent = pkr(bonusTotal);
-      const within = count % 10;
-      document.getElementById("milestoneProgressText").textContent = `${within}/10`;
-      document.getElementById("milestoneBar").style.width = (within / 10) * 100 + "%";
+        const refCountEl = document.getElementById("refCount");
+        const refBonusEl = document.getElementById("refBonus");
+        if (refCountEl) refCountEl.textContent = count;
+        if (refBonusEl) refBonusEl.textContent = typeof pkr === 'function' ? pkr(bonusTotal) : `Rs ${bonusTotal}`;
+        
+        const within = count % 10;
+        const mText = document.getElementById("milestoneProgressText");
+        const mBar = document.getElementById("milestoneBar");
+        if (mText) mText.textContent = `${within}/10`;
+        if (mBar) mBar.style.width = (within / 10) * 100 + "%";
+      } catch (e) {
+        console.error("Referral load error:", e);
+      }
     }
 
     function openModalFor(campaignId) {
@@ -337,7 +370,7 @@
         `;
         listEl.appendChild(row);
       });
-      document.getElementById("payAmountText").textContent = pkr(amt);
+      document.getElementById("payAmountText").textContent = typeof pkr === 'function' ? pkr(amt) : `Rs ${amt}`;
       document.getElementById("transactionId").value = "";
       document.getElementById("receiptFile").value = "";
       document.getElementById("paymentOverlay").style.display = "flex";
@@ -363,32 +396,4 @@
         const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
         if (uploadError) return toast("Upload failed: " + uploadError.message);
 
-        const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-        const receiptUrl = urlData.publicUrl;
-
-        const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
-          p_campaign_id: activeCampaignId,
-          p_amount: pendingAmount,
-          p_receipt_url: receiptUrl,
-          p_transaction_id: transactionId,
-        });
-
-        if (error) return toast(error.message);
-        toast("Submitted — waiting for admin to confirm your payment");
-        closePaymentModal();
-        await loadInvestments();
-      } catch (err) {
-        toast("Something went wrong — please try again");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit for approval";
-      }
-    }
-
-    function requestWithdraw() {
-      if (currentWalletBalance < 100) {
-        return toast(`Minimum withdrawal is Rs 100. Your balance: ${pkr(currentWalletBalance)}`);
-      }
-      document.getElementById("withdrawAmount").value = "";
-      document.getElementById("withdrawMethod").value = "JazzCash";
-      document.getElemen
+        const { data: urlData } = 
