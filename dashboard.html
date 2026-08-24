@@ -4,16 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>My Dashboard — RozgarBike</title>
-<link rel="manifest" href="manifest.json" />
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
   <!-- TOP BANNER AD -->
-  <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; font-family: inherit; z-index: 999; pointer-events: none;">
-    <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; z-index: 1000;">✕</button>
-    <div style="max-width: 600px; margin: 0 auto; padding-left: 30px; pointer-events: auto;">
+  <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; z-index: 999;">
+    <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer;">✕</button>
+    <div style="max-width: 600px; margin: 0 auto; padding-left: 30px;">
       <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
         <span style="font-size: 18px;">🔥</span>
         <span style="font-size: 17px; font-weight: 800; color: #ffc107;">شاندار موقع!</span>
@@ -23,14 +22,11 @@
       </div>
       <div style="background: rgba(0, 0, 0, 0.25); padding: 10px 12px; border-radius: 8px; border-right: 3px solid #ffc107;">
         <div style="font-size: 13px; color: #e0f2f1; margin-bottom: 6px; line-height: 1.5;">
-          • <b>Rs 1,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 50 سے 60</b> <span style="font-size: 11px; opacity: 0.85;">(لگاتار 90 دن)</span>
+          • <b>Rs 1,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 50 سے 60</b>
         </div>
         <div style="font-size: 13px; color: #e0f2f1; line-height: 1.5;">
           • <b>Rs 5,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 300 سے 350</b>
         </div>
-      </div>
-      <div style="margin-top: 6px; font-size: 11px; color: #ffc107; font-weight: 600; text-align: left;">
-        ⚡ محدود نشستیں دستیاب ہیں!
       </div>
     </div>
   </div>
@@ -38,12 +34,12 @@
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;position:relative;z-index:2000;cursor:pointer;" onclick="logout()">Log out</button>
+      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="logout()">Log out</button>
     </div>
     <div class="nav">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink" style="display:inline-block;">Admin</a>
+      <a href="admin.html" id="adminLink">Admin</a>
     </div>
   </div>
 
@@ -62,7 +58,7 @@
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
     <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-      <p class="muted" style="text-align:center;padding:10px;">Loading investments...</p>
+      <p class="muted" style="text-align:center;padding:15px;">Loading investments...</p>
     </div>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRALS</div>
@@ -88,7 +84,7 @@
     </div>
   </div>
 
-  <!-- MODALS -->
+  <!-- PAYMENT & FUND MODAL -->
   <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:3000;">
     <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -96,9 +92,9 @@
         <button onclick="closeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
       </div>
       <div class="muted" style="margin-bottom:6px;">Choose your amount</div>
-      <div class="tier-row" id="tierRow"></div>
-      <div class="muted" style="margin-top:12px;margin-bottom:6px;">Or enter a custom amount (min Rs 1,000)</div>
-      <input id="customAmount" type="number" placeholder="1000" />
+      <div class="tier-row" id="tierRow" style="display:flex;gap:8px;margin-bottom:10px;"></div>
+      <div class="muted" style="margin-top:12px;margin-bottom:6px;">Or enter custom amount (min Rs 1,000)</div>
+      <input id="customAmount" type="number" placeholder="1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;" />
       <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="goToPaymentStep()">Continue</button>
     </div>
   </div>
@@ -113,15 +109,16 @@
       <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
 
       <div class="muted" style="margin-bottom:6px;">Transaction / receipt ID (required)</div>
-      <input id="transactionId" placeholder="e.g. TRX123456789" style="margin-bottom:12px;" />
+      <input id="transactionId" placeholder="e.g. TRX123456789" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
 
-      <div class="muted" style="margin-bottom:6px;">Upload a screenshot of your payment (required)</div>
+      <div class="muted" style="margin-bottom:6px;">Upload payment screenshot</div>
       <input id="receiptFile" type="file" accept="image/*" style="margin-bottom:12px;" />
 
       <button class="btn btn-primary" id="submitBtn" style="width:100%;margin-top:14px;" onclick="confirmContribute()">Submit for approval</button>
     </div>
   </div>
 
+  <!-- WITHDRAW MODAL -->
   <div id="withdrawOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:3000;">
     <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -129,15 +126,15 @@
         <button onclick="closeWithdrawModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
       </div>
       <div class="muted" style="margin-bottom:6px;">Amount (min Rs 100)</div>
-      <input id="withdrawAmount" type="number" placeholder="1000" style="margin-bottom:12px;" />
+      <input id="withdrawAmount" type="number" placeholder="1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
       <div class="muted" style="margin-bottom:6px;">Method</div>
-      <select id="withdrawMethod" style="margin-bottom:12px;">
+      <select id="withdrawMethod" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;">
         <option value="JazzCash">JazzCash</option>
         <option value="Easypaisa">Easypaisa</option>
         <option value="Bank">Bank Account</option>
       </select>
       <div class="muted" style="margin-bottom:6px;">Your account / phone number</div>
-      <input id="withdrawAccount" placeholder="03xxxxxxxxx or account number" style="margin-bottom:12px;" />
+      <input id="withdrawAccount" placeholder="03xxxxxxxxx or account number" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
       <button class="btn btn-primary" style="width:100%;" onclick="submitWithdraw()">Submit request</button>
     </div>
   </div>
@@ -148,33 +145,20 @@
   <script src="assets/app.js"></script>
   <script>
     function closePromoAd() {
-      const adBox = document.getElementById('promoUrduAd');
-      if (adBox) {
-        adBox.style.display = 'none';
-        sessionStorage.setItem('hidePromoAd', 'true');
-      }
+      document.getElementById('promoUrduAd').style.display = 'none';
     }
 
-    if (sessionStorage.getItem('hidePromoAd') === 'true') {
-      const adBox = document.getElementById('promoUrduAd');
-      if (adBox) adBox.style.display = 'none';
-    }
-
-    let profile = null;
     let userId = null;
     let activeCampaignId = null;
-    let pendingAmount = null;
+    let pendingAmount = 0;
     let currentWalletBalance = 0;
 
-    document.addEventListener("DOMContentLoaded", function() {
-      setTimeout(init, 300);
-    });
-
-    async function init() {
+    document.addEventListener("DOMContentLoaded", async function() {
       const listEl = document.getElementById("investmentsList");
+      
       try {
         if (typeof supabaseClient === "undefined") {
-          if (listEl) listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Connection error. Please refresh.</p>`;
+          listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
           return;
         }
 
@@ -185,28 +169,7 @@
         }
 
         userId = session.user.id;
-
-        const adminBtn = document.getElementById("adminLink");
-        if (adminBtn) adminBtn.style.display = "inline-block";
-
-        try {
-          const { data: userProfile } = await supabaseClient
-            .from("profiles")
-            .select("*")
-            .eq("id", userId)
-            .maybeSingle();
-
-          if (userProfile) {
-            profile = userProfile;
-            const refText = document.getElementById("refLinkText");
-            if (refText && profile.referral_code) {
-              refText.textContent = `madadnow.app?ref=${profile.referral_code}`;
-            }
-          }
-        } catch(pe) {
-          console.log("Profile fallback");
-        }
-
+        
         loadWallet();
         loadInvestments();
         loadReferrals();
@@ -214,11 +177,12 @@
         const params = new URLSearchParams(window.location.search);
         const contributeId = params.get("contribute");
         if (contributeId) openModalFor(contributeId);
-      } catch (e) {
-        console.error("Init error:", e);
+
+      } catch (err) {
+        console.error(err);
         if (listEl) listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
       }
-    }
+    });
 
     async function loadWallet() {
       try {
@@ -229,30 +193,20 @@
         const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", userId).in("status", ["pending", "paid"]);
         const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
         
-        const available = earned - withdrawn;
-        const walletEl = document.getElementById("walletBalance");
-        if (walletEl) walletEl.textContent = `Rs ${available.toLocaleString()}`;
-        currentWalletBalance = available;
-      } catch(err) {
-        console.error("Wallet error:", err);
-      }
+        currentWalletBalance = earned - withdrawn;
+        document.getElementById("walletBalance").textContent = `Rs ${currentWalletBalance.toLocaleString()}`;
+      } catch(e) {}
     }
 
     async function loadInvestments() {
       const listEl = document.getElementById("investmentsList");
       if (!listEl) return;
 
-      if (!userId) {
-        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
-        return;
-      }
-
       try {
         const { data: myInv, error } = await supabaseClient
           .from("investments")
-          .select("id, amount, received, status, campaign_id, created_at")
-          .eq("investor_id", userId)
-          .order("created_at", { ascending: false });
+          .select("*")
+          .eq("investor_id", userId);
 
         if (error || !myInv || myInv.length === 0) {
           listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
@@ -260,52 +214,26 @@
         }
 
         listEl.innerHTML = "";
-
         myInv.forEach(inv => {
           const div = document.createElement("div");
           div.className = "card";
           div.style.marginBottom = "8px";
-
-          let campaignName = "Bike Campaign";
           const amt = `Rs ${Number(inv.amount || 0).toLocaleString()}`;
           const rec = `Rs ${Number(inv.received || 0).toLocaleString()}`;
 
-          if (inv.status === "pending") {
-            div.innerHTML = `
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:700;font-size:14px;">${campaignName}</div>
-                  <div class="muted" style="margin-top:2px;">Aap ne bheje: ${amt}</div>
-                </div>
-                <span style="background:#FBF1DD;color:#b45309;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-weight:700;font-size:14px;">Bike Investment</div>
+                <div class="muted" style="margin-top:2px;">Amount: ${amt}</div>
+                ${inv.status === 'active' ? `<div class="mono" style="color:#15803d;margin-top:4px;font-size:12.5px;">+${rec} mil chuke hain</div>` : ''}
               </div>
-            `;
-          } else if (inv.status === "declined") {
-            div.innerHTML = `
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:700;font-size:14px;">${campaignName}</div>
-                  <div class="muted" style="margin-top:2px;">Aap ne bheje: ${amt}</div>
-                </div>
-                <span style="background:#FBE0DC;color:#b91c1c;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
-              </div>
-            `;
-          } else {
-            div.innerHTML = `
-              <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:700;font-size:14px;">${campaignName}</div>
-                  <div class="muted" style="margin-top:2px;">Investment: ${amt}</div>
-                  <div class="mono" style="color:#15803d;margin-top:4px;font-size:12.5px;">+${rec} mil chuke hain</div>
-                </div>
-                <span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Active</span>
-              </div>
-            `;
-          }
+              <span style="background:${inv.status === 'active' ? '#dcfce7' : '#FBF1DD'};color:${inv.status === 'active' ? '#15803d' : '#b45309'};font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">${inv.status}</span>
+            </div>
+          `;
           listEl.appendChild(div);
         });
       } catch (err) {
-        console.error("Investment load error:", err);
         listEl.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">Aap ki koi investment nahi hai.</p>`;
       }
     }
@@ -314,24 +242,8 @@
       try {
         if (!userId) return;
         const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", userId);
-        const count = (refs || []).filter(r => r.bonus_paid).length;
-        const { data: bonusTxns } = await supabaseClient.from("wallet_transactions")
-          .select("amount").eq("investor_id", userId).in("type", ["referral_bonus", "milestone_bonus"]);
-        const bonusTotal = (bonusTxns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
-
-        const refCountEl = document.getElementById("refCount");
-        const refBonusEl = document.getElementById("refBonus");
-        if (refCountEl) refCountEl.textContent = count;
-        if (refBonusEl) refBonusEl.textContent = `Rs ${bonusTotal.toLocaleString()}`;
-        
-        const within = count % 10;
-        const mText = document.getElementById("milestoneProgressText");
-        const mBar = document.getElementById("milestoneBar");
-        if (mText) mText.textContent = `${within}/10`;
-        if (mBar) mBar.style.width = (within / 10) * 100 + "%";
-      } catch (e) {
-        console.error("Referral load error:", e);
-      }
+        document.getElementById("refCount").textContent = (refs || []).length;
+      } catch(e) {}
     }
 
     function openModalFor(campaignId) {
@@ -340,18 +252,11 @@
       tierRow.innerHTML = "";
       [1000, 2000, 4000].forEach(t => {
         const b = document.createElement("button");
-        b.className = "tier-btn"; b.textContent = "Rs " + t.toLocaleString();
-        b.onclick = () => selectTier(t, b);
+        b.className = "btn btn-outline"; b.textContent = "Rs " + t;
+        b.onclick = () => document.getElementById("customAmount").value = t;
         tierRow.appendChild(b);
       });
-      document.getElementById("customAmount").value = "";
       document.getElementById("modalOverlay").style.display = "flex";
-    }
-
-    function selectTier(amount, btn) {
-      document.getElementById("customAmount").value = amount;
-      document.querySelectorAll(".tier-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
     }
 
     function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
@@ -360,46 +265,65 @@
 
     async function goToPaymentStep() {
       const amt = Number(document.getElementById("customAmount").value);
-      if (!amt || amt < 1000) return toast("Minimum contribution is Rs 1,000");
+      if (!amt || amt < 1000) return alert("Minimum amount is Rs 1,000");
       pendingAmount = amt;
       closeModal();
 
-      const { data: methods } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
       const listEl = document.getElementById("paymentMethodsList");
-      listEl.innerHTML = "";
-      (methods || []).forEach(m => {
-        const row = document.createElement("div");
-        row.className = "card";
-        row.style.padding = "12px";
-        row.innerHTML = `
-          <div style="font-weight:700;font-size:13px;">${m.label}</div>
-          <div class="muted" style="margin-top:2px;">${m.account_title}</div>
-          <div class="mono" style="font-size:15px;margin-top:2px;">${m.account_number}</div>
-        `;
-        listEl.appendChild(row);
-      });
+      listEl.innerHTML = `
+        <div class="card" style="padding:10px;"><b>JazzCash:</b> 03001234567 (RozgarBike)</div>
+        <div class="card" style="padding:10px;"><b>Easypaisa:</b> 03001234567 (RozgarBike)</div>
+      `;
       document.getElementById("payAmountText").textContent = `Rs ${amt.toLocaleString()}`;
-      document.getElementById("transactionId").value = "";
-      document.getElementById("receiptFile").value = "";
       document.getElementById("paymentOverlay").style.display = "flex";
     }
 
     async function confirmContribute() {
       const transactionId = document.getElementById("transactionId").value.trim();
-      const fileInput = document.getElementById("receiptFile");
-      const file = fileInput.files[0];
+      if (!transactionId) return alert("Enter transaction ID");
 
-      if (!transactionId) return toast("Enter your transaction / receipt ID");
-      if (!file) return toast("Please upload a screenshot of your payment");
+      const { error } = await supabaseClient.from("investments").insert([{
+        investor_id: userId,
+        campaign_id: activeCampaignId,
+        amount: pendingAmount,
+        transaction_id: transactionId,
+        status: "pending"
+      }]);
 
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Uploading...";
+      if (error) return alert("Error: " + error.message);
+      alert("Submitted! Waiting for admin approval.");
+      closePaymentModal();
+      loadInvestments();
+    }
 
-      try {
-        const fileExt = file.name.split(".").pop();
-        const uniqueId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        const filePath = `${userId}-${uniqueId}.${fileExt}`;
+    function requestWithdraw() {
+      document.getElementById("withdrawOverlay").style.display = "flex";
+    }
 
-        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
-        i
+    async function submitWithdraw() {
+      const amount = Number(document.getElementById("withdrawAmount").value);
+      const method = document.getElementById("withdrawMethod").value;
+      const account_number = document.getElementById("withdrawAccount").value.trim();
+      if (!amount || !account_number) return alert("Fill all fields");
+
+      const { error } = await supabaseClient.from("withdrawal_requests").insert([{
+        investor_id: userId,
+        amount: amount,
+        method: method,
+        account_number: account_number,
+        status: "pending"
+      }]);
+
+      if (error) return alert("Error: " + error.message);
+      alert("Withdrawal requested successfully!");
+      closeWithdrawModal();
+      loadWallet();
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
