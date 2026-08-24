@@ -9,6 +9,32 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+
+  <!-- SAB SE TOP PAR URDU BANNER AD -->
+  <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; font-family: inherit; z-index: 9999;">
+    <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+    <div style="max-width: 600px; margin: 0 auto; padding-left: 30px;">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+        <span style="font-size: 18px;">🔥</span>
+        <span style="font-size: 17px; font-weight: 800; color: #ffc107;">شاندار موقع!</span>
+      </div>
+      <div style="font-size: 14px; font-weight: 700; color: #ffffff; margin-bottom: 8px; line-height: 1.4;">
+        بائیک خریدیں اور گھر بیٹھے پیسے کمائیں! 🚲💰
+      </div>
+      <div style="background: rgba(0, 0, 0, 0.25); padding: 10px 12px; border-radius: 8px; border-right: 3px solid #ffc107;">
+        <div style="font-size: 13px; color: #e0f2f1; margin-bottom: 6px; line-height: 1.5;">
+          • <b>Rs 1,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 50 سے 60</b> <span style="font-size: 11px; opacity: 0.85;">(لگاتار 90 دن)</span>
+        </div>
+        <div style="font-size: 13px; color: #e0f2f1; line-height: 1.5;">
+          • <b>Rs 5,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 300 سے 350</b>
+        </div>
+      </div>
+      <div style="margin-top: 6px; font-size: 11px; color: #ffc107; font-weight: 600; text-align: left;">
+        ⚡ محدود نشستیں دستیاب ہیں!
+      </div>
+    </div>
+  </div>
+
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
@@ -29,7 +55,7 @@
       <button class="btn btn-primary" style="margin-top:12px;" onclick="requestWithdraw()">Withdraw</button>
     </div>
 
-    <!-- NEW DIRECT APK DOWNLOAD BUTTON -->
+    <!-- DIRECT APK DOWNLOAD BUTTON -->
     <a href="rozgarbike.apk" download class="app-download-btn" style="margin-bottom: 20px;">
       📲 Download RozgarBike App (APK)
     </a>
@@ -119,6 +145,20 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
+    // Promo Ad Close Memory Logic
+    if (sessionStorage.getItem('hidePromoAd') === 'true') {
+      const adBox = document.getElementById('promoUrduAd');
+      if (adBox) adBox.style.display = 'none';
+    }
+
+    function closePromoAd() {
+      const adBox = document.getElementById('promoUrduAd');
+      if (adBox) {
+        adBox.style.display = 'none';
+        sessionStorage.setItem('hidePromoAd', 'true');
+      }
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').then(() => {
         console.log("Service Worker Registered");
@@ -339,21 +379,4 @@
       const { error } = await supabaseClient.rpc("request_withdrawal", { p_amount: amount, p_method: method, p_account_number: account_number });
       if (error) return toast(error.message);
       toast("Withdrawal request submitted");
-      closeWithdrawModal();
-      await loadWallet();
-    }
-
-    function copyRef() {
-      navigator.clipboard.writeText(`https://madadnow.app?ref=${profile.referral_code}`);
-      toast("Referral link copied");
-    }
-
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
-    }
-
-    init();
-  </script>
-</body>
-</html>
+      cl
