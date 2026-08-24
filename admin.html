@@ -3,15 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admin Panel — RozgarBike</title>
+<title>Admin — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
   <div class="header">
     <div class="header-row">
-      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike (Admin)</div>
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike Panel</div>
       <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="logout()">Log out</button>
     </div>
     <div class="nav">
@@ -22,49 +21,51 @@
   </div>
 
   <div class="wrap">
-    
-    <!-- 1. WHATSAPP MANUAL SETTINGS -->
-    <div class="disp" style="font-size:18px;margin-bottom:12px;">MANAGE WHATSAPP NUMBER</div>
+
+    <!-- WHATSAPP MANAGEMENT -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
     <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:6px;">WhatsApp Support Number (with country code e.g. 923001234567)</div>
-      <input id="whatsappInput" type="text" placeholder="923001234567" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:10px;" />
-      <button class="btn btn-primary" onclick="saveWhatsApp()">Save WhatsApp Number</button>
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Number (Chat link) — e.g. 923245380453</div>
+      <input id="waNumber" placeholder="923245380453" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Channel Link (Follow)</div>
+      <input id="waChannel" placeholder="https://whatsapp.com/channel/xxxx" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;margin-bottom:12px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
 
-    <!-- 2. PAYMENT METHODS MANUAL SETTINGS -->
-    <div class="disp" style="font-size:18px;margin-bottom:12px;">MANAGE PAYMENT ACCOUNTS (JazzCash / EasyPaisa / Bank)</div>
-    <div class="card" style="margin-bottom:16px;">
-      <div style="font-weight:700;margin-bottom:8px;">Add / Update Account</div>
-      <input id="payLabel" placeholder="Method Name (e.g. JazzCash / EasyPaisa / Meezan Bank)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
-      <input id="payTitle" placeholder="Account Title (e.g. Ali Raza)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
-      <input id="payNumber" placeholder="Account / Phone Number (e.g. 03001234567)" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;" />
-      <button class="btn btn-primary" onclick="addPaymentMethod()">Add / Update Method</button>
-    </div>
-    <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;"></div>
+    <!-- PENDING APPROVALS -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS</div>
+    <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
-    <!-- 3. BIKES & RATES MANUAL SETTINGS -->
-    <div class="disp" style="font-size:18px;margin-bottom:12px;">MANAGE BIKES & RATES</div>
-    <div class="card" style="margin-bottom:16px;">
-      <div style="font-weight:700;margin-bottom:8px;">Add New Bike / Investment Campaign</div>
-      <input id="bikeTitle" placeholder="Bike Title (e.g. Honda CD 70)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
-      <input id="bikeTarget" type="number" placeholder="Total Target (e.g. 150000)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
-      <input id="bikeDailyRate" type="number" placeholder="Daily Profit Rate % (e.g. 5)" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;" />
-      <button class="btn btn-primary" onclick="addBike()">Save Bike</button>
-    </div>
-    <div id="bikesList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;"></div>
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
+    <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
-    <!-- 4. PENDING INVESTMENTS APPROVAL -->
-    <div class="disp" style="font-size:18px;margin-bottom:12px;">PENDING INVESTMENTS</div>
-    <div id="pendingInvestmentsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
-      <p class="muted" style="text-align:center;padding:15px;">Loading pending investments...</p>
+    <!-- PAYMENT METHODS -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
+    <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:8px;font-weight:700;">Add A New Payment Account</div>
+      <input id="newLabel" placeholder="Label, e.g. JazzCash / Easypaisa / Meezan Bank" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
+      <input id="newTitle" placeholder="Account Title / Name" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
+      <input id="newNumber" placeholder="Account / Phone Number" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="addMethod()">Add Account</button>
     </div>
 
-    <!-- 5. PENDING WITHDRAWALS APPROVAL -->
-    <div class="disp" style="font-size:18px;margin-bottom:12px;">PENDING WITHDRAWALS</div>
-    <div id="pendingWithdrawalsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
-      <p class="muted" style="text-align:center;padding:15px;">Loading pending withdrawals...</p>
+    <!-- CAMPAIGN CREATION -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">CREATE A CAMPAIGN</div>
+    <div class="card" style="margin-bottom:20px;">
+      <input id="newName" placeholder="Bike name, e.g. Bike #14" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
+      <input id="newTarget" type="number" placeholder="Target amount (Rs)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
+      <input id="newMargin" type="number" placeholder="Margin on top of target (Rs)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
+      <input id="newDailyCap" type="number" placeholder="Daily payment cap from rider (Rs)" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="createCampaign()">Create Campaign</button>
     </div>
 
+    <!-- ACTIVE & CLOSED CAMPAIGNS -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS</div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">CLOSED CAMPAIGNS</div>
+    <div id="closedList" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -72,210 +73,326 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      setTimeout(initAdmin, 300);
-    });
+    let profile = null;
 
-    async function initAdmin() {
+    async function init() {
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-          window.location.href = "index.html";
-          return;
+        if (typeof requireSession === "function") {
+          profile = await requireSession(true);
+        } else if (typeof supabaseClient !== "undefined") {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (!session) { window.location.href = "index.html"; return; }
+          profile = session.user;
         }
 
-        loadPaymentMethods();
-        loadBikes();
-        loadPendingInvestments();
-        loadPendingWithdrawals();
-        loadWhatsApp();
-      } catch (e) {
-        console.error("Admin init error:", e);
+        await loadWhatsApp();
+        await loadPending();
+        await loadWithdrawals();
+        await loadMethods();
+        await loadCampaigns();
+      } catch (err) {
+        console.error("Initialization error:", err);
       }
     }
 
-    // --- WHATSAPP FUNCTIONS ---
+    function pkr(val) {
+      return "Rs " + Number(val || 0).toLocaleString();
+    }
+
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg;
+        t.className = "toast show";
+        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+      } else {
+        alert(msg);
+      }
+    }
+
+    // --- WHATSAPP MANAGEMENT ---
     async function loadWhatsApp() {
       try {
-        const { data } = await supabaseClient.from("app_settings").select("value").eq("key", "whatsapp").single();
-        if (data) document.getElementById("whatsappInput").value = data.value;
-      } catch(e){}
+        const { data } = await supabaseClient.from("site_settings").select("*");
+        const map = {};
+        (data || []).forEach(row => map[row.key] = row.value);
+        document.getElementById("waNumber").value = map["whatsapp_number"] || "";
+        document.getElementById("waChannel").value = map["whatsapp_channel"] || "";
+      } catch(e) {}
     }
 
     async function saveWhatsApp() {
-      const num = document.getElementById("whatsappInput").value.trim();
-      if(!num) return alert("Enter WhatsApp number");
-      const { error } = await supabaseClient.from("app_settings").upsert({ key: "whatsapp", value: num });
-      if(error) alert(error.message);
-      else alert("WhatsApp number saved!");
+      const number = document.getElementById("waNumber").value.trim();
+      const channel = document.getElementById("waChannel").value.trim();
+      const { error: e1 } = await supabaseClient.from("site_settings").upsert({ key: "whatsapp_number", value: number });
+      const { error: e2 } = await supabaseClient.from("site_settings").upsert({ key: "whatsapp_channel", value: channel });
+      if (e1 || e2) return toast((e1 || e2).message);
+      toast("WhatsApp links saved!");
     }
 
-    // --- PAYMENT METHODS FUNCTIONS ---
-    async function loadPaymentMethods() {
-      const list = document.getElementById("paymentMethodsList");
-      const { data } = await supabaseClient.from("payment_methods").select("*");
-      if(!data || data.length === 0) {
-        list.innerHTML = `<p class="muted">No payment methods added yet.</p>`;
-        return;
-      }
-      list.innerHTML = "";
-      data.forEach(m => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerHTML = `
-          <div style="display:flex;justify-space-between;align-items:center;">
-            <div>
-              <b>${m.label}</b> - ${m.account_title} (${m.account_number})
+    // --- PENDING PAYMENTS ---
+    async function loadPending() {
+      const listEl = document.getElementById("pendingList");
+      try {
+        const { data: pending } = await supabaseClient
+          .from("investments").select("*, campaigns(name), profiles(full_name)")
+          .eq("status", "pending").order("created_at", { ascending: true });
+        
+        if (!pending || !pending.length) {
+          listEl.innerHTML = `<p class="muted">No pending payments right now.</p>`;
+          return;
+        }
+        listEl.innerHTML = "";
+        pending.forEach(p => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="font-weight:700;font-size:14px;">${pkr(p.amount)} — ${p.campaigns?.name || 'Bike Investment'}</div>
+            <div class="muted" style="margin-top:2px;">${p.profiles?.full_name || "Investor"}</div>
+            <div class="muted" style="margin-top:6px;">Transaction ID: <span class="mono" style="color:var(--ink);">${p.transaction_id || "—"}</span></div>
+            ${p.receipt_url ? `<a href="${p.receipt_url}" target="_blank"><img src="${p.receipt_url}" style="width:100%;max-width:220px;border-radius:10px;margin-top:8px;border:1px solid var(--line);" /></a>` : ""}
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="approve('${p.id}')">Approve</button>
+              <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="decline('${p.id}')">Decline</button>
             </div>
-            <button class="btn btn-outline" style="color:red;border-color:red;padding:4px 8px;font-size:11px;" onclick="deletePayment('${m.id}')">Delete</button>
-          </div>
-        `;
-        list.appendChild(d);
-      });
-    }
-
-    async function addPaymentMethod() {
-      const label = document.getElementById("payLabel").value.trim();
-      const title = document.getElementById("payTitle").value.trim();
-      const number = document.getElementById("payNumber").value.trim();
-      if(!label || !number) return alert("Fill method details");
-
-      const { error } = await supabaseClient.from("payment_methods").insert([{ label, account_title: title, account_number: number, active: true }]);
-      if(error) alert(error.message);
-      else {
-        alert("Payment Method Added!");
-        document.getElementById("payLabel").value = "";
-        document.getElementById("payTitle").value = "";
-        document.getElementById("payNumber").value = "";
-        loadPaymentMethods();
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No pending payments right now.</p>`;
       }
     }
 
-    async function deletePayment(id) {
-      await supabaseClient.from("payment_methods").delete().eq("id", id);
-      loadPaymentMethods();
-    }
-
-    // --- BIKES & RATES FUNCTIONS ---
-    async function loadBikes() {
-      const list = document.getElementById("bikesList");
-      const { data } = await supabaseClient.from("campaigns").select("*");
-      if(!data || data.length === 0) {
-        list.innerHTML = `<p class="muted">No bikes added yet.</p>`;
-        return;
+    async function approve(investmentId) {
+      const { error } = await supabaseClient.rpc("approve_investment", { p_investment_id: investmentId });
+      if (error) {
+        const { error: fallbackErr } = await supabaseClient.from("investments").update({ status: "active" }).eq("id", investmentId);
+        if (fallbackErr) return toast(fallbackErr.message);
       }
-      list.innerHTML = "";
-      data.forEach(b => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>
-              <b>${b.title}</b><br>
-              Target: Rs ${Number(b.target_amount || 0).toLocaleString()} | Rate: ${b.daily_rate || 0}%
-            </div>
-            <button class="btn btn-outline" style="color:red;border-color:red;padding:4px 8px;font-size:11px;" onclick="deleteBike('${b.id}')">Delete</button>
-          </div>
-        `;
-        list.appendChild(d);
-      });
+      toast("Payment approved!");
+      await loadPending();
+      await loadCampaigns();
     }
 
-    async function addBike() {
-      const title = document.getElementById("bikeTitle").value.trim();
-      const target = Number(document.getElementById("bikeTarget").value);
-      const rate = Number(document.getElementById("bikeDailyRate").value);
-      if(!title || !target) return alert("Fill Bike Title and Target Amount");
+    async function decline(investmentId) {
+      const { error } = await supabaseClient.rpc("decline_investment", { p_investment_id: investmentId });
+      if (error) {
+        const { error: fallbackErr } = await supabaseClient.from("investments").update({ status: "declined" }).eq("id", investmentId);
+        if (fallbackErr) return toast(fallbackErr.message);
+      }
+      toast("Payment declined!");
+      await loadPending();
+    }
 
-      const { error } = await supabaseClient.from("campaigns").insert([{ title, target_amount: target, daily_rate: rate, raised_amount: 0 }]);
-      if(error) alert(error.message);
-      else {
-        alert("Bike Added Successfully!");
-        document.getElementById("bikeTitle").value = "";
-        document.getElementById("bikeTarget").value = "";
-        document.getElementById("bikeDailyRate").value = "";
-        loadBikes();
+    // --- WITHDRAWAL REQUESTS ---
+    async function loadWithdrawals() {
+      const listEl = document.getElementById("withdrawList");
+      try {
+        const { data: reqs } = await supabaseClient
+          .from("withdrawal_requests").select("*, profiles(full_name)")
+          .eq("status", "pending").order("created_at", { ascending: true });
+
+        if (!reqs || !reqs.length) {
+          listEl.innerHTML = `<p class="muted">No withdrawal requests right now.</p>`;
+          return;
+        }
+        listEl.innerHTML = "";
+        reqs.forEach(r => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="font-weight:700;font-size:14px;">${pkr(r.amount)}</div>
+            <div class="muted" style="margin-top:2px;">${r.profiles?.full_name || "Investor"}</div>
+            <div class="muted" style="margin-top:6px;">${r.method}: <span class="mono" style="color:var(--ink);">${r.account_number}</span></div>
+            <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="markPaid('${r.id}')">Mark as paid</button>
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No withdrawal requests right now.</p>`;
       }
     }
 
-    async function deleteBike(id) {
-      await supabaseClient.from("campaigns").delete().eq("id", id);
-      loadBikes();
+    async function markPaid(requestId) {
+      const { error } = await supabaseClient.rpc("mark_withdrawal_paid", { p_request_id: requestId });
+      if (error) {
+        const { error: fallbackErr } = await supabaseClient.from("withdrawal_requests").update({ status: "paid" }).eq("id", requestId);
+        if (fallbackErr) return toast(fallbackErr.message);
+      }
+      toast("Marked as paid!");
+      await loadWithdrawals();
     }
 
-    // --- INVESTMENTS & WITHDRAWALS APPROVALS ---
-    async function loadPendingInvestments() {
-      const container = document.getElementById("pendingInvestmentsList");
-      const { data: invs } = await supabaseClient.from("investments").select("*").eq("status", "pending");
-      if (!invs || invs.length === 0) {
-        container.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">No pending investments.</p>`;
-        return;
-      }
-      container.innerHTML = "";
-      invs.forEach(inv => {
+    // --- PAYMENT METHODS ---
+    async function loadMethods() {
+      const listEl = document.getElementById("methodsList");
+      const { data: methods } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: true });
+      listEl.innerHTML = "";
+      (methods || []).forEach(m => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-          <div><b>Rs ${Number(inv.amount).toLocaleString()}</b> - TRX: ${inv.transaction_id || 'N/A'}</div>
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary" onclick="approveInv('${inv.id}')">Approve</button>
-            <button class="btn btn-outline" style="color:red;" onclick="declineInv('${inv.id}')">Reject</button>
+          <input value="${m.label || ''}" id="label-${m.id}" style="width:100%;padding:6px;margin-bottom:6px;border-radius:4px;border:1px solid #ccc;" />
+          <input value="${m.account_title || ''}" id="title-${m.id}" style="width:100%;padding:6px;margin-bottom:6px;border-radius:4px;border:1px solid #ccc;" />
+          <input value="${m.account_number || ''}" id="number-${m.id}" style="width:100%;padding:6px;margin-bottom:8px;border-radius:4px;border:1px solid #ccc;" />
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-dark" style="flex:1;" onclick="updateMethod('${m.id}')">Save</button>
+            <button class="btn btn-outline" style="flex:1;" onclick="toggleMethod('${m.id}', ${m.active})">${m.active ? "Disable" : "Enable"}</button>
+            <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="deleteMethod('${m.id}')">Delete</button>
           </div>
         `;
-        container.appendChild(div);
+        listEl.appendChild(div);
       });
     }
 
-    async function approveInv(id) {
-      await supabaseClient.from("investments").update({ status: "active" }).eq("id", id);
-      alert("Approved!");
-      loadPendingInvestments();
+    async function addMethod() {
+      const label = document.getElementById("newLabel").value.trim();
+      const account_title = document.getElementById("newTitle").value.trim();
+      const account_number = document.getElementById("newNumber").value.trim();
+      if (!label || !account_title || !account_number) return toast("Fill all fields");
+      const { error } = await supabaseClient.from("payment_methods").insert({ label, account_title, account_number, active: true });
+      if (error) return toast(error.message);
+      toast("Account added!");
+      document.getElementById("newLabel").value = "";
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newNumber").value = "";
+      await loadMethods();
     }
 
-    async function declineInv(id) {
-      await supabaseClient.from("investments").update({ status: "declined" }).eq("id", id);
-      alert("Declined!");
-      loadPendingInvestments();
+    async function updateMethod(id) {
+      const label = document.getElementById(`label-${id}`).value;
+      const account_title = document.getElementById(`title-${id}`).value;
+      const account_number = document.getElementById(`number-${id}`).value;
+      const { error } = await supabaseClient.from("payment_methods").update({ label, account_title, account_number }).eq("id", id);
+      if (error) return toast(error.message);
+      toast("Saved!");
+      await loadMethods();
     }
 
-    async function loadPendingWithdrawals() {
-      const container = document.getElementById("pendingWithdrawalsList");
-      const { data: wds } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "pending");
-      if (!wds || wds.length === 0) {
-        container.innerHTML = `<p class="muted" style="text-align:center;padding:15px;">No pending withdrawals.</p>`;
-        return;
+    async function toggleMethod(id, currentlyActive) {
+      const { error } = await supabaseClient.from("payment_methods").update({ active: !currentlyActive }).eq("id", id);
+      if (error) return toast(error.message);
+      await loadMethods();
+    }
+
+    async function deleteMethod(id) {
+      const { error } = await supabaseClient.from("payment_methods").delete().eq("id", id);
+      if (error) return toast(error.message);
+      toast("Account removed!");
+      await loadMethods();
+    }
+
+    // --- CAMPAIGNS ---
+    async function createCampaign() {
+      const name = document.getElementById("newName").value.trim();
+      const target = Number(document.getElementById("newTarget").value);
+      const margin = Number(document.getElementById("newMargin").value || 0);
+      const daily_cap = Number(document.getElementById("newDailyCap").value || 350);
+      if (!name || !target) return toast("Name and target are required");
+      const { error } = await supabaseClient.from("campaigns").insert({ name, target, margin, daily_cap, status: "active" });
+      if (error) return toast(error.message);
+      toast("Campaign created!");
+      document.getElementById("newName").value = "";
+      document.getElementById("newTarget").value = "";
+      document.getElementById("newMargin").value = "";
+      document.getElementById("newDailyCap").value = "";
+      await loadCampaigns();
+    }
+
+    async function closeCampaign(campaignId) {
+      const { error } = await supabaseClient.rpc("close_campaign", { p_campaign_id: campaignId });
+      if (error) {
+        const { error: fallbackErr } = await supabaseClient.from("campaigns").update({ status: "complete" }).eq("id", campaignId);
+        if (fallbackErr) return toast(fallbackErr.message);
       }
-      container.innerHTML = "";
-      wds.forEach(w => {
+      toast("Campaign closed!");
+      await loadCampaigns();
+    }
+
+    async function giveBonus(investorId, campaignId) {
+      const input = document.getElementById(`bonus-${campaignId}-${investorId}`);
+      const amount = Number(input.value);
+      if (!amount) return toast("Enter a bonus amount");
+      const { error } = await supabaseClient.rpc("admin_give_bonus", {
+        p_investor_id: investorId, p_amount: amount, p_note: "Admin bonus",
+      });
+      if (error) return toast(error.message);
+      toast(pkr(amount) + " bonus sent!");
+      input.value = "";
+    }
+
+    async function loadCampaigns() {
+      const { data: campaigns } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
+      const activeEl = document.getElementById("campaignsList");
+      const closedEl = document.getElementById("closedList");
+      activeEl.innerHTML = "";
+      closedEl.innerHTML = "";
+
+      for (const c of campaigns || []) {
+        const { data: investors } = await supabaseClient
+          .from("investments").select("id, amount, received, investor_id, profiles(full_name)").eq("campaign_id", c.id).in("status", ["approved", "active"]);
+        const isClosed = c.status === "complete" || c.status === "closed";
+
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-          <div><b>Rs ${Number(w.amount).toLocaleString()}</b> (${w.method}: ${w.account_number})</div>
-          <div style="display:flex;gap:8px;margin-top:8px;">
-            <button class="btn btn-primary" onclick="approveWd('${w.id}')">Mark Paid</button>
-            <button class="btn btn-outline" style="color:red;" onclick="declineWd('${w.id}')">Reject</button>
+          <div style="font-weight:700;font-size:14px;">${c.name || c.title || 'Bike'}
+            <span class="muted" style="font-weight:400;font-size:11.5px;"> · cap Rs ${c.daily_cap || 350}/day ${isClosed ? "· CLOSED" : ""}</span>
           </div>
+          <div class="muted" style="margin-top:4px;">${pkr(c.total_received || 0)} repaid so far</div>
+          ${isClosed ? "" : `
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <input id="sim-${c.id}" type="number" placeholder="Rider payment today (Rs)" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+            <button class="btn btn-dark" onclick="distribute('${c.id}')">Distribute</button>
+          </div>
+          `}
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;" id="investorList-${c.id}"></div>
+          ${isClosed ? "" : `<button class="btn btn-outline" style="width:100%;margin-top:10px;border-color:var(--rust);color:var(--rust);" onclick="closeCampaign('${c.id}')">Close campaign</button>`}
         `;
-        container.appendChild(div);
+        (isClosed ? closedEl : activeEl).appendChild(div);
+
+        const invListEl = div.querySelector(`#investorList-${c.id}`);
+        (investors || []).forEach(inv => {
+          const row = document.createElement("div");
+          row.className = "card";
+          row.style.padding = "10px";
+          row.innerHTML = `
+            <div style="display:flex;justify-content:space-between;font-size:12px;">
+              <span class="muted">${inv.profiles?.full_name || "Investor"} (${pkr(inv.amount)} in)</span>
+              <span class="mono">${pkr(inv.received || 0)} received</span>
+            </div>
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <input id="bonus-${c.id}-${inv.investor_id}" type="number" placeholder="Bonus amount (Rs)" style="flex:1;padding:6px;font-size:12px;border-radius:4px;border:1px solid #ccc;" />
+              <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveBonus('${inv.investor_id}', '${c.id}')">Give</button>
+            </div>
+          `;
+          invListEl.appendChild(row);
+        });
+      }
+
+      if (!activeEl.children.length) activeEl.innerHTML = `<p class="muted">No active campaigns.</p>`;
+      if (!closedEl.children.length) closedEl.innerHTML = `<p class="muted">No closed campaigns.</p>`;
+    }
+
+    async function distribute(campaignId) {
+      const input = document.getElementById(`sim-${campaignId}`);
+      const amount = Number(input.value);
+      if (!amount) return toast("Enter an amount first");
+      const { error } = await supabaseClient.rpc("distribute_rider_payment", {
+        p_campaign_id: campaignId, p_amount: amount,
       });
-    }
-
-    async function approveWd(id) {
-      await supabaseClient.from("withdrawal_requests").update({ status: "paid" }).eq("id", id);
-      alert("Marked Paid!");
-      loadPendingWithdrawals();
-    }
-
-    async function declineWd(id) {
-      await supabaseClient.from("withdrawal_requests").update({ status: "rejected" }).eq("id", id);
-      alert("Rejected!");
-      loadPendingWithdrawals();
+      if (error) return toast(error.message);
+      toast("Payment split across all investors!");
+      input.value = "";
+      await loadCampaigns();
     }
 
     async function logout() {
       await supabaseClient.auth.signOut();
       window.location.href = "index.html";
     }
+
+    document.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
-</html>
+</html
