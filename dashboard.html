@@ -80,7 +80,7 @@
       <input id="wAmount" type="number" placeholder="Amount in Rs" style="margin-bottom:14px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
 
       <div style="display:flex;gap:10px;">
-        <button class="btn btn-dark" style="flex:1;cursor:pointer;" onclick="submitWithdrawal()">Submit</button>
+        <button id="wSubmitBtn" class="btn btn-dark" style="flex:1;cursor:pointer;" onclick="submitWithdrawal()">Submit</button>
         <button class="btn btn-outline" style="flex:1;cursor:pointer;" onclick="closeWithdrawModal()">Cancel</button>
       </div>
     </div>
@@ -107,7 +107,7 @@
     async function init() {
       try {
         await checkAdminAccess();
-        await loadInvestments();
+        await loadInvestmentsAndBalance();
         await loadCampaignsSelect();
         await loadPaymentMethods();
       } catch(e) {
@@ -129,7 +129,7 @@
       }
     }
 
-    async function loadInvestments() {
+    async function loadInvestmentsAndBalance() {
       const container = document.getElementById("myInvestments");
       const user = (await supabaseClient.auth.getUser())?.data?.user;
       
@@ -138,38 +138,51 @@
         return;
       }
 
+      // 1. Fetch investments for total received profit
       const { data: invs } = await supabaseClient
         .from("investments")
         .select("*, campaigns(name)")
         .eq("investor_id", user.id);
 
-      if (!invs || !invs.length) {
+      let totalReceived = 0;
+      if (invs && invs.length > 0) {
+        container.innerHTML = "";
+        invs.forEach(inv => {
+          if (inv.status === "approved" || inv.status === "active") {
+            totalReceived += Number(inv.received || 0);
+          }
+          
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
+            <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
+            <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
+              STATUS: ${inv.status.toUpperCase()}
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } else {
         container.innerHTML = `<p class="muted">No investments yet.</p>`;
-        document.getElementById("availAmount").textContent = pkr(0);
-        return;
       }
 
-      let totalReceived = 0;
-      container.innerHTML = "";
+      // 2. Fetch all non-declined withdrawals (Pending + Approved)
+      const { data: withdrawals } = await supabaseClient
+        .from("withdrawal_requests")
+        .select("amount")
+        .eq("investor_id", user.id)
+        .neq("status", "declined");
 
-      invs.forEach(inv => {
-        if (inv.status === "approved" || inv.status === "active") {
-          totalReceived += Number(inv.received || 0);
-        }
-        
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-          <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
-          <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
-          <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
-            STATUS: ${inv.status.toUpperCase()}
-          </div>
-        `;
-        container.appendChild(div);
-      });
+      let totalWithdrawnOrPending = 0;
+      if (withdrawals && withdrawals.length > 0) {
+        withdrawals.forEach(w => {
+          totalWithdrawnOrPending += Number(w.amount || 0);
+        });
+      }
 
-      currentBalance = totalReceived;
+      // CALCULATE REMAINING BALANCE ACCURATELY
+      currentBalance = Math.max(0, totalReceived - totalWithdrawnOrPending);
       document.getElementById("availAmount").textContent = pkr(currentBalance);
     }
 
@@ -256,7 +269,7 @@
       document.getElementById("trxInput").value = "";
       document.getElementById("investAmount").value = "";
       document.getElementById("receiptFileInput").value = "";
-      loadInvestments();
+      loadInvestmentsAndBalance();
     }
 
     function openWithdrawModal() {
@@ -275,10 +288,31 @@
       const amount = Number(document.getElementById("wAmount").value);
 
       if (!title || !number || !amount) return toast("Fill all withdrawal details!");
+      if (amount <= 0) return toast("Amount must be greater than zero!");
+      if (amount > currentBalance) return toast("Insufficient balance! You can withdraw up to Rs " + currentBalance);
 
       const user = (await supabaseClient.auth.getUser())?.data?.user;
       if (!user) return toast("Please log in again.");
 
+      const btn = document.getElementById("wSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Checking...";
+
+      // CHECK: 24-HOUR LIMIT (1 REQUEST PER DAY)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentRequests } = await supabaseClient
+        .from("withdrawal_requests")
+        .select("id")
+        .eq("investor_id", user.id)
+        .gte("created_at", oneDayAgo);
+
+      if (recentRequests && recentRequests.length > 0) {
+        btn.disabled = false;
+        btn.textContent = "Submit";
+        return toast("Limit Reached! Aap din mein sirf EK baar withdrawal request kar sakte hain. Subah dobara try karein.");
+      }
+
+      btn.textContent = "Submitting...";
       const { error } = await supabaseClient.from("withdrawal_requests").insert({
         investor_id: user.id,
         amount: amount,
@@ -287,11 +321,14 @@
         status: "pending"
       });
 
+      btn.disabled = false;
+      btn.textContent = "Submit";
+
       if (error) return toast(error.message);
 
       toast("Withdrawal request submitted successfully!");
       closeWithdrawModal();
-      loadInvestments();
+      loadInvestmentsAndBalance();
     }
 
     init();
