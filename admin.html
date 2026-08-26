@@ -21,21 +21,34 @@
   </div>
 
   <div class="wrap">
-    <!-- WHATSAPP -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS</div>
+    <!-- WHATSAPP & SUPPORT -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
     <div class="card" style="margin-bottom:24px;">
-      <input id="waNumber" placeholder="WhatsApp Number" style="margin-bottom:8px;" />
-      <input id="waChannel" placeholder="Channel Link" style="margin-bottom:8px;" />
-      <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp</button>
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Number — e.g. 923245380453</div>
+      <input id="waNumber" placeholder="923245380453" style="margin-bottom:12px;" />
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Channel Link</div>
+      <input id="waChannel" placeholder="https://whatsapp.com/channel/xxxx" style="margin-bottom:12px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
 
     <!-- PENDING PAYMENTS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS</div>
-    <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+    <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
-    <!-- WITHDRAWALS -->
+    <!-- WITHDRAWAL REQUESTS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
-    <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+    <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
+
+    <!-- PAYMENT METHODS (MANUAL ACCOUNT SETUP) -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
+    <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">Loading...</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:8px;font-weight:700;">Add A New Payment Account</div>
+      <input id="newLabel" placeholder="Label, e.g. JazzCash / Easypaisa / Meezan Bank" style="margin-bottom:8px;" />
+      <input id="newTitle" placeholder="Account Title / Name" style="margin-bottom:8px;" />
+      <input id="newNumber" placeholder="Account / Phone Number" style="margin-bottom:10px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="addMethod()">Add Account</button>
+    </div>
 
     <!-- CREATE CAMPAIGN -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">CREATE CAMPAIGN</div>
@@ -47,7 +60,7 @@
 
     <!-- ACTIVE CAMPAIGNS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS (SHARE % PROFIT)</div>
-    <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;"></div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">Loading...</div>
   </div>
 
   <div id="toast" class="toast"></div>
@@ -58,7 +71,6 @@
     function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
     function toast(msg) { alert(msg); }
 
-    // Direct Logout (Always Works)
     function logout() {
       try {
         if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
@@ -71,12 +83,24 @@
 
     async function init() {
       try {
+        await loadWhatsApp();
         await loadPending();
         await loadWithdrawals();
+        await loadMethods();
         await loadCampaigns();
       } catch(e) {
         console.error(e);
       }
+    }
+
+    async function loadWhatsApp() {
+      try {
+        const { data } = await supabaseClient.from("site_settings").select("*");
+        const map = {};
+        (data || []).forEach(row => map[row.key] = row.value);
+        if (document.getElementById("waNumber")) document.getElementById("waNumber").value = map["whatsapp_number"] || "";
+        if (document.getElementById("waChannel")) document.getElementById("waChannel").value = map["whatsapp_channel"] || "";
+      } catch(e) {}
     }
 
     async function saveWhatsApp() {
@@ -122,6 +146,69 @@
       await supabaseClient.from("withdrawal_requests").update({ status: "paid" }).eq("id", id);
       toast("Paid!");
       loadWithdrawals();
+    }
+
+    /* MANUAL PAYMENT METHODS MANAGEMENT */
+    async function loadMethods() {
+      const listEl = document.getElementById("methodsList");
+      try {
+        const { data: methods } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: true });
+        if (!methods || !methods.length) {
+          listEl.innerHTML = `<p class="muted">No payment methods added yet.</p>`;
+          return;
+        }
+        listEl.innerHTML = "";
+        methods.forEach(m => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <input value="${m.label || ""}" id="label-${m.id}" placeholder="Method Label" style="margin-bottom:6px;" />
+            <input value="${m.account_title || ""}" id="title-${m.id}" placeholder="Account Title" style="margin-bottom:6px;" />
+            <input value="${m.account_number || ""}" id="number-${m.id}" placeholder="Account Number" style="margin-bottom:8px;" />
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-dark" style="flex:1;" onclick="updateMethod('${m.id}')">Save</button>
+              <button class="btn btn-outline" style="flex:1;" onclick="toggleMethod('${m.id}', ${m.active})">${m.active ? "Disable" : "Enable"}</button>
+              <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="deleteMethod('${m.id}')">Delete</button>
+            </div>
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No payment methods found.</p>`;
+      }
+    }
+
+    async function addMethod() {
+      const label = document.getElementById("newLabel").value.trim();
+      const account_title = document.getElementById("newTitle").value.trim();
+      const account_number = document.getElementById("newNumber").value.trim();
+      if (!label || !account_title || !account_number) return toast("Fill all fields");
+      await supabaseClient.from("payment_methods").insert({ label, account_title, account_number, active: true });
+      toast("Account added!");
+      document.getElementById("newLabel").value = "";
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newNumber").value = "";
+      await loadMethods();
+    }
+
+    async function updateMethod(id) {
+      const label = document.getElementById(`label-${id}`).value;
+      const account_title = document.getElementById(`title-${id}`).value;
+      const account_number = document.getElementById(`number-${id}`).value;
+      await supabaseClient.from("payment_methods").update({ label, account_title, account_number }).eq("id", id);
+      toast("Saved!");
+      await loadMethods();
+    }
+
+    async function toggleMethod(id, currentlyActive) {
+      await supabaseClient.from("payment_methods").update({ active: !currentlyActive }).eq("id", id);
+      await loadMethods();
+    }
+
+    async function deleteMethod(id) {
+      await supabaseClient.from("payment_methods").delete().eq("id", id);
+      toast("Account removed!");
+      await loadMethods();
     }
 
     async function createCampaign() {
