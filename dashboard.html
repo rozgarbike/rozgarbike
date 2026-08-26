@@ -21,95 +21,64 @@
   </div>
 
   <div class="wrap">
-    <div id="promoBanner" class="card" style="background:linear-gradient(135deg, #0d3b36, #052420);color:#fff;margin-bottom:20px;display:none;">
-      <div style="color:#f59e0b;font-weight:700;font-size:16px;margin-bottom:6px;">🔥 شاندار موقع!</div>
-      <div style="font-size:13.5px;line-height:1.5;">
-        بائیک خریدیں اور گھر بیٹھے پیسے کمائیں! 🚲💰<br/>
-        • <b>Rs 1,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 50 سے 60</b><br/>
-        • <b>Rs 5,000</b> انویسٹمنٹ کریں اور کمائیں روزانہ <b>Rs 300 سے 350</b>
-      </div>
-    </div>
-
-    <div class="card" style="margin-bottom:20px;">
-      <div style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Welcome back</div>
-      <div id="userName" style="font-size:20px;font-weight:800;margin-top:2px;">—</div>
-      <div id="userPhone" class="mono" style="font-size:13px;color:var(--muted);margin-top:2px;">—</div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
-      <div class="card">
-        <div class="muted" style="font-size:12px;">TOTAL INVESTED</div>
-        <div id="totalInvested" style="font-size:20px;font-weight:800;color:var(--brand);margin-top:4px;">Rs 0</div>
-      </div>
-      <div class="card">
-        <div class="muted" style="font-size:12px;">TOTAL RECEIVED</div>
-        <div id="totalReceived" style="font-size:20px;font-weight:800;color:var(--brand);margin-top:4px;">Rs 0</div>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-bottom:24px;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="openInvestModal()">+ Invest in a Bike</button>
-
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">MY ACTIVE INVESTMENTS</div>
+    <!-- MY INVESTMENTS LIST -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
     <div id="myInvestments" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
+    <!-- WITHDRAWAL SECTION -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
     <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:6px;">Available for Withdrawal</div>
-      <div id="withdrawableBalance" style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:12px;">Rs 0</div>
+      <div class="muted">Available for Withdrawal</div>
+      <div id="availAmount" style="font-size:28px;font-weight:900;margin:6px 0 14px;color:var(--ink);">Rs 0</div>
       <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
-  </div>
 
-  <!-- INVEST MODAL STEP 1: AMOUNT -->
-  <div id="investOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="font-weight:800;font-size:16px;">INVEST IN ROZGARBIKE</div>
-        <span style="cursor:pointer;font-size:20px;" onclick="closeModal()">✕</span>
-      </div>
-      <div class="muted" style="margin-bottom:8px;">Select a bike campaign:</div>
-      <select id="campaignSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;"></select>
+    <!-- DEPOSIT / INVEST SECTION -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">INVEST IN ROZGARBIKE</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:6px;">Select a bike campaign:</div>
+      <select id="campaignSelect" style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);"></select>
       <div class="muted" style="margin-bottom:6px;">Investment Amount (Min Rs 1,000)</div>
-      <input id="customAmount" type="number" placeholder="e.g. 1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
-      <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="goToPaymentStep()">Continue to Payment</button>
+      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom:12px;" />
+      <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="startInvestment()">Continue to Payment</button>
     </div>
-  </div>
 
-  <!-- INVEST MODAL STEP 2: PAYMENT DETAILS -->
-  <div id="paymentOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;max-height:90vh;overflow-y:auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-weight:800;font-size:16px;">SEND YOUR PAYMENT</div>
-        <span style="cursor:pointer;font-size:20px;" onclick="closePaymentModal()">✕</span>
-      </div>
-      <p style="font-size:13px;margin-bottom:10px;">Send <b id="payAmountText">Rs 0</b> to any one of these accounts:</p>
-      
-      <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">Loading accounts...</div>
-
-      <div class="muted" style="margin-bottom:4px;">Transaction / receipt ID or Sender Phone Number (required)</div>
-      <input id="txIdInput" placeholder="e.g. TRX123456789 or 03245380453" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;" />
-
-      <div class="muted" style="margin-bottom:4px;">Upload payment screenshot (optional)</div>
-      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
-
-      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitInvestment()">Submit for approval</button>
+    <!-- PAYMENT DETAILS INSTRUCTION -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">SEND YOUR PAYMENT</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:8px;">Transfer amount to any payment method below:</div>
+      <div id="methodsDisplay" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">Loading accounts...</div>
+      <div class="muted" style="margin-bottom:6px;">Enter Transaction ID / Sender Number:</div>
+      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom:12px;" />
+      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitTrx()">Submit Payment Details</button>
     </div>
   </div>
 
   <!-- WITHDRAW MODAL -->
-  <div id="withdrawOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div style="font-weight:800;font-size:16px;">WITHDRAW FUNDS</div>
-        <span style="cursor:pointer;font-size:20px;" onclick="closeWithdrawModal()">✕</span>
+  <div id="withdrawModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;position:relative;">
+      <div style="font-weight:800;font-size:18px;margin-bottom:12px;">Request Withdrawal</div>
+      
+      <div class="muted" style="margin-bottom:6px;">Select Payment Method:</div>
+      <select id="wMethod" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
+        <option value="JazzCash">JazzCash</option>
+        <option value="EasyPaisa">EasyPaisa</option>
+        <option value="Bank Transfer">Bank Transfer</option>
+      </select>
+
+      <div class="muted" style="margin-bottom:6px;">Account Title / Name:</div>
+      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom:10px;width:100%;" />
+
+      <div class="muted" style="margin-bottom:6px;">Account / Phone Number:</div>
+      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom:10px;width:100%;" />
+
+      <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs):</div>
+      <input id="wAmount" type="number" placeholder="Amount in Rs" style="margin-bottom:14px;width:100%;" />
+
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-dark" style="flex:1;cursor:pointer;" onclick="submitWithdrawal()">Submit</button>
+        <button class="btn btn-outline" style="flex:1;cursor:pointer;" onclick="closeWithdrawModal()">Cancel</button>
       </div>
-      <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs)</div>
-      <input id="wAmount" type="number" placeholder="Amount" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
-      <div class="muted" style="margin-bottom:6px;">Payment Method (Easypaisa / JazzCash / Bank / SadaPay)</div>
-      <input id="wMethod" placeholder="e.g. JazzCash" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
-      <div class="muted" style="margin-bottom:6px;">Account Number / Title</div>
-      <input id="wAccount" placeholder="03xxxxxxxxx / Account Title" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
-      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitWithdrawal()">Request Withdrawal</button>
     </div>
   </div>
 
@@ -118,212 +87,169 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    let userProfile = null;
-    let pendingAmount = 0;
+    let currentBalance = 0;
     let selectedCampaignId = null;
-    let currentAvailable = 0;
 
-    async function initDashboard() {
+    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
+    function toast(msg) { alert(msg); }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    async function init() {
       try {
-        if (typeof requireSession === "function") {
-          userProfile = await requireSession();
-        } else if (typeof supabaseClient !== "undefined") {
-          const { data: { session } } = await supabaseClient.auth.getSession();
-          if (!session) { window.location.href = "index.html"; return; }
-          userProfile = session.user;
-        }
-
-        if (userProfile) {
-          document.getElementById("userName").textContent = userProfile.user_metadata?.full_name || userProfile.email || "User";
-          document.getElementById("userPhone").textContent = userProfile.email || "";
-        }
-
-        await loadMyData();
+        await loadInvestments();
         await loadCampaignsSelect();
         await loadPaymentMethods();
-      } catch (err) {
-        console.error("Dashboard error:", err);
+      } catch(e) {
+        console.error(e);
       }
     }
 
-    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
-    function toast(msg) {
-      const t = document.getElementById("toast");
-      if (t) {
-        t.textContent = msg;
-        t.className = "toast show";
-        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
-      } else { alert(msg); }
-    }
+    async function loadInvestments() {
+      const container = document.getElementById("myInvestments");
+      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
 
-    async function loadMyData() {
-      const { data: investments } = await supabaseClient
+      const { data: invs } = await supabaseClient
         .from("investments")
         .select("*, campaigns(name)")
-        .eq("investor_id", userProfile.id);
+        .eq("investor_id", user.id);
 
-      let totalInv = 0;
-      let totalRec = 0;
-      const listEl = document.getElementById("myInvestments");
-      listEl.innerHTML = "";
+      if (!invs || !invs.length) {
+        container.innerHTML = `<p class="muted">No investments yet.</p>`;
+        document.getElementById("availAmount").textContent = pkr(0);
+        return;
+      }
 
-      (investments || []).forEach(inv => {
+      let totalReceived = 0;
+      container.innerHTML = "";
+
+      invs.forEach(inv => {
         if (inv.status === "approved" || inv.status === "active") {
-          totalInv += Number(inv.amount || 0);
-          totalRec += Number(inv.received || 0);
+          totalReceived += Number(inv.received || 0);
         }
-
+        
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-          <div style="font-weight:700;">${inv.campaigns?.name || "Bike Campaign"}</div>
-          <div class="muted" style="font-size:12px;margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
-          <div style="font-size:11px;margin-top:4px;font-weight:600;color:${inv.status === 'approved' || inv.status === 'active' ? '#10b981' : inv.status === 'pending' ? '#f59e0b' : '#ef4444'};">
+          <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
+          <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
+          <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
             STATUS: ${inv.status.toUpperCase()}
           </div>
         `;
-        listEl.appendChild(div);
+        container.appendChild(div);
       });
 
-      if (!investments || investments.length === 0) {
-        listEl.innerHTML = `<p class="muted">You have no investments yet.</p>`;
-      }
-
-      currentAvailable = totalRec;
-
-      document.getElementById("totalInvested").textContent = pkr(totalInv);
-      document.getElementById("totalReceived").textContent = pkr(totalRec);
-      document.getElementById("withdrawableBalance").textContent = pkr(currentAvailable);
+      currentBalance = totalReceived;
+      document.getElementById("availAmount").textContent = pkr(currentBalance);
     }
 
     async function loadCampaignsSelect() {
-      const select = document.getElementById("campaignSelect");
-      const { data: campaigns } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
-      select.innerHTML = "";
-      (campaigns || []).forEach(c => {
-        const opt = document.createElement("option");
-        opt.value = c.id;
-        opt.textContent = c.name;
-        select.appendChild(opt);
-      });
+      const sel = document.getElementById("campaignSelect");
+      const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
+      if (!data || !data.length) {
+        sel.innerHTML = `<option value="">No Active Campaigns</option>`;
+        return;
+      }
+      sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target: ${pkr(c.target)}</option>`).join('');
     }
 
     async function loadPaymentMethods() {
-      const display = document.getElementById("paymentMethodsList");
+      const display = document.getElementById("methodsDisplay");
       const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
       if (!data || !data.length) {
-        display.innerHTML = `
-          <div class="card" style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;">
-            <b>JazzCash:</b> <span class="mono">03245380453</span> (Muhammad Safdar)
-          </div>`;
+        display.innerHTML = `<p class="muted">No active payment methods currently.</p>`;
         return;
       }
       display.innerHTML = data.map(m => `
-        <div class="card" style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;">
-          <b>${m.label}:</b> <span class="mono">${m.account_number}</span> (${m.account_title})
+        <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
+          <div style="font-weight:700;font-size:13px;">${m.label}</div>
+          <div style="font-size:12px;" class="muted">Title: ${m.account_title}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--brand);">${m.account_number}</div>
         </div>
       `).join('');
     }
 
-    function openInvestModal() {
-      document.getElementById("investOverlay").style.display = "flex";
-    }
-    function closeModal() {
-      document.getElementById("investOverlay").style.display = "none";
-    }
-    function closePaymentModal() {
-      document.getElementById("paymentOverlay").style.display = "none";
-    }
-
-    function goToPaymentStep() {
-      const amt = Number(document.getElementById("customAmount").value);
-      if (!amt || amt < 1000) return toast("Minimum amount is Rs 1,000");
+    function startInvestment() {
+      const campaignId = document.getElementById("campaignSelect").value;
+      const amount = Number(document.getElementById("investAmount").value);
+      if (!campaignId) return toast("Select a campaign first");
+      if (!amount || amount < 1000) return toast("Minimum investment amount is Rs 1,000");
       
-      pendingAmount = amt;
-      selectedCampaignId = document.getElementById("campaignSelect").value;
-      closeModal();
-
-      document.getElementById("payAmountText").textContent = pkr(amt);
-      document.getElementById("paymentOverlay").style.display = "flex";
+      selectedCampaignId = campaignId;
+      toast("Now transfer money to given accounts and enter Transaction ID below.");
     }
 
-    async function submitInvestment() {
-      const txId = document.getElementById("txIdInput").value.trim();
-      const fileInput = document.getElementById("receiptFileInput");
-      
-      if (!txId) return toast("Please enter Transaction / Receipt ID");
+    async function submitTrx() {
+      const trx = document.getElementById("trxInput").value.trim();
+      const amount = Number(document.getElementById("investAmount").value);
+      const campaignId = selectedCampaignId || document.getElementById("campaignSelect").value;
 
-      let receiptUrl = null;
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileExt = file.name.split('.').pop();
-        const filePath = `receipts/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
-        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
-        if (!uploadError) {
-          const { data: publicData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-          receiptUrl = publicData.publicUrl;
-        }
-      }
+      if (!campaignId || !amount) return toast("Please select campaign and enter amount above first.");
+      if (!trx) return toast("Please enter Transaction ID or Sender Phone Number.");
+
+      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      if (!user) return toast("Please log in again.");
 
       const { error } = await supabaseClient.from("investments").insert({
-        investor_id: userProfile.id,
-        campaign_id: selectedCampaignId,
-        amount: pendingAmount,
-        transaction_id: txId,
-        receipt_url: receiptUrl,
+        investor_id: user.id,
+        campaign_id: campaignId,
+        amount: amount,
+        transaction_id: trx,
         status: "pending"
       });
 
       if (error) return toast(error.message);
-      
-      toast("Investment submitted for approval!");
-      closePaymentModal();
-      document.getElementById("txIdInput").value = "";
-      document.getElementById("customAmount").value = "";
-      await loadMyData();
+      toast("Investment request submitted! Admin will verify shortly.");
+      document.getElementById("trxInput").value = "";
+      document.getElementById("investAmount").value = "";
+      loadInvestments();
     }
 
     function openWithdrawModal() {
-      document.getElementById("wAmount").value = currentAvailable;
-      document.getElementById("withdrawOverlay").style.display = "flex";
+      document.getElementById("wAmount").value = currentBalance;
+      document.getElementById("withdrawModal").style.display = "flex";
     }
 
     function closeWithdrawModal() {
-      document.getElementById("withdrawOverlay").style.display = "none";
+      document.getElementById("withdrawModal").style.display = "none";
     }
 
     async function submitWithdrawal() {
-      const amt = Number(document.getElementById("wAmount").value);
-      const method = document.getElementById("wMethod").value.trim();
-      const account = document.getElementById("wAccount").value.trim();
+      const method = document.getElementById("wMethod").value;
+      const title = document.getElementById("wTitle").value.trim();
+      const number = document.getElementById("wNumber").value.trim();
+      const amount = Number(document.getElementById("wAmount").value);
 
-      if (!amt || !method || !account) return toast("Fill all withdrawal details");
+      if (!title || !number || !amount) return toast("Fill all withdrawal details!");
+
+      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      if (!user) return toast("Please log in again.");
 
       const { error } = await supabaseClient.from("withdrawal_requests").insert({
-        investor_id: userProfile.id,
-        amount: amt,
-        method: method,
-        account_number: account,
+        investor_id: user.id,
+        amount: amount,
+        method: `${method} (${title})`,
+        account_number: number,
         status: "pending"
       });
 
       if (error) return toast(error.message);
 
-      toast("Withdrawal request submitted!");
+      toast("Withdrawal request submitted successfully!");
       closeWithdrawModal();
-      document.getElementById("wAmount").value = "";
-      document.getElementById("wMethod").value = "";
-      document.getElementById("wAccount").value = "";
-      await loadMyData();
+      loadInvestments();
     }
 
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
-    }
-
-    document.addEventListener("DOMContentLoaded", initDashboard);
+    init();
   </script>
 </body>
 </html>
