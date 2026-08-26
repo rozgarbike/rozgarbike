@@ -21,13 +21,12 @@
   </div>
 
   <div class="wrap">
-
     <!-- WHATSAPP & SUPPORT -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
     <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:6px;">WhatsApp Number (Chat link) — e.g. 923245380453</div>
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Number — e.g. 923245380453</div>
       <input id="waNumber" placeholder="923245380453" style="margin-bottom:12px;" />
-      <div class="muted" style="margin-bottom:6px;">WhatsApp Channel Link (Follow)</div>
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Channel Link</div>
       <input id="waChannel" placeholder="https://whatsapp.com/channel/xxxx" style="margin-bottom:12px;" />
       <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
@@ -105,8 +104,8 @@
       const { data } = await supabaseClient.from("site_settings").select("*");
       const map = {};
       (data || []).forEach(row => map[row.key] = row.value);
-      document.getElementById("waNumber").value = map["whatsapp_number"] || "";
-      document.getElementById("waChannel").value = map["whatsapp_channel"] || "";
+      if (document.getElementById("waNumber")) document.getElementById("waNumber").value = map["whatsapp_number"] || "";
+      if (document.getElementById("waChannel")) document.getElementById("waChannel").value = map["whatsapp_channel"] || "";
     }
 
     async function saveWhatsApp() {
@@ -217,7 +216,7 @@
         div.innerHTML = `
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-weight:700;font-size:14px;">${g.name}</div>
-            <span style="background:var(--bg);color:var(--ink-soft);font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;">${confirmedCount} referrals</span>
+            <span style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;">${confirmedCount} referrals</span>
           </div>
           <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
             ${g.members.map(m => `<div class="muted" style="font-size:12px;">${m.name} ${m.paid ? "✓" : "(not invested yet)"}</div>`).join("")}
@@ -310,17 +309,18 @@
       await loadCampaigns();
     }
 
+    // FIXED CAMPAIGNS LOADING & PROPORTIONAL SHARE
     async function loadCampaigns() {
       const activeEl = document.getElementById("campaignsList");
       const closedEl = document.getElementById("closedList");
 
-      const { data: campaigns, error } = await supabaseClient
+      const { data: campaigns, error: campErr } = await supabaseClient
         .from("campaigns")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) {
-        activeEl.innerHTML = `<p class="muted">Error loading campaigns: ${error.message}</p>`;
+      if (campErr) {
+        activeEl.innerHTML = `<p class="muted">Error loading campaigns: ${campErr.message}</p>`;
         return;
       }
 
@@ -328,12 +328,13 @@
       closedEl.innerHTML = "";
 
       if (!campaigns || campaigns.length === 0) {
-        activeEl.innerHTML = `<p class="muted">No active campaigns found.</p>`;
-        closedEl.innerHTML = `<p class="muted">No closed campaigns.</p>`;
+        activeEl.innerHTML = `<p class="muted">No active campaigns available.</p>`;
+        closedEl.innerHTML = `<p class="muted">No closed campaigns available.</p>`;
         return;
       }
 
       for (const c of campaigns) {
+        // Safe fetch for investments per campaign
         const { data: investors } = await supabaseClient
           .from("investments")
           .select("id, amount, received, investor_id, profiles(full_name)")
@@ -345,26 +346,26 @@
 
         const div = document.createElement("div");
         div.className = "card";
-        div.style.border = isClosed ? "1px solid #cbd5e1" : "1px solid #94a3b8";
+        div.style.border = "1px solid #cbd5e1";
         div.innerHTML = `
           <div style="font-weight:800;font-size:16px;color:var(--brand);">${c.name}
             <span class="muted" style="font-weight:400;font-size:12px;"> ${isClosed ? "· CLOSED" : "· ACTIVE"}</span>
           </div>
-          <div class="muted" style="margin-top:2px;">Target: ${pkr(c.target)} | Total Raised: ${pkr(totalPool)}</div>
+          <div class="muted" style="margin-top:2px;">Target: ${pkr(c.target)} | Raised: ${pkr(totalPool)}</div>
 
           ${isClosed ? "" : `
-          <!-- RIDER DISTRIBUTION BOX (PROPORTIONAL SHARE FORMULA) -->
+          <!-- RIDER DISTRIBUTION BOX -->
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:10px;border:1px solid #e2e8f0;">
-            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">🏍️ RIDER PAYMENT TODAY (PERCENTAGE SHARE)</div>
-            <input id="sim-${c.id}" type="number" placeholder="Enter Total Rider Amount (e.g. 2800)" style="width:100%;margin-bottom:8px;padding:8px;" />
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">🏍️ DAILY RIDER PAYMENT (PERCENTAGE SHARE)</div>
+            <input id="sim-${c.id}" type="number" placeholder="Enter amount (e.g. 2800)" style="width:100%;margin-bottom:8px;padding:8px;" />
             <button class="btn btn-dark" style="width:100%;font-size:12px;" onclick="distributeProportional('${c.id}')">Distribute Profit by Share %</button>
           </div>
 
-          <!-- EXTRA CAMPAIGN BONUS BOX -->
+          <!-- EXTRA BONUS BOX -->
           <div style="background:#f0fdf4;padding:12px;border-radius:8px;margin-top:10px;border:1px solid #bbf7d0;">
-            <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">🎁 EXTRA CAMPAIGN BONUS (ALL INVESTORS)</div>
-            <input id="campbonus-${c.id}" type="number" placeholder="Bonus amount per investor (Rs)" style="width:100%;margin-bottom:8px;padding:8px;" />
-            <button class="btn btn-primary" style="width:100%;font-size:12px;background:#16a34a;" onclick="giveCampaignBonus('${c.id}')">Send Extra Bonus to Campaign</button>
+            <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">🎁 EXTRA CAMPAIGN BONUS</div>
+            <input id="campbonus-${c.id}" type="number" placeholder="Bonus amount (Rs)" style="width:100%;margin-bottom:8px;padding:8px;" />
+            <button class="btn btn-primary" style="width:100%;font-size:12px;background:#16a34a;" onclick="giveCampaignBonus('${c.id}')">Send Extra Bonus</button>
           </div>
           `}
 
@@ -376,7 +377,7 @@
 
         const invListEl = div.querySelector(`#investorList-${c.id}`);
         if (!investors || investors.length === 0) {
-          invListEl.innerHTML = `<p class="muted" style="font-size:12px;">No approved investors in this campaign yet.</p>`;
+          invListEl.innerHTML = `<p class="muted" style="font-size:12px;">No approved investors in this campaign.</p>`;
         } else {
           investors.forEach(inv => {
             const sharePercent = totalPool > 0 ? ((Number(inv.amount) / totalPool) * 100).toFixed(2) : 0;
@@ -390,13 +391,9 @@
                 <span class="mono" style="color:#059669;">${pkr(inv.received)} received</span>
               </div>
               <div style="display:flex;gap:6px;margin-top:8px;">
-                <input id="bonus-${c.id}-${inv.investor_id}" type="number" placeholder="Single bonus (Rs)" style="flex:1;padding:6px;font-size:12px;" />
+                <input id="bonus-${c.id}-${inv.investor_id}" type="number" placeholder="Bonus (Rs)" style="flex:1;padding:6px;font-size:12px;" />
                 <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveBonus('${inv.investor_id}', '${c.id}')">Give</button>
               </div>
             `;
             invListEl.appendChild(row);
-          });
-        }
-      }
-
-      if (!activ
+         
