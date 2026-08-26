@@ -117,12 +117,15 @@
 
     async function checkAdminAccess() {
       const user = (await supabaseClient.auth.getUser())?.data?.user;
-      if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      if (user && user.email && user.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
         const navBar = document.getElementById("navBar");
-        const adminLink = document.createElement("a");
-        adminLink.href = "admin.html";
-        adminLink.textContent = "Admin";
-        navBar.appendChild(adminLink);
+        if (!document.getElementById("adminNavLink")) {
+          const adminLink = document.createElement("a");
+          adminLink.id = "adminNavLink";
+          adminLink.href = "admin.html";
+          adminLink.textContent = "Admin";
+          navBar.appendChild(adminLink);
+        }
       }
     }
 
