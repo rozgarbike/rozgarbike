@@ -16,7 +16,6 @@
     <div class="nav" id="navBar">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <!-- Admin Link Script ke zariye sirf Aapki ID par Inject hoga -->
     </div>
   </div>
 
@@ -92,7 +91,6 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    // AAPKI ADMIN EMAIL YAHAN ENTER KAREIN
     const ADMIN_EMAIL = "saimpk5227@gmail.com"; 
 
     let currentBalance = 0;
@@ -119,7 +117,7 @@
 
     async function checkAdminAccess() {
       const user = (await supabaseClient.auth.getUser())?.data?.user;
-      if (user && user.email === ADMIN_EMAIL) {
+      if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         const navBar = document.getElementById("navBar");
         const adminLink = document.createElement("a");
         adminLink.href = "admin.html";
