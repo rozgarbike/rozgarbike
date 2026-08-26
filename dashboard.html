@@ -47,7 +47,7 @@
       </div>
     </div>
 
-    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-bottom:24px;background:var(--gold);color:#000;border:none;font-weight:700;" onclick="openInvestModal()">+ Invest in a Bike</button>
+    <button class="btn btn-primary" style="width:100%;padding:14px;font-size:15px;margin-bottom:24px;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="openInvestModal()">+ Invest in a Bike</button>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">MY ACTIVE INVESTMENTS</div>
     <div id="myInvestments" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
@@ -56,13 +56,13 @@
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:6px;">Available for Withdrawal</div>
       <div id="withdrawableBalance" style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:12px;">Rs 0</div>
-      <button class="btn btn-dark" style="width:100%;" onclick="openWithdrawModal()">Request Withdrawal</button>
+      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
   </div>
 
   <!-- INVEST MODAL STEP 1: AMOUNT -->
-  <div id="investOverlay" class="overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="modal" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;">
+  <div id="investOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <div style="font-weight:800;font-size:16px;">INVEST IN ROZGARBIKE</div>
         <span style="cursor:pointer;font-size:20px;" onclick="closeModal()">✕</span>
@@ -71,13 +71,13 @@
       <select id="campaignSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;"></select>
       <div class="muted" style="margin-bottom:6px;">Investment Amount (Min Rs 1,000)</div>
       <input id="customAmount" type="number" placeholder="e.g. 1000" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
-      <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;" onclick="goToPaymentStep()">Continue to Payment</button>
+      <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="goToPaymentStep()">Continue to Payment</button>
     </div>
   </div>
 
   <!-- INVEST MODAL STEP 2: PAYMENT DETAILS -->
-  <div id="paymentOverlay" class="overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="modal" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;max-height:90vh;overflow-y:auto;">
+  <div id="paymentOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;max-height:90vh;overflow-y:auto;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-weight:800;font-size:16px;">SEND YOUR PAYMENT</div>
         <span style="cursor:pointer;font-size:20px;" onclick="closePaymentModal()">✕</span>
@@ -92,13 +92,13 @@
       <div class="muted" style="margin-bottom:4px;">Upload payment screenshot (optional)</div>
       <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
 
-      <button class="btn btn-dark" style="width:100%;" onclick="submitInvestment()">Submit for approval</button>
+      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitInvestment()">Submit for approval</button>
     </div>
   </div>
 
   <!-- WITHDRAW MODAL -->
-  <div id="withdrawOverlay" class="overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="modal" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;">
+  <div id="withdrawOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-weight:800;font-size:16px;">WITHDRAW FUNDS</div>
         <span style="cursor:pointer;font-size:20px;" onclick="closeWithdrawModal()">✕</span>
@@ -109,7 +109,7 @@
       <input id="wMethod" placeholder="e.g. JazzCash" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;" />
       <div class="muted" style="margin-bottom:6px;">Account Number / Title</div>
       <input id="wAccount" placeholder="03xxxxxxxxx / Account Title" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);margin-bottom:16px;" />
-      <button class="btn btn-dark" style="width:100%;" onclick="submitWithdrawal()">Request Withdrawal</button>
+      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitWithdrawal()">Request Withdrawal</button>
     </div>
   </div>
 
@@ -189,15 +189,7 @@
         listEl.innerHTML = `<p class="muted">You have no investments yet.</p>`;
       }
 
-      // Subtract pending/approved withdrawals from available total
-      const { data: wReqs } = await supabaseClient
-        .from("withdrawal_requests")
-        .select("amount")
-        .eq("investor_id", userProfile.id)
-        .neq("status", "declined");
-
-      const totalWithdrawn = (wReqs || []).reduce((sum, r) => sum + Number(r.amount || 0), 0);
-      currentAvailable = Math.max(0, totalRec - totalWithdrawn);
+      currentAvailable = totalRec;
 
       document.getElementById("totalInvested").textContent = pkr(totalInv);
       document.getElementById("totalReceived").textContent = pkr(totalRec);
@@ -293,9 +285,6 @@
     }
 
     function openWithdrawModal() {
-      if (currentAvailable <= 0) {
-        return toast("Available balance Rs 0 hai. Aap withdrawal request nahi kar sakte.");
-      }
       document.getElementById("wAmount").value = currentAvailable;
       document.getElementById("withdrawOverlay").style.display = "flex";
     }
@@ -310,7 +299,6 @@
       const account = document.getElementById("wAccount").value.trim();
 
       if (!amt || !method || !account) return toast("Fill all withdrawal details");
-      if (amt > currentAvailable) return toast("Amount exceeds available balance!");
 
       const { error } = await supabaseClient.from("withdrawal_requests").insert({
         investor_id: userProfile.id,
