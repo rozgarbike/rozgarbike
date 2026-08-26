@@ -21,7 +21,7 @@
   </div>
 
   <div class="wrap">
-    <!-- WHATSAPP & SUPPORT -->
+    <!-- WHATSAPP LINKS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:6px;">WhatsApp Number — e.g. 923245380453</div>
@@ -31,7 +31,7 @@
       <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
 
-    <!-- PENDING PAYMENTS -->
+    <!-- PENDING PAYMENTS WITH FULL DETAILS & DECLINE BUTTON -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS</div>
     <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
@@ -39,7 +39,7 @@
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
     <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
-    <!-- PAYMENT METHODS (MANUAL ACCOUNT SETUP) -->
+    <!-- PAYMENT METHODS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
     <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">Loading...</div>
     <div class="card" style="margin-bottom:24px;">
@@ -111,23 +111,47 @@
       toast("Saved!");
     }
 
+    /* PENDING PAYMENTS (WITH RECEIPT & DECLINE OPTION) */
     async function loadPending() {
       const listEl = document.getElementById("pendingList");
       const { data } = await supabaseClient.from("investments").select("*").eq("status", "pending");
       if (!data || !data.length) return listEl.innerHTML = `<p class="muted">No pending payments.</p>`;
-      listEl.innerHTML = data.map(p => `
-        <div class="card">
-          <div>${pkr(p.amount)} — Trx: ${p.transaction_id || "N/A"}</div>
-          <button class="btn btn-primary" style="margin-top:8px;" onclick="approve('${p.id}')">Approve</button>
-        </div>
-      `).join('');
+      
+      listEl.innerHTML = data.map(p => {
+        const proofLink = p.proof_url || p.receipt_url || p.screenshot || p.image;
+        return `
+          <div class="card" style="border-left:4px solid var(--gold);">
+            <div style="font-weight:800;font-size:18px;color:#1e293b;margin-bottom:4px;">Amount: ${pkr(p.amount)}</div>
+            <div style="font-size:13px;color:#475569;">Trx / Phone: <b>${p.transaction_id || p.sender_number || "N/A"}</b></div>
+            ${p.user_email ? `<div style="font-size:12px;color:#64748b;">User: ${p.user_email}</div>` : ''}
+            
+            ${proofLink ? `
+              <div style="margin-top:8px;">
+                <a href="${proofLink}" target="_blank" class="btn btn-outline" style="display:inline-block;padding:4px 10px;font-size:12px;text-decoration:none;">🖼️ View Payment Receipt / Screenshot</a>
+              </div>
+            ` : ''}
+
+            <div style="display:flex;gap:10px;margin-top:12px;">
+              <button class="btn btn-primary" style="flex:1;background:#16a34a;border:none;color:white;padding:8px;cursor:pointer;border-radius:6px;font-weight:700;" onclick="approve('${p.id}')">Approve</button>
+              <button class="btn btn-outline" style="flex:1;border-color:#dc2626;color:#dc2626;padding:8px;cursor:pointer;border-radius:6px;font-weight:700;" onclick="decline('${p.id}')">Decline</button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     async function approve(id) {
       await supabaseClient.from("investments").update({ status: "approved" }).eq("id", id);
-      toast("Approved!");
+      toast("Payment Approved!");
       loadPending();
       loadCampaigns();
+    }
+
+    async function decline(id) {
+      if(!confirm("Are you sure you want to decline this payment?")) return;
+      await supabaseClient.from("investments").update({ status: "declined" }).eq("id", id);
+      toast("Payment Declined!");
+      loadPending();
     }
 
     async function loadWithdrawals() {
@@ -148,7 +172,7 @@
       loadWithdrawals();
     }
 
-    /* MANUAL PAYMENT METHODS MANAGEMENT */
+    /* PAYMENT METHODS MANAGEMENT */
     async function loadMethods() {
       const listEl = document.getElementById("methodsList");
       try {
