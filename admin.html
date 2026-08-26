@@ -22,6 +22,7 @@
 
   <div class="wrap">
 
+    <!-- WHATSAPP & SUPPORT -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:6px;">WhatsApp Number (Chat link) — e.g. 923245380453</div>
@@ -31,15 +32,19 @@
       <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
 
+    <!-- PENDING PAYMENTS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS</div>
     <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
+    <!-- WITHDRAWAL REQUESTS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
     <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRAL TEAMS</div>
+    <!-- REFERRAL TEAMS -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRAL TEAMS & BONUSES</div>
     <div id="referralsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
+    <!-- PAYMENT METHODS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
     <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
     <div class="card" style="margin-bottom:24px;">
@@ -50,6 +55,7 @@
       <button class="btn btn-dark" style="width:100%;" onclick="addMethod()">Add Account</button>
     </div>
 
+    <!-- CREATE CAMPAIGN -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">CREATE A CAMPAIGN</div>
     <div class="card" style="margin-bottom:20px;">
       <input id="newName" placeholder="Bike name, e.g. Bike #14" style="margin-bottom:8px;" />
@@ -58,9 +64,11 @@
       <button class="btn btn-dark" style="width:100%;" onclick="createCampaign()">Create Campaign</button>
     </div>
 
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS</div>
-    <div id="campaignsList" style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;"></div>
+    <!-- ACTIVE CAMPAIGNS -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS (PERCENTAGE PROFIT & BONUS)</div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;"></div>
 
+    <!-- CLOSED CAMPAIGNS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">CLOSED CAMPAIGNS</div>
     <div id="closedList" style="display:flex;flex-direction:column;gap:12px;"></div>
   </div>
@@ -83,9 +91,18 @@
       await loadCampaigns();
     }
 
+    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg;
+        t.className = "toast show";
+        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+      } else { alert(msg); }
+    }
+
     async function loadWhatsApp() {
-      const { data, error } = await supabaseClient.from("site_settings").select("*");
-      if (error) { toast("Could not load WhatsApp settings: " + error.message); return; }
+      const { data } = await supabaseClient.from("site_settings").select("*");
       const map = {};
       (data || []).forEach(row => map[row.key] = row.value);
       document.getElementById("waNumber").value = map["whatsapp_number"] || "";
@@ -95,18 +112,17 @@
     async function saveWhatsApp() {
       const number = document.getElementById("waNumber").value.trim();
       const channel = document.getElementById("waChannel").value.trim();
-      const { error: e1 } = await supabaseClient.from("site_settings").upsert({ key: "whatsapp_number", value: number });
-      const { error: e2 } = await supabaseClient.from("site_settings").upsert({ key: "whatsapp_channel", value: channel });
-      if (e1 || e2) return toast((e1 || e2).message);
+      await supabaseClient.from("site_settings").upsert({ key: "whatsapp_number", value: number });
+      await supabaseClient.from("site_settings").upsert({ key: "whatsapp_channel", value: channel });
       toast("WhatsApp links saved");
     }
 
     async function loadPending() {
       const listEl = document.getElementById("pendingList");
-      const { data: pending, error } = await supabaseClient
+      const { data: pending } = await supabaseClient
         .from("investments").select("*, campaigns(name), profiles(full_name)")
         .eq("status", "pending").order("created_at", { ascending: true });
-      if (error) { listEl.innerHTML = `<p class="muted">Could not load pending payments: ${error.message}</p>`; return; }
+
       if (!pending || !pending.length) {
         listEl.innerHTML = `<p class="muted">No pending payments right now.</p>`;
         return;
@@ -146,10 +162,10 @@
 
     async function loadWithdrawals() {
       const listEl = document.getElementById("withdrawList");
-      const { data: reqs, error } = await supabaseClient
+      const { data: reqs } = await supabaseClient
         .from("withdrawal_requests").select("*, profiles(full_name)")
         .eq("status", "pending").order("created_at", { ascending: true });
-      if (error) { listEl.innerHTML = `<p class="muted">Could not load withdrawal requests: ${error.message}</p>`; return; }
+
       if (!reqs || !reqs.length) {
         listEl.innerHTML = `<p class="muted">No withdrawal requests right now.</p>`;
         return;
@@ -177,45 +193,42 @@
 
     async function loadReferrals() {
       const listEl = document.getElementById("referralsList");
-      try {
-        const { data: refs, error } = await supabaseClient
-          .from("referrals").select("*, referrer:referrer_id(full_name), referred:referred_id(full_name)")
-          .order("created_at", { ascending: true });
-        if (error) throw error;
-        if (!refs || !refs.length) {
-          listEl.innerHTML = `<p class="muted">No referrals yet.</p>`;
-          return;
-        }
-        const groups = {};
-        refs.forEach(r => {
-          const key = r.referrer_id;
-          if (!groups[key]) groups[key] = { name: r.referrer?.full_name || "Unknown", members: [] };
-          groups[key].members.push({ name: r.referred?.full_name || "Unknown", paid: r.bonus_paid });
-        });
-        listEl.innerHTML = "";
-        Object.entries(groups).forEach(([referrerId, g]) => {
-          const confirmedCount = g.members.filter(m => m.paid).length;
-          const hitMilestone = confirmedCount > 0 && confirmedCount % 10 === 0;
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div style="font-weight:700;font-size:14px;">${g.name}</div>
-              <span style="background:${hitMilestone ? "#FBF1DD" : "var(--bg)"};color:${hitMilestone ? "var(--mustard-deep)" : "var(--ink-soft)"};font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;">${confirmedCount} confirmed referrals</span>
-            </div>
-            <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
-              ${g.members.map(m => `<div class="muted" style="font-size:12px;">${m.name} ${m.paid ? "✓" : "(not invested yet)"}</div>`).join("")}
-            </div>
-            <div style="display:flex;gap:6px;margin-top:10px;">
-              <input id="refbonus-${referrerId}" type="number" placeholder="Referral bonus (Rs)" style="flex:1;padding:8px;font-size:12px;" />
-              <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveReferralBonus('${referrerId}')">Give</button>
-            </div>
-          `;
-          listEl.appendChild(div);
-        });
-      } catch (err) {
-        listEl.innerHTML = `<p class="muted">Could not load referrals: ${err.message}</p>`;
+      const { data: refs } = await supabaseClient
+        .from("referrals").select("*, referrer:referrer_id(full_name), referred:referred_id(full_name)")
+        .order("created_at", { ascending: true });
+
+      if (!refs || !refs.length) {
+        listEl.innerHTML = `<p class="muted">No referrals yet.</p>`;
+        return;
       }
+
+      const groups = {};
+      refs.forEach(r => {
+        const key = r.referrer_id;
+        if (!groups[key]) groups[key] = { name: r.referrer?.full_name || "Unknown", members: [] };
+        groups[key].members.push({ name: r.referred?.full_name || "Unknown", paid: r.bonus_paid });
+      });
+
+      listEl.innerHTML = "";
+      Object.entries(groups).forEach(([referrerId, g]) => {
+        const confirmedCount = g.members.filter(m => m.paid).length;
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:700;font-size:14px;">${g.name}</div>
+            <span style="background:var(--bg);color:var(--ink-soft);font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;">${confirmedCount} referrals</span>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+            ${g.members.map(m => `<div class="muted" style="font-size:12px;">${m.name} ${m.paid ? "✓" : "(not invested yet)"}</div>`).join("")}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <input id="refbonus-${referrerId}" type="number" placeholder="Referral bonus amount (Rs)" style="flex:1;padding:8px;font-size:12px;" />
+            <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveReferralBonus('${referrerId}')">Give Bonus</button>
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
     }
 
     async function giveReferralBonus(referrerId) {
@@ -232,8 +245,7 @@
 
     async function loadMethods() {
       const listEl = document.getElementById("methodsList");
-      const { data: methods, error } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: true });
-      if (error) { listEl.innerHTML = `<p class="muted">Could not load payment methods: ${error.message}</p>`; return; }
+      const { data: methods } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: true });
       listEl.innerHTML = "";
       (methods || []).forEach(m => {
         const div = document.createElement("div");
@@ -257,8 +269,7 @@
       const account_title = document.getElementById("newTitle").value.trim();
       const account_number = document.getElementById("newNumber").value.trim();
       if (!label || !account_title || !account_number) return toast("Fill all fields");
-      const { error } = await supabaseClient.from("payment_methods").insert({ label, account_title, account_number, active: true });
-      if (error) return toast(error.message);
+      await supabaseClient.from("payment_methods").insert({ label, account_title, account_number, active: true });
       toast("Account added");
       document.getElementById("newLabel").value = "";
       document.getElementById("newTitle").value = "";
@@ -270,21 +281,18 @@
       const label = document.getElementById(`label-${id}`).value;
       const account_title = document.getElementById(`title-${id}`).value;
       const account_number = document.getElementById(`number-${id}`).value;
-      const { error } = await supabaseClient.from("payment_methods").update({ label, account_title, account_number }).eq("id", id);
-      if (error) return toast(error.message);
+      await supabaseClient.from("payment_methods").update({ label, account_title, account_number }).eq("id", id);
       toast("Saved");
       await loadMethods();
     }
 
     async function toggleMethod(id, currentlyActive) {
-      const { error } = await supabaseClient.from("payment_methods").update({ active: !currentlyActive }).eq("id", id);
-      if (error) return toast(error.message);
+      await supabaseClient.from("payment_methods").update({ active: !currentlyActive }).eq("id", id);
       await loadMethods();
     }
 
     async function deleteMethod(id) {
-      const { error } = await supabaseClient.from("payment_methods").delete().eq("id", id);
-      if (error) return toast(error.message);
+      await supabaseClient.from("payment_methods").delete().eq("id", id);
       toast("Account removed");
       await loadMethods();
     }
@@ -294,8 +302,7 @@
       const target = Number(document.getElementById("newTarget").value);
       const margin = Number(document.getElementById("newMargin").value || 0);
       if (!name || !target) return toast("Name and target are required");
-      const { error } = await supabaseClient.from("campaigns").insert({ name, target, margin, daily_cap: 999999999 });
-      if (error) return toast(error.message);
+      await supabaseClient.from("campaigns").insert({ name, target, margin, daily_cap: 999999999, status: "active" });
       toast("Campaign created");
       document.getElementById("newName").value = "";
       document.getElementById("newTarget").value = "";
@@ -303,84 +310,93 @@
       await loadCampaigns();
     }
 
-    async function closeCampaign(campaignId) {
-      const { error } = await supabaseClient.rpc("close_campaign", { p_campaign_id: campaignId });
-      if (error) return toast(error.message);
-      toast("Campaign closed");
-      await loadCampaigns();
-    }
-
-    async function giveBonus(investorId, campaignId) {
-      const input = document.getElementById(`bonus-${campaignId}-${investorId}`);
-      const amount = Number(input.value);
-      if (!amount) return toast("Enter a bonus amount");
-      const { error } = await supabaseClient.rpc("admin_give_bonus", {
-        p_investor_id: investorId, p_amount: amount, p_note: "Admin bonus",
-      });
-      if (error) return toast(error.message);
-      toast(pkr(amount) + " bonus sent");
-      input.value = "";
-    }
-
-    async function giveInvestorReferralBonus(investorId, campaignId) {
-      const input = document.getElementById(`refb-${campaignId}-${investorId}`);
-      const amount = Number(input.value);
-      if (!amount) return toast("Enter a referral bonus amount");
-      const { error } = await supabaseClient.rpc("admin_give_bonus", {
-        p_investor_id: investorId, p_amount: amount, p_note: "Referral bonus (via campaign)",
-      });
-      if (error) return toast(error.message);
-      toast(pkr(amount) + " referral bonus sent");
-      input.value = "";
-    }
-
     async function loadCampaigns() {
       const activeEl = document.getElementById("campaignsList");
       const closedEl = document.getElementById("closedList");
-      activeEl.innerHTML = "";
-      closedEl.innerHTML = "";
 
-      const { data: campaigns, error } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
+      const { data: campaigns, error } = await supabaseClient
+        .from("campaigns")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (error) {
-        activeEl.innerHTML = `<p class="muted">Could not load campaigns: ${error.message}</p>`;
+        activeEl.innerHTML = `<p class="muted">Error loading campaigns: ${error.message}</p>`;
         return;
       }
 
-      for (const c of campaigns || []) {
-        try {
-          const { data: investors } = await supabaseClient
-            .from("investments").select("id, amount, received, investor_id, profiles(full_name)").eq("campaign_id", c.id).eq("status", "approved");
-          const isClosed = c.status === "complete";
+      activeEl.innerHTML = "";
+      closedEl.innerHTML = "";
 
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <div style="font-weight:700;font-size:14px;">${c.name}
-              <span class="muted" style="font-weight:400;font-size:11.5px;"> ${isClosed ? "· CLOSED" : ""}</span>
-            </div>
-            <div class="muted" style="margin-top:4px;">${pkr(c.total_received)} repaid so far</div>
-            ${isClosed ? "" : `
-            <div style="display:flex;gap:8px;margin-top:10px;">
-              <input id="sim-${c.id}" type="number" placeholder="Rider payment today (Rs)" />
-              <button class="btn btn-dark" onclick="distribute('${c.id}')">Distribute</button>
-            </div>
-            `}
-            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;" id="investorList-${c.id}"></div>
-            ${isClosed ? "" : `<button class="btn btn-outline" style="width:100%;margin-top:10px;border-color:var(--rust);color:var(--rust);" onclick="closeCampaign('${c.id}')">Close campaign</button>`}
-          `;
-          (isClosed ? closedEl : activeEl).appendChild(div);
+      if (!campaigns || campaigns.length === 0) {
+        activeEl.innerHTML = `<p class="muted">No active campaigns found.</p>`;
+        closedEl.innerHTML = `<p class="muted">No closed campaigns.</p>`;
+        return;
+      }
 
-          const invListEl = div.querySelector(`#investorList-${c.id}`);
-          (investors || []).forEach(inv => {
+      for (const c of campaigns) {
+        const { data: investors } = await supabaseClient
+          .from("investments")
+          .select("id, amount, received, investor_id, profiles(full_name)")
+          .eq("campaign_id", c.id)
+          .eq("status", "approved");
+
+        const isClosed = c.status === "complete";
+        const totalPool = (investors || []).reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+
+        const div = document.createElement("div");
+        div.className = "card";
+        div.style.border = isClosed ? "1px solid #cbd5e1" : "1px solid #94a3b8";
+        div.innerHTML = `
+          <div style="font-weight:800;font-size:16px;color:var(--brand);">${c.name}
+            <span class="muted" style="font-weight:400;font-size:12px;"> ${isClosed ? "· CLOSED" : "· ACTIVE"}</span>
+          </div>
+          <div class="muted" style="margin-top:2px;">Target: ${pkr(c.target)} | Total Raised: ${pkr(totalPool)}</div>
+
+          ${isClosed ? "" : `
+          <!-- RIDER DISTRIBUTION BOX (PROPORTIONAL SHARE FORMULA) -->
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:10px;border:1px solid #e2e8f0;">
+            <div style="font-size:12px;font-weight:700;margin-bottom:6px;">🏍️ RIDER PAYMENT TODAY (PERCENTAGE SHARE)</div>
+            <input id="sim-${c.id}" type="number" placeholder="Enter Total Rider Amount (e.g. 2800)" style="width:100%;margin-bottom:8px;padding:8px;" />
+            <button class="btn btn-dark" style="width:100%;font-size:12px;" onclick="distributeProportional('${c.id}')">Distribute Profit by Share %</button>
+          </div>
+
+          <!-- EXTRA CAMPAIGN BONUS BOX -->
+          <div style="background:#f0fdf4;padding:12px;border-radius:8px;margin-top:10px;border:1px solid #bbf7d0;">
+            <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:6px;">🎁 EXTRA CAMPAIGN BONUS (ALL INVESTORS)</div>
+            <input id="campbonus-${c.id}" type="number" placeholder="Bonus amount per investor (Rs)" style="width:100%;margin-bottom:8px;padding:8px;" />
+            <button class="btn btn-primary" style="width:100%;font-size:12px;background:#16a34a;" onclick="giveCampaignBonus('${c.id}')">Send Extra Bonus to Campaign</button>
+          </div>
+          `}
+
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;" id="investorList-${c.id}"></div>
+          ${isClosed ? "" : `<button class="btn btn-outline" style="width:100%;margin-top:12px;border-color:var(--rust);color:var(--rust);" onclick="closeCampaign('${c.id}')">Close Campaign</button>`}
+        `;
+
+        (isClosed ? closedEl : activeEl).appendChild(div);
+
+        const invListEl = div.querySelector(`#investorList-${c.id}`);
+        if (!investors || investors.length === 0) {
+          invListEl.innerHTML = `<p class="muted" style="font-size:12px;">No approved investors in this campaign yet.</p>`;
+        } else {
+          investors.forEach(inv => {
+            const sharePercent = totalPool > 0 ? ((Number(inv.amount) / totalPool) * 100).toFixed(2) : 0;
             const row = document.createElement("div");
             row.className = "card";
             row.style.padding = "10px";
+            row.style.background = "#fff";
             row.innerHTML = `
               <div style="display:flex;justify-content:space-between;font-size:12px;">
-                <span class="muted">${inv.profiles?.full_name || "Investor"} (${pkr(inv.amount)} in)</span>
-                <span class="mono">${pkr(inv.received)} received</span>
+                <span style="font-weight:600;">${inv.profiles?.full_name || "Investor"} (${pkr(inv.amount)} — ${sharePercent}%)</span>
+                <span class="mono" style="color:#059669;">${pkr(inv.received)} received</span>
               </div>
               <div style="display:flex;gap:6px;margin-top:8px;">
-                <input id="bonus-${c.id}-${inv.investor_id}" type="number" placeholder="Extra bonus (Rs)" style="flex:1;padding:6px;font-size:12px;" />
-                <button class="btn btn-dark" style="padding:0 10px;font-size:11px;" onclick="giveBonus('${inv.investor_id}', '${c.id}')">Give</button>
-         
+                <input id="bonus-${c.id}-${inv.investor_id}" type="number" placeholder="Single bonus (Rs)" style="flex:1;padding:6px;font-size:12px;" />
+                <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveBonus('${inv.investor_id}', '${c.id}')">Give</button>
+              </div>
+            `;
+            invListEl.appendChild(row);
+          });
+        }
+      }
+
+      if (!activ
