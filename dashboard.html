@@ -13,7 +13,7 @@
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
       <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="logout()">Log out</button>
     </div>
-    <div class="nav">
+    <div class="nav" id="navBar">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
     </div>
@@ -91,6 +91,8 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
+    const ADMIN_EMAIL = "saimpk5227@gmail.com"; 
+
     let currentBalance = 0;
     let selectedCampaignId = null;
 
@@ -104,11 +106,26 @@
 
     async function init() {
       try {
+        await checkAdminAccess();
         await loadInvestmentsAndBalance();
         await loadCampaignsSelect();
         await loadPaymentMethods();
       } catch(e) {
         console.error(e);
+      }
+    }
+
+    async function checkAdminAccess() {
+      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      if (user && user.email && user.email.toLowerCase().trim() === ADMIN_EMAIL.toLowerCase().trim()) {
+        const navBar = document.getElementById("navBar");
+        if (!document.getElementById("adminNavLink")) {
+          const adminLink = document.createElement("a");
+          adminLink.id = "adminNavLink";
+          adminLink.href = "admin.html";
+          adminLink.textContent = "Admin";
+          navBar.appendChild(adminLink);
+        }
       }
     }
 
@@ -121,7 +138,6 @@
         return;
       }
 
-      // 1. Calculate Received Profit from Investments
       const { data: invs } = await supabaseClient
         .from("investments")
         .select("*, campaigns(name)")
@@ -150,7 +166,6 @@
         container.innerHTML = `<p class="muted">No investments yet.</p>`;
       }
 
-      // 2. Fetch Non-Declined Withdrawals (Pending + Approved)
       const { data: withdrawals } = await supabaseClient
         .from("withdrawal_requests")
         .select("amount")
@@ -164,7 +179,6 @@
         });
       }
 
-      // Exact Remaining Balance Calculation
       currentBalance = Math.max(0, totalReceived - totalWithdrawnOrPending);
       document.getElementById("availAmount").textContent = pkr(currentBalance);
     }
@@ -281,7 +295,6 @@
       btn.disabled = true;
       btn.textContent = "Checking...";
 
-      // STRICT RULE: SIRF 1 PENDING REQUEST ALLOWED AT A TIME
       const { data: pendingReqs } = await supabaseClient
         .from("withdrawal_requests")
         .select("id")
