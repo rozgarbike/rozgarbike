@@ -37,6 +37,9 @@
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
     <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
 
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRAL TEAMS</div>
+    <div id="referralsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
     <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;"></div>
     <div class="card" style="margin-bottom:24px;">
@@ -51,8 +54,7 @@
     <div class="card" style="margin-bottom:20px;">
       <input id="newName" placeholder="Bike name, e.g. Bike #14" style="margin-bottom:8px;" />
       <input id="newTarget" type="number" placeholder="Target amount (Rs)" style="margin-bottom:8px;" />
-      <input id="newMargin" type="number" placeholder="Margin on top of target (Rs)" style="margin-bottom:8px;" />
-      <input id="newDailyCap" type="number" placeholder="Daily payment cap from rider (Rs)" style="margin-bottom:10px;" />
+      <input id="newMargin" type="number" placeholder="Margin on top of target (Rs)" style="margin-bottom:10px;" />
       <button class="btn btn-dark" style="width:100%;" onclick="createCampaign()">Create Campaign</button>
     </div>
 
@@ -76,6 +78,7 @@
       await loadWhatsApp();
       await loadPending();
       await loadWithdrawals();
+      await loadReferrals();
       await loadMethods();
       await loadCampaigns();
     }
@@ -172,6 +175,59 @@
       await loadWithdrawals();
     }
 
+    async function loadReferrals() {
+      const listEl = document.getElementById("referralsList");
+      const { data: refs, error } = await supabaseClient
+        .from("referrals").select("*, referrer:referrer_id(full_name), referred:referred_id(full_name)")
+        .order("created_at", { ascending: true });
+      if (error) { listEl.innerHTML = `<p class="muted">Could not load referrals: ${error.message}</p>`; return; }
+      if (!refs || !refs.length) {
+        listEl.innerHTML = `<p class="muted">No referrals yet.</p>`;
+        return;
+      }
+
+      const groups = {};
+      refs.forEach(r => {
+        const key = r.referrer_id;
+        if (!groups[key]) groups[key] = { name: r.referrer?.full_name || "Unknown", members: [] };
+        groups[key].members.push({ name: r.referred?.full_name || "Unknown", paid: r.bonus_paid });
+      });
+
+      listEl.innerHTML = "";
+      Object.entries(groups).forEach(([referrerId, g]) => {
+        const confirmedCount = g.members.filter(m => m.paid).length;
+        const hitMilestone = confirmedCount > 0 && confirmedCount % 10 === 0;
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:700;font-size:14px;">${g.name}</div>
+            <span style="background:${hitMilestone ? "#FBF1DD" : "var(--bg)"};color:${hitMilestone ? "var(--mustard-deep)" : "var(--ink-soft)"};font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;">${confirmedCount} confirmed referrals</span>
+          </div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+            ${g.members.map(m => `<div class="muted" style="font-size:12px;">${m.name} ${m.paid ? "✓" : "(not invested yet)"}</div>`).join("")}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <input id="refbonus-${referrerId}" type="number" placeholder="Bonus amount (Rs)" style="flex:1;padding:8px;font-size:12px;" />
+            <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveReferralBonus('${referrerId}')">Give</button>
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    async function giveReferralBonus(referrerId) {
+      const input = document.getElementById(`refbonus-${referrerId}`);
+      const amount = Number(input.value);
+      if (!amount) return toast("Enter a bonus amount");
+      const { error } = await supabaseClient.rpc("admin_give_bonus", {
+        p_investor_id: referrerId, p_amount: amount, p_note: "Referral milestone bonus",
+      });
+      if (error) return toast(error.message);
+      toast(pkr(amount) + " referral bonus sent");
+      input.value = "";
+    }
+
     async function loadMethods() {
       const listEl = document.getElementById("methodsList");
       const { data: methods, error } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: true });
@@ -235,15 +291,13 @@
       const name = document.getElementById("newName").value.trim();
       const target = Number(document.getElementById("newTarget").value);
       const margin = Number(document.getElementById("newMargin").value || 0);
-      const daily_cap = Number(document.getElementById("newDailyCap").value || 350);
       if (!name || !target) return toast("Name and target are required");
-      const { error } = await supabaseClient.from("campaigns").insert({ name, target, margin, daily_cap });
+      const { error } = await supabaseClient.from("campaigns").insert({ name, target, margin, daily_cap: 999999999 });
       if (error) return toast(error.message);
       toast("Campaign created");
       document.getElementById("newName").value = "";
       document.getElementById("newTarget").value = "";
       document.getElementById("newMargin").value = "";
-      document.getElementById("newDailyCap").value = "";
       await loadCampaigns();
     }
 
@@ -283,9 +337,9 @@
         div.className = "card";
         div.innerHTML = `
           <div style="font-weight:700;font-size:14px;">${c.name}
-            <span class="muted" style="font-weight:400;font-size:11.5px;"> · cap Rs ${c.daily_cap}/day ${isClosed ? "· CLOSED" : ""}</span>
+            <span class="muted" style="font-weight:400;font-size:11.5px;"> ${isClosed ? "· CLOSED" : ""}</span>
           </div>
-          <div class="muted" style="margin-top:4px;">${pkr(c.total_received)} repaid so far (unlimited)</div>
+          <div class="muted" style="margin-top:4px;">${pkr(c.total_received)} repaid so far</div>
           ${isClosed ? "" : `
           <div style="display:flex;gap:8px;margin-top:10px;">
             <input id="sim-${c.id}" type="number" placeholder="Rider payment today (Rs)" />
@@ -330,15 +384,4 @@
       if (error) return toast(error.message);
       toast("Payment split across all investors");
       input.value = "";
-      await loadCampaigns();
-    }
-
-    async function logout() {
-      await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
-    }
-
-    init();
-  </script>
-</body>
-</html>
+      await loadCampaig
