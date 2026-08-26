@@ -39,7 +39,7 @@
       <div class="muted" style="margin-bottom:6px;">Select a bike campaign:</div>
       <select id="campaignSelect" style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);"></select>
       <div class="muted" style="margin-bottom:6px;">Investment Amount (Min Rs 1,000)</div>
-      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom:12px;" />
+      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom:12px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);" />
       <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="startInvestment()">Continue to Payment</button>
     </div>
 
@@ -48,9 +48,14 @@
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:8px;">Transfer amount to any payment method below:</div>
       <div id="methodsDisplay" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">Loading accounts...</div>
+      
       <div class="muted" style="margin-bottom:6px;">Enter Transaction ID / Sender Number:</div>
-      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom:12px;" />
-      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitTrx()">Submit Payment Details</button>
+      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom:12px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);" />
+
+      <div class="muted" style="margin-bottom:6px;">Upload Payment Receipt Photo (Optional):</div>
+      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
+
+      <button id="submitBtn" class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitTrx()">Submit Payment Details</button>
     </div>
   </div>
 
@@ -67,13 +72,13 @@
       </select>
 
       <div class="muted" style="margin-bottom:6px;">Account Title / Name:</div>
-      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom:10px;width:100%;" />
+      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
 
       <div class="muted" style="margin-bottom:6px;">Account / Phone Number:</div>
-      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom:10px;width:100%;" />
+      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
 
       <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs):</div>
-      <input id="wAmount" type="number" placeholder="Amount in Rs" style="margin-bottom:14px;width:100%;" />
+      <input id="wAmount" type="number" placeholder="Amount in Rs" style="margin-bottom:14px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
 
       <div style="display:flex;gap:10px;">
         <button class="btn btn-dark" style="flex:1;cursor:pointer;" onclick="submitWithdrawal()">Submit</button>
@@ -192,6 +197,7 @@
       const trx = document.getElementById("trxInput").value.trim();
       const amount = Number(document.getElementById("investAmount").value);
       const campaignId = selectedCampaignId || document.getElementById("campaignSelect").value;
+      const fileInput = document.getElementById("receiptFileInput");
 
       if (!campaignId || !amount) return toast("Please select campaign and enter amount above first.");
       if (!trx) return toast("Please enter Transaction ID or Sender Phone Number.");
@@ -199,18 +205,42 @@
       const user = (await supabaseClient.auth.getUser())?.data?.user;
       if (!user) return toast("Please log in again.");
 
+      const btn = document.getElementById("submitBtn");
+      btn.textContent = "Uploading & Submitting...";
+      btn.disabled = true;
+
+      let receiptUrl = null;
+
+      // Handle File Upload if selected
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const filePath = `receipts/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
+        if (!uploadError) {
+          const { data: publicData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
+          receiptUrl = publicData.publicUrl;
+        }
+      }
+
       const { error } = await supabaseClient.from("investments").insert({
         investor_id: user.id,
         campaign_id: campaignId,
         amount: amount,
         transaction_id: trx,
+        receipt_url: receiptUrl,
         status: "pending"
       });
+
+      btn.textContent = "Submit Payment Details";
+      btn.disabled = false;
 
       if (error) return toast(error.message);
       toast("Investment request submitted! Admin will verify shortly.");
       document.getElementById("trxInput").value = "";
       document.getElementById("investAmount").value = "";
+      document.getElementById("receiptFileInput").value = "";
       loadInvestments();
     }
 
