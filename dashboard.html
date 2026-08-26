@@ -13,10 +13,10 @@
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
       <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="logout()">Log out</button>
     </div>
-    <div class="nav">
+    <div class="nav" id="navBar">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html">Admin</a>
+      <!-- Admin Link Script ke zariye sirf Aapki ID par Inject hoga -->
     </div>
   </div>
 
@@ -92,6 +92,9 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
+    // AAPKI ADMIN EMAIL YAHAN ENTER KAREIN
+    const ADMIN_EMAIL = "your-admin-email@gmail.com"; 
+
     let currentBalance = 0;
     let selectedCampaignId = null;
 
@@ -105,11 +108,23 @@
 
     async function init() {
       try {
+        await checkAdminAccess();
         await loadInvestments();
         await loadCampaignsSelect();
         await loadPaymentMethods();
       } catch(e) {
         console.error(e);
+      }
+    }
+
+    async function checkAdminAccess() {
+      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      if (user && user.email === ADMIN_EMAIL) {
+        const navBar = document.getElementById("navBar");
+        const adminLink = document.createElement("a");
+        adminLink.href = "admin.html";
+        adminLink.textContent = "Admin";
+        navBar.appendChild(adminLink);
       }
     }
 
@@ -211,7 +226,6 @@
 
       let receiptUrl = null;
 
-      // Handle File Upload if selected
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const fileExt = file.name.split('.').pop();
