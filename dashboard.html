@@ -16,7 +16,8 @@
     <div class="nav" id="navBar">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink">Admin</a>
+      <!-- Admin Link Privacy Hide/Show -->
+      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
     </div>
   </div>
 
@@ -97,6 +98,9 @@
     let currentBalance = 0;
     let selectedCampaignId = null;
 
+    // SIRF IS ADMIN EMAIL PAR BUTTON SHOW HOGA
+    const ADMIN_EMAIL = "saimpk5227@gmail.com";
+
     function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
     function toast(msg) { alert(msg); }
 
@@ -107,11 +111,24 @@
 
     async function init() {
       try {
+        await checkAdminPrivacy();
         await loadInvestmentsAndBalance();
         await loadCampaignsSelect();
         await loadPaymentMethods();
       } catch(e) {
         console.error(e);
+      }
+    }
+
+    // PRIVACY CHECK FUNCTION
+    async function checkAdminPrivacy() {
+      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      if (user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        // Sirf saimpk5227@gmail.com ko Admin link dikhega
+        document.getElementById("adminLink").style.display = "inline-block";
+      } else {
+        // Baqi tamaam users ke liye Admin link HIDE rahega
+        document.getElementById("adminLink").style.display = "none";
       }
     }
 
@@ -124,7 +141,7 @@
         return;
       }
 
-      // 1. Fetch Profit Received from Investments (Unlimited Distributions Supported)
+      // 1. Fetch Profit Received from Investments
       const { data: invs } = await supabaseClient
         .from("investments")
         .select("*, campaigns(name)")
