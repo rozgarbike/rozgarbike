@@ -16,7 +16,7 @@
     <div class="nav" id="navBar">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="admin.html" id="adminLink" style="display:none;">Admin Dashboard</a>
     </div>
   </div>
 
@@ -30,7 +30,7 @@
       <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
 
-    <!-- 2. ATTRACTIVE URDU REFERRAL & 10% BONUS SECTION -->
+    <!-- 2. ATTRACTIVE URDU REFERRAL & 10% EXTRA BONUS SECTION -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL & 10% EXTRA BONUS</div>
     <div class="card" style="margin-bottom:24px;background:linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);border:2px solid #3b82f6;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);padding:18px;">
       
@@ -98,7 +98,7 @@
   </div>
 
   <!-- WITHDRAW MODAL -->
-  <div id="withdrawModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+  <div id="withdrawModal" style="display:none;positionfixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
     <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;position:relative;">
       <div style="font-weight:800;font-size:18px;margin-bottom:12px;">Request Withdrawal</div>
       
@@ -140,81 +140,90 @@
 
     function logout() {
       localStorage.clear();
+      if(window.supabaseClient && window.supabaseClient.auth) {
+        supabaseClient.auth.signOut();
+      }
       window.location.href = "index.html";
     }
 
     async function init() {
       try {
-        await checkAdminPrivacy();
-        await loadReferralDataAndBonus();
-        await loadInvestmentsAndBalance();
-        await loadCampaignsSelect();
-        await loadPaymentMethods();
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        checkAdminPrivacy(user);
+        loadReferralDataAndBonus(user);
+        loadInvestmentsAndBalance(user);
+        loadCampaignsSelect();
+        loadPaymentMethods();
       } catch(e) {
-        console.error(e);
+        console.error("Init Error:", e);
       }
     }
 
-    async function checkAdminPrivacy() {
-      const user = (await supabaseClient.auth.getUser())?.data?.user;
-      if (user && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    function checkAdminPrivacy(user) {
+      if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
         document.getElementById("adminLink").style.display = "inline-block";
       } else {
         document.getElementById("adminLink").style.display = "none";
       }
     }
 
-    async function loadReferralDataAndBonus() {
-      const user = (await supabaseClient.auth.getUser())?.data?.user;
-      if (!user) return;
+    async function loadReferralDataAndBonus(user) {
+      try {
+        const currentPath = window.location.pathname.replace("dashboard.html", "");
+        const fullUrl = window.location.origin + currentPath + `index.html?ref=${user.id}`;
+        document.getElementById("refLinkInput").value = fullUrl;
 
-      const currentPath = window.location.pathname.replace("dashboard.html", "");
-      const fullUrl = window.location.origin + currentPath + `index.html?ref=${user.id}`;
-      document.getElementById("refLinkInput").value = fullUrl;
+        const { data: list } = await supabaseClient
+          .from("profiles")
+          .select("email, created_at")
+          .eq("referred_by", user.id)
+          .order("created_at", { ascending: false });
 
-      const { data: list } = await supabaseClient
-        .from("profiles")
-        .select("email, created_at")
-        .eq("referred_by", user.id)
-        .order("created_at", { ascending: false });
+        const count = list ? list.length : 0;
+        document.getElementById("refCount").textContent = `${count} / 10 Joined`;
 
-      const count = list ? list.length : 0;
-      document.getElementById("refCount").textContent = `${count} / 10 Joined`;
+        const percent = Math.min(100, (count / 10) * 100);
+        document.getElementById("progressBar").style.width = percent + "%";
 
-      // Progress Bar Calculation
-      const percent = Math.min(100, (count / 10) * 100);
-      document.getElementById("progressBar").style.width = percent + "%";
+        const bonusBox = document.getElementById("bonusBox");
+        if (count >= 10) {
+          bonusBox.style.background = "#dcfce7";
+          bonusBox.style.color = "#15803d";
+          bonusBox.style.borderColor = "#22c55e";
+          bonusBox.innerHTML = `🎉 <strong>Mubarak Ho! 10% Extra Bonus Unlocked!</strong><br/><span style="font-size:12px;">Aap ne ${count} referrals ka target kamyabi se poora kar liya hai!</span>`;
+        } else {
+          const remaining = 10 - count;
+          const remEl = document.getElementById("remCountText");
+          if(remEl) remEl.textContent = remaining + " aur";
+          bonusBox.style.background = "#e0f2fe";
+          bonusBox.style.color = "#0369a1";
+          bonusBox.style.borderColor = "#0284c7";
+        }
 
-      const bonusBox = document.getElementById("bonusBox");
-      if (count >= 10) {
-        bonusBox.style.background = "#dcfce7";
-        bonusBox.style.color = "#15803d";
-        bonusBox.style.borderColor = "#22c55e";
-        bonusBox.innerHTML = `🎉 <strong>Mubarak Ho! 10% Extra Bonus Unlocked!</strong><br/><span style="font-size:12px;">Aap ne ${count} referrals ka target kamyabi se poora kar liya hai!</span>`;
-      } else {
-        const remaining = 10 - count;
-        document.getElementById("remCountText").textContent = remaining + " aur";
-        bonusBox.style.background = "#e0f2fe";
-        bonusBox.style.color = "#0369a1";
-        bonusBox.style.borderColor = "#0284c7";
-      }
-
-      const listContainer = document.getElementById("referredUsersList");
-      if (list && list.length > 0) {
-        listContainer.innerHTML = list.map((item, index) => {
-          const parts = (item.email || "user@gmail.com").split('@');
-          const maskedEmail = parts[0].substring(0, 3) + "***@" + parts[1];
-          const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recent';
-          
-          return `
-            <div style="display:flex;justify-content:space-between;background:#fff;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:12px;">
-              <span><strong>#${index + 1}</strong> ${maskedEmail}</span>
-              <span class="muted" style="color:#64748b;">${dateStr}</span>
-            </div>
-          `;
-        }).join('');
-      } else {
-        listContainer.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:10px;background:#fff;border-radius:6px;border:1px dashed #cbd5e1;">Abhi tak koi referral join nahi hua. Apna link doston ke sath share karein!</p>`;
+        const listContainer = document.getElementById("referredUsersList");
+        if (list && list.length > 0) {
+          listContainer.innerHTML = list.map((item, index) => {
+            const parts = (item.email || "user@gmail.com").split('@');
+            const maskedEmail = parts[0].substring(0, 3) + "***@" + (parts[1] || "gmail.com");
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recent';
+            
+            return `
+              <div style="display:flex;justify-content:space-between;background:#fff;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:12px;">
+                <span><strong>#${index + 1}</strong> ${maskedEmail}</span>
+                <span class="muted" style="color:#64748b;">${dateStr}</span>
+              </div>
+            `;
+          }).join('');
+        } else {
+          listContainer.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:10px;background:#fff;border-radius:6px;border:1px dashed #cbd5e1;">Abhi tak koi referral join nahi hua. Apna link doston ke sath share karein!</p>`;
+        }
+      } catch(e) {
+        console.error("Referral Error:", e);
       }
     }
 
@@ -226,82 +235,87 @@
       toast("Referral Link Copy ho gaya hai! Ab doston ko WhatsApp par bhejen.");
     }
 
-    async function loadInvestmentsAndBalance() {
+    async function loadInvestmentsAndBalance(user) {
       const container = document.getElementById("myInvestments");
-      const user = (await supabaseClient.auth.getUser())?.data?.user;
-      
-      if (!user) {
-        window.location.href = "index.html";
-        return;
+      try {
+        const { data: invs } = await supabaseClient
+          .from("investments")
+          .select("*, campaigns(name)")
+          .eq("investor_id", user.id);
+
+        let totalReceived = 0;
+        if (invs && invs.length > 0) {
+          container.innerHTML = "";
+          invs.forEach(inv => {
+            totalReceived += Number(inv.received || 0);
+            
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+              <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
+              <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
+              <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
+                STATUS: ${(inv.status || 'pending').toUpperCase()}
+              </div>
+            `;
+            container.appendChild(div);
+          });
+        } else {
+          container.innerHTML = `<p class="muted" style="font-size:13px;">No investments yet.</p>`;
+        }
+
+        const { data: withdrawals } = await supabaseClient
+          .from("withdrawal_requests")
+          .select("amount")
+          .eq("investor_id", user.id)
+          .neq("status", "declined");
+
+        let totalRequested = 0;
+        if (withdrawals && withdrawals.length > 0) {
+          withdrawals.forEach(w => {
+            totalRequested += Number(w.amount || 0);
+          });
+        }
+
+        currentBalance = Math.max(0, totalReceived - totalRequested);
+        document.getElementById("availAmount").textContent = pkr(currentBalance);
+      } catch(e) {
+        container.innerHTML = `<p class="muted" style="font-size:13px;">No investments yet.</p>`;
       }
-
-      const { data: invs } = await supabaseClient
-        .from("investments")
-        .select("*, campaigns(name)")
-        .eq("investor_id", user.id);
-
-      let totalReceived = 0;
-      if (invs && invs.length > 0) {
-        container.innerHTML = "";
-        invs.forEach(inv => {
-          totalReceived += Number(inv.received || 0);
-          
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
-            <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
-            <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
-              STATUS: ${inv.status.toUpperCase()}
-            </div>
-          `;
-          container.appendChild(div);
-        });
-      } else {
-        container.innerHTML = `<p class="muted">No investments yet.</p>`;
-      }
-
-      const { data: withdrawals } = await supabaseClient
-        .from("withdrawal_requests")
-        .select("amount")
-        .eq("investor_id", user.id)
-        .neq("status", "declined");
-
-      let totalRequested = 0;
-      if (withdrawals && withdrawals.length > 0) {
-        withdrawals.forEach(w => {
-          totalRequested += Number(w.amount || 0);
-        });
-      }
-
-      currentBalance = Math.max(0, totalReceived - totalRequested);
-      document.getElementById("availAmount").textContent = pkr(currentBalance);
     }
 
     async function loadCampaignsSelect() {
       const sel = document.getElementById("campaignSelect");
-      const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
-      if (!data || !data.length) {
-        sel.innerHTML = `<option value="">No Active Campaigns</option>`;
-        return;
+      try {
+        const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
+        if (!data || !data.length) {
+          sel.innerHTML = `<option value="">No Active Campaigns Available</option>`;
+          return;
+        }
+        sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target: ${pkr(c.target)}</option>`).join('');
+      } catch(e) {
+        sel.innerHTML = `<option value="">No Active Campaigns Available</option>`;
       }
-      sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target: ${pkr(c.target)}</option>`).join('');
     }
 
     async function loadPaymentMethods() {
       const display = document.getElementById("methodsDisplay");
-      const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-      if (!data || !data.length) {
-        display.innerHTML = `<p class="muted">No active payment methods currently.</p>`;
-        return;
+      try {
+        const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
+        if (!data || !data.length) {
+          display.innerHTML = `<p class="muted" style="font-size:13px;">No payment methods added by admin yet.</p>`;
+          return;
+        }
+        display.innerHTML = data.map(m => `
+          <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;font-size:13px;">${m.label}</div>
+            <div style="font-size:12px;" class="muted">Title: ${m.account_title}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--brand);">${m.account_number}</div>
+          </div>
+        `).join('');
+      } catch(e) {
+        display.innerHTML = `<p class="muted" style="font-size:13px;">No payment methods added by admin yet.</p>`;
       }
-      display.innerHTML = data.map(m => `
-        <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
-          <div style="font-weight:700;font-size:13px;">${m.label}</div>
-          <div style="font-size:12px;" class="muted">Title: ${m.account_title}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--brand);">${m.account_number}</div>
-        </div>
-      `).join('');
     }
 
     function startInvestment() {
@@ -323,7 +337,7 @@
       if (!campaignId || !amount) return toast("Please select campaign and enter amount above first.");
       if (!trx) return toast("Please enter Transaction ID or Sender Phone Number.");
 
-      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) return toast("Please log in again.");
 
       const btn = document.getElementById("submitBtn");
@@ -361,7 +375,7 @@
       document.getElementById("trxInput").value = "";
       document.getElementById("investAmount").value = "";
       document.getElementById("receiptFileInput").value = "";
-      loadInvestmentsAndBalance();
+      loadInvestmentsAndBalance(user);
     }
 
     function openWithdrawModal() {
@@ -384,7 +398,7 @@
       if (amount > 10000) return toast("Maximum withdrawal limit is Rs 10,000 per transaction!");
       if (amount > currentBalance) return toast("Insufficient balance! Available: Rs " + currentBalance);
 
-      const user = (await supabaseClient.auth.getUser())?.data?.user;
+      const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) return toast("Please log in again.");
 
       const btn = document.getElementById("wSubmitBtn");
@@ -396,28 +410,4 @@
 
       const { data: todayRequests } = await supabaseClient
         .from("withdrawal_requests")
-        .select("id")
-        .eq("investor_id", user.id)
-        .gte("created_at", startOfDay.toISOString());
-
-      if (todayRequests && todayRequests.length > 0) {
-        btn.disabled = false;
-        btn.textContent = "Submit";
-        return toast("Aap aaj ki 1 withdrawal request submit kar chuke hain. Agli request kal kar sakenge.");
-      }
-
-      btn.textContent = "Submitting...";
-      const { error } = await supabaseClient.from("withdrawal_requests").insert({
-        investor_id: user.id,
-        amount: amount,
-        method: `${method} (${title})`,
-        account_number: number,
-        status: "pending"
-      });
-
-      btn.disabled = false;
-      btn.textContent = "Submit";
-
-      if (error) return toast(error.message);
-
-      toast("Withdrawal reque
+    
