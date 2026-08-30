@@ -12,7 +12,7 @@
 </head>
 <body>
 
-  <!-- SAB SE TOP PAR URDU BANNER AD (FIXED Z-INDEX & POINTER EVENTS) -->
+  <!-- SAB SE TOP PAR URDU BANNER AD -->
   <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; font-family: inherit; z-index: 999; pointer-events: none;">
     <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; z-index: 1000;">✕</button>
     <div style="max-width: 600px; margin: 0 auto; padding-left: 30px; pointer-events: auto;">
@@ -52,7 +52,7 @@
       Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.
     </p>
 
-    <!-- WhatsApp Buttons Only -->
+    <!-- WhatsApp Buttons -->
     <div style="display:flex;gap:8px;margin:10px 0 18px;flex-wrap:wrap;">
       <a id="whatsappChatBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:#25D366;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
         <span style="font-size:15px;">💬</span> WhatsApp Chat
@@ -68,14 +68,23 @@
       abi humri team ka hissa bny
     </p>
 
+    <!-- AUTH BOX (LOGIN & SIGNUP TOGGLE) -->
     <div id="authBox" class="card" style="margin-bottom:20px; display:none;">
       <div id="authTitle" class="disp" style="font-size:18px;margin-bottom:10px;">SIGN UP</div>
-      <input id="fullName" placeholder="Full name" style="margin-bottom:8px;" />
-      <input id="email" placeholder="Email" type="email" style="margin-bottom:8px;" />
-      <input id="password" placeholder="Password" type="password" style="margin-bottom:8px;" />
-      <button class="btn btn-primary" style="width:100%;" onclick="doSignUp()">Create account</button>
+      
+      <div id="fullNameGroup">
+        <input id="fullName" placeholder="Full name" style="margin-bottom:8px; width:100%; box-sizing:border-box;" />
+      </div>
+      
+      <input id="email" placeholder="Email" type="email" style="margin-bottom:8px; width:100%; box-sizing:border-box;" />
+      <input id="password" placeholder="Password" type="password" style="margin-bottom:8px; width:100%; box-sizing:border-box;" />
+      
+      <button id="mainAuthBtn" class="btn btn-primary" style="width:100%;" onclick="handleAuth()">Create account</button>
+      
       <div style="text-align:center;margin:10px 0;font-size:12px;" class="muted">— or —</div>
-      <button class="btn btn-outline" style="width:100%;" onclick="doSignIn()">Log in instead</button>
+      
+      <button id="toggleAuthBtn" class="btn btn-outline" style="width:100%;" onclick="toggleAuthMode()">Log in instead</button>
+      
       <div id="authMsg" class="muted" style="margin-top:8px;"></div>
       
       <!-- Download Button -->
@@ -89,6 +98,7 @@
     <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
   </div>
 
+  <!-- INTRO OVERLAY -->
   <div id="introOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.55);align-items:center;justify-content:center;z-index:3000;padding:20px;">
     <div class="card" style="max-width:380px;width:100%;text-align:center;">
       <div class="disp" style="font-size:20px;margin-bottom:4px;">YE KAISE KAAM KARTA HAI</div>
@@ -114,8 +124,10 @@
   <div id="toast" class="toast"></div>
 
   <script src="assets/config.js"></script>
-  <script src="assets/app.js"></script>
   <script>
+    let isSignUpMode = true;
+    let currentSession = null;
+
     // Promo Ad Close Logic
     function closePromoAd() {
       const adBox = document.getElementById('promoUrduAd');
@@ -130,68 +142,50 @@
       if (adBox) adBox.style.display = 'none';
     }
 
-    let currentSession = null;
+    // Toggle Login vs Sign Up
+    function toggleAuthMode() {
+      isSignUpMode = !isSignUpMode;
+      const title = document.getElementById("authTitle");
+      const fullNameGroup = document.getElementById("fullNameGroup");
+      const mainBtn = document.getElementById("mainAuthBtn");
+      const toggleBtn = document.getElementById("toggleAuthBtn");
+      const msg = document.getElementById("authMsg");
 
-    async function loadWhatsAppLinks() {
-      const { data } = await supabaseClient.from("site_settings").select("*");
-      const map = {};
-      (data || []).forEach(row => map[row.key] = row.value);
+      msg.textContent = "";
 
-      if (map["whatsapp_number"]) {
-        const btn = document.getElementById("whatsappChatBtn");
-        btn.href = `https://wa.me/${map["whatsapp_number"]}`;
-        btn.style.display = "inline-flex";
-      }
-      if (map["whatsapp_channel"]) {
-        const btn = document.getElementById("whatsappChannelBtn");
-        btn.href = map["whatsapp_channel"];
-        btn.style.display = "inline-flex";
-      }
-    }
-
-    if (!sessionStorage.getItem("introSeen")) {
-      window.addEventListener("load", () => {
-        setTimeout(() => { document.getElementById("introOverlay").style.display = "flex"; }, 600);
-      });
-    }
-    function closeIntro() {
-      document.getElementById("introOverlay").style.display = "none";
-      sessionStorage.setItem("introSeen", "1");
-      document.getElementById("campaignsList")?.scrollIntoView({ behavior: "smooth" });
-    }
-
-    async function init() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      currentSession = session;
-      renderAuthArea();
-      if (!session) {
-        document.getElementById("authBox").style.display = "block";
-        const refCode = getReferralCodeFromURL();
-        if (refCode) toast("Referral code applied: " + refCode);
-      }
-      await loadWhatsAppLinks();
-      await loadCampaigns();
-    }
-
-    function renderAuthArea() {
-      const el = document.getElementById("authArea");
-      if (currentSession) {
-        el.innerHTML = `<a href="dashboard.html" style="color:#fff;">My Dashboard</a>`;
+      if (isSignUpMode) {
+        title.textContent = "SIGN UP";
+        fullNameGroup.style.display = "block";
+        mainBtn.textContent = "Create account";
+        toggleBtn.textContent = "Log in instead";
       } else {
-        el.innerHTML = `<span>Not logged in</span>`;
+        title.textContent = "LOG IN";
+        fullNameGroup.style.display = "none";
+        mainBtn.textContent = "Log In";
+        toggleBtn.textContent = "Create an account instead";
+      }
+    }
+
+    async function handleAuth() {
+      if (isSignUpMode) {
+        await doSignUp();
+      } else {
+        await doSignIn();
       }
     }
 
     async function doSignUp() {
-      const full_name = document.getElementById("fullName").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+      const full_name = document.getElementById("fullName").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      
       if (!email || !password) return toast("Email and password required");
       const refCode = getReferralCodeFromURL();
 
       const { data, error } = await supabaseClient.auth.signUp({
         email, password, options: { data: { full_name } },
       });
+      
       if (error) return toast(error.message);
 
       if (refCode && data.user) {
@@ -201,23 +195,122 @@
           await supabaseClient.from("referrals").insert({ referrer_id: refProfile.id, referred_id: data.user.id });
         }
       }
-      document.getElementById("authMsg").textContent = "Check your email to confirm, then log in.";
+      
+      if (data?.session) {
+        window.location.href = "dashboard.html";
+      } else {
+        document.getElementById("authMsg").textContent = "Account created! If email confirmation is enabled, check your inbox or log in.";
+      }
     }
 
     async function doSignIn() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      
+      if (!email || !password) return toast("Please enter email and password");
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      
       if (error) return toast(error.message);
+      
       window.location.href = "dashboard.html";
     }
 
+    async function loadWhatsAppLinks() {
+      try {
+        const { data } = await supabaseClient.from("site_settings").select("*");
+        const map = {};
+        (data || []).forEach(row => map[row.key] = row.value);
+
+        if (map["whatsapp_number"]) {
+          const btn = document.getElementById("whatsappChatBtn");
+          btn.href = `https://wa.me/${map["whatsapp_number"]}`;
+          btn.style.display = "inline-flex";
+        }
+        if (map["whatsapp_channel"]) {
+          const btn = document.getElementById("whatsappChannelBtn");
+          btn.href = map["whatsapp_channel"];
+          btn.style.display = "inline-flex";
+        }
+      } catch (err) {
+        console.log("Settings load error", err);
+      }
+    }
+
+    if (!sessionStorage.getItem("introSeen")) {
+      window.addEventListener("load", () => {
+        setTimeout(() => { 
+          const intro = document.getElementById("introOverlay");
+          if (intro) intro.style.display = "flex"; 
+        }, 600);
+      });
+    }
+
+    function closeIntro() {
+      document.getElementById("introOverlay").style.display = "none";
+      sessionStorage.setItem("introSeen", "1");
+      document.getElementById("campaignsList")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function getReferralCodeFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("ref");
+    }
+
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) { alert(msg); return; }
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 3000);
+    }
+
+    function pkr(num) {
+      return "Rs " + Number(num || 0).toLocaleString();
+    }
+
+    function gaugeSVG(pct) {
+      const clamped = Math.min(Math.max(pct, 0), 100);
+      return `<svg width="40" height="40" viewBox="0 0 36 36">
+        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" stroke-width="3.8"/>
+        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#123D3D" stroke-width="3.8" stroke-dasharray="${clamped}, 100"/>
+      </svg>`;
+    }
+
+    async function init() {
+      if (typeof supabaseClient !== 'undefined') {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        currentSession = session;
+        renderAuthArea();
+        if (!session) {
+          document.getElementById("authBox").style.display = "block";
+          const refCode = getReferralCodeFromURL();
+          if (refCode) toast("Referral code applied: " + refCode);
+        } else {
+          // If already logged in
+          document.getElementById("authBox").style.display = "none";
+        }
+        await loadWhatsAppLinks();
+        await loadCampaigns();
+      }
+    }
+
+    function renderAuthArea() {
+      const el = document.getElementById("authArea");
+      if (currentSession) {
+        el.innerHTML = `<a href="dashboard.html" style="color:#fff;font-weight:700;">My Dashboard</a>`;
+      } else {
+        el.innerHTML = `<span>Not logged in</span>`;
+      }
+    }
+
     async function loadCampaigns() {
+      const listEl = document.getElementById("campaignsList");
       const { data: campaigns, error } = await supabaseClient
         .from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false });
-      const listEl = document.getElementById("campaignsList");
+      
       if (error) { listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; return; }
-      if (!campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
+      if (!campaigns || !campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
 
       listEl.innerHTML = "";
       for (const c of campaigns) {
@@ -230,7 +323,7 @@
           <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div>
               <div class="disp" style="font-size:20px;">${c.name}</div>
-              <div class="muted" style="margin-top:2px;">${c.rider_tag}</div>
+              <div class="muted" style="margin-top:2px;">${c.rider_tag || ''}</div>
               <div style="margin-top:10px;font-size:12.5px;"><span class="mono" style="font-weight:600;">${pkr(funded)}</span><span class="muted"> raised of ${pkr(c.target)} target</span></div>
             </div>
             <div class="gauge-wrap">${gaugeSVG(pct)}</div>
