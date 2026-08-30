@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="ur">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,363 +7,118 @@
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
-  .user-wrap { max-width: 500px; margin: 0 auto; padding: 16px; font-size: 14px; }
-  .card { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .input-field { width: 100%; padding: 11px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fff; }
-  .btn-submit { width: 100%; padding: 12px; background: #0f172a; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; transition: 0.2s; }
-  .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
-  
-  /* ACCORDION BUTTON STYLES */
-  .accordion-btn {
-    width: 100%;
-    padding: 14px 16px;
-    background: #ffffff;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 15px;
-    color: #1e293b;
-    text-align: left;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-    margin-bottom: 10px;
-  }
-  .accordion-content {
-    display: none;
-    background: #fff;
-    padding: 16px;
-    border-radius: 10px;
-    border: 1px solid #e2e8f0;
-    margin-bottom: 16px;
-  }
-
-  .accounts-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; line-height: 1.6; }
-  .item-card { border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; margin-bottom: 8px; background: #fff; display: flex; justify-content: space-between; align-items: center; }
-  .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-  .badge-approved { background: #dcfce7; color: #166534; }
-  .badge-pending { background: #fef9c3; color: #854d0e; }
-  .badge-rejected { background: #fee2e2; color: #991b1b; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
+  .wrap { max-width: 600px; margin: 0 auto; }
+  .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #334155; }
+  .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; color: #fff; }
+  .input-field { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; }
+  .ref-box { background: #0284c722; border: 1px dashed #38bdf8; padding: 10px; border-radius: 8px; text-align: center; word-break: break-all; font-weight: bold; color: #38bdf8; }
 </style>
 </head>
 <body>
 
-  <!-- HEADER WITH ADMIN BUTTON -->
-  <div style="background:#0f172a; color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;">
-    <div style="font-weight:bold; font-size:16px;">🚲 RozgarBike</div>
-    <div>
-      <a id="adminPageBtn" href="admin.html" style="display:none; background:#0284c7; color:#fff; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; margin-right:8px;">🛠️ Admin Panel</a>
-      <button onclick="handleLogout()" style="background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.4); padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Logout</button>
-    </div>
-  </div>
-
-  <div class="user-wrap">
-
-    <!-- BALANCE CARD -->
-    <div class="card" style="background: #1e293b; color: #fff;">
-      <div style="font-size:12px; opacity: 0.8; margin-bottom: 4px;">Withdrawable Balance:</div>
-      <div id="userBalance" style="font-size:26px; font-weight:bold;">Rs 0</div>
+  <div class="wrap">
+    <h2>🚲 RozgarBike Dashboard</h2>
+    
+    <!-- REFERRAL BOX -->
+    <div class="card">
+      <h3 style="color:#38bdf8; margin-top:0;">🔗 آپ کا ریفرل لنک (Referral Link)</h3>
+      <div class="ref-box" id="refLink">Loading...</div>
+      <p style="font-size:12px; color:#cbd5e1; margin-bottom:0; margin-top:10px;">
+        🎁 **بونس آفر:** جب آپ کے لنک سے **10 دوست** ڈپازٹ مکمل کر لیں گے تو آپ کو الگ سے بونس ملے گا!
+        <br/>کامیا ب ریفرلز: <strong id="refCount" style="color:#4ade80;">0 / 10</strong>
+      </p>
     </div>
 
-    <!-- 1. WITHDRAWAL SECTION (ON TOP) -->
-    <button class="accordion-btn" onclick="toggleSection('withdrawSection', 'withdrawArrow')">
-      <span>💰 Request Withdrawal</span>
-      <span id="withdrawArrow">▼</span>
-    </button>
-    <div id="withdrawSection" class="accordion-content">
-      <div style="font-size:12px; color:#d97706; font-weight:bold; margin-bottom:10px;">
-        ⚠️ Min: Rs 100 | Max: Rs 10,000 (Limit: 1 per day)
-      </div>
+    <!-- DEPOSIT SECTION -->
+    <div class="card">
+      <h3 style="color:#4ade80; margin-top:0;">📥 رقم جمع کروائیں (Deposit)</h3>
+      <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 1,000 سے Rs 200,000 (ایک وقت میں 1 ہی ریکوئسٹ ڈال سکتے ہیں)</p>
+      <input id="depAmount" type="number" class="input-field" placeholder="رقم (Rs 1,000 - 200,000)" />
+      <input id="depSlip" type="text" class="input-field" placeholder="ڈپازٹ سلیپ تصویر کا لنک (Slip URL)" />
+      <button class="btn" style="background:#16a34a;" onclick="submitDeposit()">Submit Deposit</button>
+    </div>
 
-      <select id="withdrawMethodSelect" class="input-field">
+    <!-- WITHDRAWAL SECTION -->
+    <div class="card">
+      <h3 style="color:#f87171; margin-top:0;">📤 رقم نکلوا لیں (Withdraw)</h3>
+      <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 100 سے Rs 10,000 (دن میں صرف 1 بار)</p>
+      <select id="wMethod" class="input-field">
         <option value="JazzCash">JazzCash</option>
         <option value="EasyPaisa">EasyPaisa</option>
-        <option value="SadaPay">SadaPay</option>
-        <option value="Bank Transfer">Bank Transfer</option>
+        <option value="Bank">Bank Account</option>
       </select>
-
-      <input id="withdrawAccountTitle" class="input-field" placeholder="Account Title Name" />
-      <input id="withdrawAccountNumber" class="input-field" placeholder="Account Number (e.g. 03001234567)" />
-      <input id="withdrawAmount" type="number" class="input-field" placeholder="Withdrawal Amount (e.g. 500)" />
-
-      <button id="withdrawSubmitBtn" class="btn-submit" style="background:#16a34a;" onclick="handleWithdrawSubmit()">Request Withdrawal</button>
+      <input id="wTitle" class="input-field" placeholder="Account Title" />
+      <input id="wNumber" class="input-field" placeholder="Account Number" />
+      <input id="wAmount" type="number" class="input-field" placeholder="رقم (Rs 100 - 10,000)" />
+      <button class="btn" style="background:#dc2626;" onclick="submitWithdrawal()">Request Withdrawal</button>
     </div>
-
-    <!-- 2. DEPOSIT SECTION (AT BOTTOM) -->
-    <button class="accordion-btn" onclick="toggleSection('depositSection', 'depositArrow')">
-      <span>💸 Make a Deposit / Add Investment</span>
-      <span id="depositArrow">▼</span>
-    </button>
-    <div id="depositSection" class="accordion-content">
-      
-      <div class="accounts-box" id="officialAccountsList">
-        <strong>Official Accounts for Payment:</strong><br/>
-        Loading payment accounts...
-      </div>
-
-      <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">Select Campaign:</label>
-      <select id="depositCampaignSelect" class="input-field">
-        <option value="">Select Campaign...</option>
-      </select>
-
-      <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">Amount (PKR):</label>
-      <input id="depositAmount" type="number" class="input-field" placeholder="e.g. 1000" />
-
-      <label style="font-size:12px; font-weight:bold; display:block; margin-bottom:4px;">Payment Slip (Image Screenshot):</label>
-      <input id="depositSlipFile" type="file" accept="image/*" class="input-field" />
-
-      <button id="depositSubmitBtn" class="btn-submit" onclick="handleDepositSubmit()">Submit Deposit</button>
-    </div>
-
-    <!-- MY INVESTMENTS LIST -->
-    <div style="font-weight:700; font-size:14px; color:#1e293b; margin: 16px 0 10px 0;">📋 My Investments</div>
-    <div id="myInvestmentsList">Loading investments...</div>
-
-    <!-- MY WITHDRAWALS LIST -->
-    <div style="font-weight:700; font-size:14px; color:#1e293b; margin: 16px 0 10px 0;">🔄 Withdrawal History</div>
-    <div id="myWithdrawalsList">Loading history...</div>
-
   </div>
 
   <script src="assets/config.js"></script>
   <script>
-    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString("en-PK"); }
-
-    function getSupabase() {
-      return window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase : null);
-    }
-
-    function toggleSection(sectionId, arrowId) {
-      const content = document.getElementById(sectionId);
-      const arrow = document.getElementById(arrowId);
-      if (content.style.display === "block") {
-        content.style.display = "none";
-        arrow.innerText = "▼";
-      } else {
-        content.style.display = "block";
-        arrow.innerText = "▲";
-      }
-    }
-
-    async function handleLogout() {
-      const db = getSupabase();
-      if (db) await db.auth.signOut();
-      window.location.href = "index.html";
-    }
+    function getSupabase() { return window.supabaseClient || window.supabase; }
 
     async function initDashboard() {
       const db = getSupabase();
-      if (!db) return alert("Database connection error.");
-
       const { data: { user } } = await db.auth.getUser();
-      if (!user) {
-        window.location.href = "index.html";
-        return;
-      }
+      if (!user) { window.location.href = "index.html"; return; }
 
-      // SHOW ADMIN BUTTON FOR ALL USERS OR SPECIFIC EMAIL
-      document.getElementById("adminPageBtn").style.display = "inline-block";
+      // Generate Referral Link
+      document.getElementById("refLink").innerText = window.location.origin + "/register.html?ref=" + user.id;
 
-      loadBalance(db, user.id);
-      loadPaymentMethods(db);
-      loadCampaignsDropdown(db);
-      loadMyInvestments(db, user.id);
-      loadMyWithdrawals(db, user.id);
-    }
-
-    async function loadBalance(db, userId) {
-      try {
-        const { data: bonuses } = await db.from("wallet_transactions").select("amount").eq("investor_id", userId).eq("status", "approved");
-        const { data: withdrawals } = await db.from("withdrawal_requests").select("amount").eq("investor_id", userId).eq("status", "approved");
-
-        const totalProfits = (bonuses || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        const totalWithdrawals = (withdrawals || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-
-        const currentBalance = totalProfits - totalWithdrawals;
-        document.getElementById("userBalance").innerText = pkr(currentBalance > 0 ? currentBalance : 0);
-      } catch (e) {
-        document.getElementById("userBalance").innerText = "Rs 0";
-      }
-    }
-
-    async function loadPaymentMethods(db) {
-      const box = document.getElementById("officialAccountsList");
-      try {
-        const { data } = await db.from("payment_methods").select("*").eq("is_active", true);
-        if (!data || data.length === 0) {
-          box.innerHTML = "<strong>Official Accounts:</strong><br/>No active payment accounts found.";
-          return;
+      // Count 10 Approved Deposited Referrals
+      const { data: refs } = await db.from("profiles").select("id").eq("referred_by", user.id);
+      let activeCount = 0;
+      if (refs) {
+        for (let r of refs) {
+          const { data: dep } = await db.from("investments").select("id").eq("investor_id", r.id).eq("status", "approved").limit(1);
+          if (dep && dep.length > 0) activeCount++;
         }
-        box.innerHTML = "<strong>Official Accounts for Payment:</strong><br/>" + 
-          data.map(a => `• <strong>${a.label}:</strong> ${a.account_number} (${a.account_title})`).join("<br/>");
-      } catch (e) {
-        box.innerHTML = "Failed to load payment accounts.";
       }
+      document.getElementById("refCount").innerText = `${activeCount} / 10`;
     }
 
-    async function loadCampaignsDropdown(db) {
-      const select = document.getElementById("depositCampaignSelect");
-      try {
-        const { data } = await db.from("campaigns").select("*").eq("status", "active");
-        if (!data || data.length === 0) {
-          select.innerHTML = `<option value="">Default Campaign</option>`;
-          return;
-        }
-        select.innerHTML = `<option value="">Select Campaign...</option>` + 
-          data.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
-      } catch (e) {
-        select.innerHTML = `<option value="">Default Campaign</option>`;
-      }
-    }
-
-    async function handleDepositSubmit() {
+    async function submitDeposit() {
       const db = getSupabase();
-      const btn = document.getElementById("depositSubmitBtn");
-      const campaign_id = document.getElementById("depositCampaignSelect").value;
-      const amount = document.getElementById("depositAmount").value;
-      const fileInput = document.getElementById("depositSlipFile");
-      const file = fileInput.files ? fileInput.files[0] : null;
+      const { data: { user } } = await db.auth.getUser();
+      const amount = Number(document.getElementById("depAmount").value);
+      const slipUrl = document.getElementById("depSlip").value.trim();
 
-      if (!amount || Number(amount) <= 0) return alert("براہ کرم صحیح رقم درج کریں۔");
-      if (!file) return alert("براہ کرم پیمنٹ کی رسید (Deposit Slip) اپلوڈ کریں۔");
+      if (amount < 1000 || amount > 200000) return alert("ڈپازٹ کی رقم کم سے کم Rs 1,000 اور زیادہ سے زیادہ Rs 200,000 ہونی چاہیے۔");
+      if (!slipUrl) return alert("براہ کرم سلیپ کا لنک درج کریں۔");
 
-      btn.disabled = true;
-      btn.innerText = "Uploading & Submitting...";
+      // Check for pending deposit
+      const { data: pending } = await db.from("investments").select("id").eq("investor_id", user.id).eq("status", "pending");
+      if (pending && pending.length > 0) return alert("آپ کی پہلی ڈپازٹ درخواست پروسیسنگ میں ہے۔ اس کے ختم ہونے کا انتظار کریں۔");
 
-      try {
-        const { data: { user } } = await db.auth.getUser();
-
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-
-        const { error: uploadErr } = await db.storage
-          .from('slips')
-          .upload(fileName, file);
-
-        if (uploadErr) {
-          alert("تصویر اپلوڈ میں ناکامی: " + uploadErr.message);
-          btn.disabled = false;
-          btn.innerText = "Submit Deposit";
-          return;
-        }
-
-        const { data: urlData } = db.storage.from('slips').getPublicUrl(fileName);
-        const slip_url = urlData.publicUrl;
-
-        const { error: insertErr } = await db.from("investments").insert([{
-          investor_id: user.id,
-          campaign_id: campaign_id || null,
-          amount: Number(amount),
-          slip_url: slip_url,
-          status: "pending"
-        }]);
-
-        if (insertErr) {
-          alert("ایرر: " + insertErr.message);
-        } else {
-          alert("آپ کی ڈپازٹ درخواست بھیج دی گئی ہے!");
-          document.getElementById("depositAmount").value = "";
-          fileInput.value = "";
-          loadMyInvestments(db, user.id);
-        }
-
-      } catch (e) {
-        alert("ایرر: " + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Submit Deposit";
-      }
+      const { error } = await db.from("investments").insert([{ investor_id: user.id, amount, slip_url: slipUrl, status: "pending" }]);
+      if (error) alert(error.message);
+      else alert("ڈپازٹ کی درخواست بھیج دی گئی ہے!");
     }
 
-    async function handleWithdrawSubmit() {
+    async function submitWithdrawal() {
       const db = getSupabase();
-      const btn = document.getElementById("withdrawSubmitBtn");
-      const method = document.getElementById("withdrawMethodSelect").value;
-      const title = document.getElementById("withdrawAccountTitle").value;
-      const number = document.getElementById("withdrawAccountNumber").value;
-      const amount = document.getElementById("withdrawAmount").value;
+      const { data: { user } } = await db.auth.getUser();
+      const amount = Number(document.getElementById("wAmount").value);
+      const method = document.getElementById("wMethod").value;
+      const title = document.getElementById("wTitle").value.trim();
+      const number = document.getElementById("wNumber").value.trim();
 
-      if (!title || !number || !amount || Number(amount) < 100) {
-        return alert("تمام معلومات صحیح درج کریں۔ (کم سے کم رقم: 100 PKR)");
-      }
+      if (amount < 100 || amount > 10000) return alert("ودڈرال کم سے کم Rs 100 اور زیادہ سے زیادہ Rs 10,000 ہو سکتا ہے۔");
+      if (!title || !number) return alert("اکاؤنٹ کی مکمل معلومات لکھیں۔");
 
-      btn.disabled = true;
-      btn.innerText = "Processing...";
+      // Check 1 withdrawal per day limit
+      const today = new Date().toISOString().split("T")[0];
+      const { data: dailyReqs } = await db.from("withdrawal_requests").select("created_at").eq("investor_id", user.id).gte("created_at", today);
+      if (dailyReqs && dailyReqs.length > 0) return alert("آپ آج کے دن میں 1 بار ودڈرال کی درخواست بھیج چکے ہیں۔");
 
-      try {
-        const { data: { user } } = await db.auth.getUser();
+      const { error } = await db.from("withdrawal_requests").insert([{
+        investor_id: user.id, payment_method: method, account_title: title, account_number: number, amount, status: "pending"
+      }]);
 
-        const { error } = await db.from("withdrawal_requests").insert([{
-          investor_id: user.id,
-          payment_method: method,
-          account_title: title,
-          account_number: number,
-          amount: Number(amount),
-          status: "pending"
-        }]);
-
-        if (error) {
-          alert("ایرر: " + error.message);
-        } else {
-          alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
-          document.getElementById("withdrawAccountTitle").value = "";
-          document.getElementById("withdrawAccountNumber").value = "";
-          document.getElementById("withdrawAmount").value = "";
-          loadMyWithdrawals(db, user.id);
-        }
-      } catch (e) {
-        alert("ایرر: " + e.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Request Withdrawal";
-      }
-    }
-
-    async function loadMyInvestments(db, userId) {
-      const el = document.getElementById("myInvestmentsList");
-      try {
-        const { data } = await db.from("investments").select("*, campaigns(name)").eq("investor_id", userId).order("created_at", { ascending: false });
-        if (!data || data.length === 0) {
-          el.innerHTML = `<div class="card" style="color:#64748b; font-size:13px;">No investment history.</div>`;
-          return;
-        }
-        el.innerHTML = data.map(i => `
-          <div class="item-card">
-            <div>
-              <strong>${i.campaigns?.name || 'Bike Investment'}</strong><br/>
-              <span style="font-size:12px; color:#64748b;">${pkr(i.amount)}</span>
-            </div>
-            <span class="badge badge-${i.status}">${i.status}</span>
-          </div>
-        `).join("");
-      } catch(e) {
-        el.innerHTML = `<div class="card">Error loading investments.</div>`;
-      }
-    }
-
-    async function loadMyWithdrawals(db, userId) {
-      const el = document.getElementById("myWithdrawalsList");
-      try {
-        const { data } = await db.from("withdrawal_requests").select("*").eq("investor_id", userId).order("created_at", { ascending: false });
-        if (!data || data.length === 0) {
-          el.innerHTML = `<div class="card" style="color:#64748b; font-size:13px;">No withdrawal history.</div>`;
-          return;
-        }
-        el.innerHTML = data.map(w => `
-          <div class="item-card">
-            <div>
-              <strong>${pkr(w.amount)}</strong> (${w.payment_method})<br/>
-              <span style="font-size:11px; color:#64748b;">${w.account_title} (${w.account_number})</span>
-            </div>
-            <span class="badge badge-${w.status}">${w.status}</span>
-          </div>
-        `).join("");
-      } catch(e) {
-        el.innerHTML = `<div class="card">Error loading withdrawals.</div>`;
-      }
+      if (error) alert(error.message);
+      else alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
     }
 
     window.addEventListener("DOMContentLoaded", initDashboard);
