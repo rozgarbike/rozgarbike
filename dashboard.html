@@ -90,10 +90,12 @@ body{
   background:#1f2937;
   border-radius:12px;
   width:100%;
-  max-width:450px;
+  max-width:480px;
   padding:20px;
   border:1px solid #374151;
   position:relative;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 .modal-close{
   position:absolute;
@@ -102,6 +104,27 @@ body{
   cursor:pointer;
   color:#9ca3af;
 }
+
+.account-details-box {
+  background:#111827;
+  border:1px solid #e29d38;
+  border-radius:8px;
+  padding:12px;
+  margin-bottom:15px;
+  font-size:13px;
+}
+.account-item {
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid #374151;
+}
+.account-item:last-child {
+  margin-bottom:0;
+  padding-bottom:0;
+  border-bottom:none;
+}
+.acc-title { color:#e29d38; font-weight:bold; font-size:12px; text-transform:uppercase; }
+.acc-val { color:#fff; font-weight:bold; font-size:14px; }
 
 .input-box, select{
   width:100%;
@@ -192,11 +215,36 @@ th{ background:#111827; color:#9ca3af }
 
 </div>
 
-<!-- DEPOSIT MODAL -->
+<!-- DEPOSIT MODAL WITH PAYMENT ACCOUNTS -->
 <div id="depositModal" class="modal">
   <div class="modal-content">
     <span class="modal-close" onclick="closeDepositModal()">&times;</span>
     <h3 style="color:#e29d38;margin-top:0;">📥 Deposit Funds</h3>
+
+    <!-- OFFICIAL PAYMENT ACCOUNTS DISPLAY -->
+    <div class="account-details-box">
+      <div style="font-weight:bold;color:#10b981;margin-bottom:8px;border-bottom:1px solid #374151;padding-bottom:4px;">
+        📌 Payment Details (رقم بھیجنے کے لیے اکاؤنٹس):
+      </div>
+
+      <div class="account-item">
+        <div class="acc-title">JazzCash</div>
+        <div class="acc-val">03245380453</div>
+        <div style="font-size:11px;color:#9ca3af;">Title: Muhammad Safdar</div>
+      </div>
+
+      <div class="account-item">
+        <div class="acc-title">SadaPay</div>
+        <div class="acc-val">03245380453</div>
+        <div style="font-size:11px;color:#9ca3af;">Title: Muhammad Safdar</div>
+      </div>
+
+      <div class="account-item">
+        <div class="acc-title">Meezan Bank</div>
+        <div class="acc-val">00300113025971</div>
+        <div style="font-size:11px;color:#9ca3af;">Title: Naveed Ahmed</div>
+      </div>
+    </div>
     
     <label style="font-size:12px;color:#9ca3af">Deposit Amount (PKR):</label>
     <input id="depAmount" type="number" class="input-box" placeholder="e.g. 1000">
@@ -220,6 +268,7 @@ th{ background:#111827; color:#9ca3af }
     <label style="font-size:12px;color:#9ca3af">Payment Method:</label>
     <select id="witMethod" class="input-box">
       <option value="JazzCash">JazzCash</option>
+      <option value="SadaPay">SadaPay</option>
       <option value="EasyPaisa">EasyPaisa</option>
       <option value="Bank Transfer">Bank Transfer</option>
     </select>
