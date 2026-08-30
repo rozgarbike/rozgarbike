@@ -6,6 +6,7 @@
 <title>RozgarBike — User Dashboard</title>
 
 <link rel="stylesheet" href="assets/style.css">
+<!-- Supabase JS Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -49,7 +50,7 @@ body{
   font-size:12px;
   font-weight:bold;
   text-decoration:none;
-  display:inline-block; /* Admin button remains visible */
+  display:inline-block;
 }
 .container{
   max-width:500px;
@@ -186,10 +187,18 @@ body{
 .notice{
   background:#f8fafc;
   border:1px solid #e2e8f0;
-  padding:10px;
-  border-radius:7px;
-  font-size:12px;
-  margin-bottom:12px
+  padding:12px;
+  border-radius:8px;
+  font-size:13px;
+  margin-bottom:12px;
+  line-height:1.5
+}
+.account-item{
+  background:#ffffff;
+  border:1px dashed #0b3c36;
+  padding:8px 10px;
+  border-radius:6px;
+  margin-top:6px
 }
 .profile-box{
   text-align:center;
@@ -211,31 +220,10 @@ body{
   border-bottom:1px solid #f1f5f9;
   font-size:13px
 }
-.badge-pending{
-  background:#fef3c7;
-  color:#d97706;
-  padding:2px 6px;
-  border-radius:4px;
-  font-size:11px
-}
-.badge-approved{
-  background:#dcfce7;
-  color:#15803d;
-  padding:2px 6px;
-  border-radius:4px;
-  font-size:11px
-}
-.badge-rejected{
-  background:#fee2e2;
-  color:#b91c1c;
-  padding:2px 6px;
-  border-radius:4px;
-  font-size:11px
-}
-.small{
-  font-size:11px;
-  color:#64748b
-}
+.badge-pending{ background:#fef3c7; color:#d97706; padding:2px 6px; border-radius:4px; font-size:11px }
+.badge-approved{ background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:4px; font-size:11px }
+.badge-rejected{ background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-size:11px }
+.small{ font-size:11px; color:#64748b }
 </style>
 </head>
 
@@ -248,914 +236,301 @@ body{
   </div>
 
   <div class="nav-right">
-    <a id="adminBtn" href="admin.html" class="btn-admin-link">
-      ⚙️ Admin Panel
-    </a>
-
-    <div id="userGreeting"
-         style="font-size:12px;background:#ffffff1a;padding:4px 8px;border-radius:6px">
-      Loading...
-    </div>
+    <a id="adminBtn" href="admin.html" class="btn-admin-link">⚙️ Admin Panel</a>
+    <div id="userGreeting" style="font-size:12px;background:#ffffff1a;padding:4px 8px;border-radius:6px">User</div>
   </div>
 </div>
-
 
 <div class="container">
 
   <!-- PROFILE -->
   <div class="card">
     <div class="profile-box">
-
       <strong style="color:#0b3c36">Investor Profile</strong>
-
-      <img id="profilePreview"
-           class="profile-preview"
-           src=""
-           style="display:none">
-
-      <div class="small">
-        Admin verification ke liye apni picture upload karein
-      </div>
-
-      <input
-        id="profileFile"
-        type="file"
-        accept="image/*"
-        class="input-box"
-        style="margin-top:10px">
-
-      <button
-        id="profileUploadBtn"
-        onclick="uploadProfilePicture()"
-        class="btn-submit">
-        Profile Picture Upload
-      </button>
-
-      <div id="profileStatus"
-           class="small"
-           style="margin-top:7px">
-      </div>
-
+      <img id="profilePreview" class="profile-preview" src="" style="display:none">
+      <div class="small">Admin verification ke liye apni picture upload karein</div>
+      <input id="profileFile" type="file" accept="image/*" class="input-box" style="margin-top:10px">
+      <button id="profileUploadBtn" onclick="uploadProfilePicture()" class="btn-submit">Profile Picture Upload</button>
+      <div id="profileStatus" class="small" style="margin-top:7px"></div>
     </div>
   </div>
 
-
-  <!-- WITHDRAWABLE BALANCE -->
+  <!-- BALANCE -->
   <div class="balance-card">
-
-    <div class="balance-title">
-      قابلِ ودڈرال موجودی
-    </div>
-
-    <div id="withdrawableBalance"
-         class="balance-amount">
-      Rs 0
-    </div>
-
-    <div style="font-size:11px;opacity:.8">
-      Available withdrawable balance
-    </div>
-
+    <div class="balance-title">قابلِ ودڈرال موجودی</div>
+    <div id="withdrawableBalance" class="balance-amount">Rs 0</div>
+    <div style="font-size:11px;opacity:.8">Available withdrawable balance</div>
     <div class="action-btns">
-
-      <button
-        class="btn btn-dep"
-        onclick="openModal('depositModal')">
-        + Deposit
-      </button>
-
-      <button
-        class="btn btn-with"
-        onclick="openWithdrawModal()">
-        📤 Withdraw
-      </button>
-
+      <button class="btn btn-dep" onclick="openModal('depositModal')">+ Deposit</button>
+      <button class="btn btn-with" onclick="openWithdrawModal()">📤 Withdraw</button>
     </div>
-
   </div>
 
-
-  <!-- INVESTMENT / PROFIT -->
+  <!-- SUB CARDS -->
   <div class="sub-cards">
-
     <div class="mini-card">
-      <div class="mini-title">
-        کل انویسٹمنٹ
-      </div>
-      <div id="totalInvested"
-           class="mini-value">
-        Rs 0
-      </div>
+      <div class="mini-title">کل انویسٹمنٹ</div>
+      <div id="totalInvested" class="mini-value">Rs 0</div>
     </div>
-
     <div class="mini-card">
-      <div class="mini-title">
-        کل منافع / بونس
-      </div>
-      <div id="totalProfit"
-           class="mini-value">
-        Rs 0
-      </div>
+      <div class="mini-title">کل منافع / بونس</div>
+      <div id="totalProfit" class="mini-value">Rs 0</div>
     </div>
-
   </div>
-
 
   <!-- REFERRAL -->
-  <div class="section-title">
-    🎁 Referral Program
-  </div>
-
+  <div class="section-title">🎁 Referral Program</div>
   <div class="card">
-
-    <div style="font-size:13px;color:#475569;margin-bottom:8px">
-      اپنا referral link دوستوں کے ساتھ share کریں:
-    </div>
-
+    <div style="font-size:13px;color:#475569;margin-bottom:8px">اپنا referral link دوستوں کے ساتھ share کریں:</div>
     <div style="display:flex;gap:5px">
-
-      <input
-        id="refLinkInput"
-        class="input-box"
-        readonly
-        value="Loading..."
-        style="margin-bottom:0">
-
-      <button
-        onclick="copyReferralLink()"
-        style="background:#0b3c36;color:#fff;border:0;padding:0 12px;border-radius:6px;font-weight:bold">
-        Copy
-      </button>
-
+      <input id="refLinkInput" class="input-box" readonly value="Generating..." style="margin-bottom:0">
+      <button onclick="copyReferralLink()" style="background:#0b3c36;color:#fff;border:0;padding:0 12px;border-radius:6px;font-weight:bold">Copy</button>
     </div>
-
   </div>
-
 
   <!-- CAMPAIGNS -->
-  <div class="section-title">
-    🚀 Active Campaigns
-  </div>
-
+  <div class="section-title">🚀 Active Campaigns</div>
   <div id="campaignsContainer">
-    <div class="card">
-      Loading campaigns...
-    </div>
+    <div class="card">Loading campaigns...</div>
   </div>
-
 
   <!-- HISTORY -->
-  <div class="section-title">
-    📜 Recent History
-  </div>
-
+  <div class="section-title">📜 Recent History</div>
   <div class="card">
-    <div id="historyList">
-      Loading...
-    </div>
+    <div id="historyList">Loading...</div>
   </div>
-
 
   <!-- SUPPORT -->
   <div style="text-align:center;margin:20px 0">
-
-    <a id="waSupportBtn"
-       href="#"
-       target="_blank"
-       style="color:#16a34a;font-weight:bold;text-decoration:none;font-size:14px">
+    <a id="waSupportBtn" href="#" target="_blank" style="color:#16a34a;font-weight:bold;text-decoration:none;font-size:14px">
       💬 Contact Official Support on WhatsApp
     </a>
-
   </div>
 
 </div>
 
-
-<!-- ================= DEPOSIT MODAL ================= -->
-
+<!-- DEPOSIT MODAL -->
 <div id="depositModal" class="modal-overlay">
-
   <div class="modal-box">
-
-    <span class="close-btn"
-          onclick="closeModal('depositModal')">
-      ×
-    </span>
-
-    <h3 style="margin-top:0;color:#0b3c36">
-      Make Deposit
-    </h3>
-
+    <span class="close-btn" onclick="closeModal('depositModal')">×</span>
+    <h3 style="margin-top:0;color:#0b3c36">Make Deposit</h3>
+    
     <div class="notice">
-
-      <strong>Deposit Limits</strong><br>
-
-      Minimum:
-      <b>Rs 1,000</b><br>
-
-      Maximum:
-      <b>Rs 1,000,000</b><br><br>
-
-      ⚠️ Ek waqt mein sirf
-      <b>1 pending deposit</b>
-      allowed hai.
-
-    </div>
-
-
-    <div class="notice">
-
-      <strong>Official Payment Accounts</strong>
-
-      <div id="officialAccountsList"
-           style="margin-top:6px">
-        Loading...
+      <strong style="color:#0b3c36;font-size:14px">Official Payment Accounts</strong>
+      
+      <div class="account-item">
+        <b>JazzCash:</b> 03245380453<br>
+        <small>Name: Muhammad Safdar</small>
+      </div>
+      
+      <div class="account-item">
+        <b>SadaPay:</b> 03245380453<br>
+        <small>Name: Muhammad Safdar</small>
       </div>
 
+      <div class="account-item">
+        <b>Meezan Bank:</b> 00300113025971<br>
+        <small>Name: Naveed Ahmed</small>
+      </div>
     </div>
 
-
-    <label>Deposit Amount (PKR)</label>
-
-    <input
-      id="depAmount"
-      type="number"
-      min="1000"
-      max="1000000"
-      class="input-box"
-      placeholder="1000 - 1000000">
-
-
-    <label>Transaction ID</label>
-
-    <input
-      id="depTrxId"
-      class="input-box"
-      placeholder="Transaction ID">
-
-
-    <label>Payment Slip</label>
-
-    <input
-      id="depSlipFile"
-      type="file"
-      accept="image/*"
-      class="input-box">
-
-
-    <button
-      id="btnSubmitDeposit"
-      onclick="submitDepositRequest()"
-      class="btn-submit"
-      style="background:#e29d38;color:#000">
-      Submit Deposit
-    </button>
-
+    <label style="font-size:13px;font-weight:bold">Deposit Amount (PKR)</label>
+    <input id="depAmount" type="number" min="1000" max="1000000" class="input-box" placeholder="1000 - 1000000">
+    
+    <label style="font-size:13px;font-weight:bold">Transaction ID (Trx ID)</label>
+    <input id="depTrxId" class="input-box" placeholder="Transaction ID">
+    
+    <label style="font-size:13px;font-weight:bold">Payment Slip</label>
+    <input id="depSlipFile" type="file" accept="image/*" class="input-box">
+    
+    <button id="btnSubmitDeposit" onclick="submitDepositRequest()" class="btn-submit" style="background:#e29d38;color:#000">Submit Deposit</button>
   </div>
-
 </div>
 
-
-<!-- ================= WITHDRAW MODAL ================= -->
-
+<!-- WITHDRAW MODAL -->
 <div id="withdrawModal" class="modal-overlay">
-
   <div class="modal-box">
-
-    <span class="close-btn"
-          onclick="closeModal('withdrawModal')">
-      ×
-    </span>
-
-    <h3 style="margin-top:0;color:#0b3c36">
-      📤 Withdraw
-    </h3>
-
-
+    <span class="close-btn" onclick="closeModal('withdrawModal')">×</span>
+    <h3 style="margin-top:0;color:#0b3c36">📤 Withdraw</h3>
     <div class="notice">
-
       <strong>Withdrawable Balance</strong>
-
-      <div id="withdrawModalBalance"
-           style="font-size:25px;font-weight:bold;color:#0b3c36;margin-top:4px">
-        Rs 0
-      </div>
-
+      <div id="withdrawModalBalance" style="font-size:25px;font-weight:bold;color:#0b3c36;margin-top:4px">Rs 0</div>
     </div>
-
-
-    <div class="notice">
-
-      <strong>Withdrawal Rules</strong><br>
-
-      Minimum:
-      <b>Rs 100</b><br>
-
-      Maximum:
-      <b>Rs 10,000</b><br>
-
-      Daily limit:
-      <b>1 withdrawal per 24 hours</b>
-
-    </div>
-
-
-    <label>Withdrawal Amount (PKR)</label>
-
-    <input
-      id="withAmount"
-      type="number"
-      min="100"
-      max="10000"
-      class="input-box"
-      placeholder="100 - 10000">
-
-
-    <label>Payment Method</label>
-
-    <select
-      id="withMethod"
-      class="input-box">
-
-      <option value="EasyPaisa">
-        EasyPaisa
-      </option>
-
-      <option value="JazzCash">
-        JazzCash
-      </option>
-
-      <option value="SadaPay">
-        SadaPay
-      </option>
-
-      <option value="Bank Account">
-        Bank Account
-      </option>
-
+    <label style="font-size:13px;font-weight:bold">Withdrawal Amount (PKR)</label>
+    <input id="withAmount" type="number" min="100" max="100000" class="input-box" placeholder="Enter Amount">
+    <label style="font-size:13px;font-weight:bold">Payment Method</label>
+    <select id="withMethod" class="input-box">
+      <option value="JazzCash">JazzCash</option>
+      <option value="SadaPay">SadaPay</option>
+      <option value="Meezan Bank">Meezan Bank</option>
+      <option value="EasyPaisa">EasyPaisa</option>
     </select>
-
-
-    <label>Account Title</label>
-
-    <input
-      id="withTitle"
-      class="input-box"
-      placeholder="Account Title">
-
-
-    <label>Account Number</label>
-
-    <input
-      id="withNumber"
-      class="input-box"
-      placeholder="Account Number">
-
-
-    <button
-      id="btnSubmitWithdraw"
-      onclick="submitWithdrawRequest()"
-      class="btn-submit">
-      Submit Withdrawal
-    </button>
-
+    <label style="font-size:13px;font-weight:bold">Account Title</label>
+    <input id="withTitle" class="input-box" placeholder="Account Title">
+    <label style="font-size:13px;font-weight:bold">Account Number</label>
+    <input id="withNumber" class="input-box" placeholder="Account Number">
+    <button id="btnSubmitWithdraw" onclick="submitWithdrawRequest()" class="btn-submit">Submit Withdrawal</button>
   </div>
-
 </div>
-
 
 <script src="assets/config.js"></script>
 
 <script>
-
-function getSupabase(){
+function getSupabase() {
   return window.supabaseClient || window.supabase;
 }
 
+function openModal(id){ document.getElementById(id).style.display="flex"; }
+function closeModal(id){ document.getElementById(id).style.display="none"; }
 
-/* ================= MODALS ================= */
-
-function openModal(id){
-  document.getElementById(id).style.display="flex";
+function openWithdrawModal() {
+  openModal('withdrawModal');
 }
 
-function closeModal(id){
-  document.getElementById(id).style.display="none";
-}
-
-
-/* ================= INIT ================= */
-
-async function initDashboard(){
-
-  const db=getSupabase();
-
-  if(!db){
-    alert("Supabase configuration nahi mili.");
+async function initDashboard() {
+  const db = getSupabase();
+  if(!db || typeof db.auth === 'undefined'){
+    console.error("Supabase load nahi ho saka. assets/config.js check karein.");
+    document.getElementById("userGreeting").innerText = "Error";
     return;
   }
 
-  const {
-    data:{user}
-  }=await db.auth.getUser();
-
-  if(!user){
-    window.location.href="index.html";
-    return;
-  }
-
-
-  /* ADMIN BUTTON ALWAYS VISIBLE OR CHECKED */
-  document.getElementById("adminBtn").style.display="inline-block";
-
-
-  /* USER */
-
-  document.getElementById("userGreeting").innerText =
-    user.email
-      ? user.email.split("@")[0]
-      : "User";
-
-
-  /* REFERRAL */
-
-  const refLink =
-    `${window.location.origin}/signup.html?ref=${user.id}`;
-
-  document.getElementById("refLinkInput").value=refLink;
-
-
-  /* LOAD DATA */
-
-  await loadProfile(db,user.id);
-  await loadUserBalances(db,user.id);
-  await loadPaymentMethods(db);
-  await loadCampaigns(db);
-  await loadHistory(db,user.id);
-  await loadWhatsAppLink(db);
-
-}
-
-
-/* ================= PROFILE ================= */
-
-async function loadProfile(db,userId){
-
-  const {data,error}=await db
-    .from("profiles")
-    .select("avatar_url")
-    .eq("id",userId)
-    .maybeSingle();
-
-  if(error || !data || !data.avatar_url)
-    return;
-
-  const img=document.getElementById("profilePreview");
-
-  img.src=data.avatar_url;
-  img.style.display="block";
-}
-
-
-async function uploadProfilePicture(){
-
-  const db=getSupabase();
-
-  const {
-    data:{user}
-  }=await db.auth.getUser();
-
-  if(!user)
-    return;
-
-  const file=
-    document.getElementById("profileFile").files[0];
-
-  if(!file)
-    return alert("Pehle picture select karein.");
-
-  if(!file.type.startsWith("image/"))
-    return alert("Sirf image upload karein.");
-
-  if(file.size>5*1024*1024)
-    return alert("Picture 5MB se kam honi chahiye.");
-
-  const btn=document.getElementById("profileUploadBtn");
-
-  btn.disabled=true;
-  btn.innerText="Uploading...";
-
-  try{
-
-    const path=
-      `profiles/${user.id}_${Date.now()}_${file.name}`;
-
-    const {data,error}=await db.storage
-      .from("profiles")
-      .upload(path,file,{
-        upsert:true
-      });
-
-    if(error)
-      throw error;
-
-
-    const {
-      data:publicData
-    }=db.storage
-      .from("profiles")
-      .getPublicUrl(path);
-
-
-    const imageUrl=publicData.publicUrl;
-
-    const {error:updateError}=await db
-      .from("profiles")
-      .upsert({
-        id:user.id,
-        avatar_url:imageUrl
-      });
-
-
-    if(updateError)
-      throw updateError;
-
-
-    document.getElementById("profilePreview").src=imageUrl;
-    document.getElementById("profilePreview").style.display="block";
-
-    document.getElementById("profileStatus").innerText=
-      "Picture successfully uploaded.";
-
-    alert("Investor picture upload ho gayi.");
-
-  }catch(err){
-
-    alert("Picture upload error: "+err.message);
-
-  }finally{
-
-    btn.disabled=false;
-    btn.innerText="Profile Picture Upload";
-
-  }
-
-}
-
-
-/* ================= BALANCE ================= */
-
-async function loadUserBalances(db,userId){
-
-  let totalInvested=0;
-  let totalProfit=0;
-  let totalWithdrawn=0;
-
-
-  const {
-    data:investments
-  }=await db
-    .from("investments")
-    .select("amount")
-    .or(`investor_id.eq.${userId},user_id.eq.${userId}`)
-    .eq("status","approved");
-
-
-  if(investments){
-    investments.forEach(i=>{
-      totalInvested += Number(i.amount||0);
-    });
-  }
-
-
-  const {
-    data:txs
-  }=await db
-    .from("wallet_transactions")
-    .select("amount")
-    .or(`investor_id.eq.${userId},user_id.eq.${userId}`)
-    .eq("status","approved");
-
-
-  if(txs){
-    txs.forEach(t=>{
-      totalProfit += Number(t.amount||0);
-    });
-  }
-
-
-  const {
-    data:withdraws
-  }=await db
-    .from("withdrawals")
-    .select("amount,status")
-    .or(`investor_id.eq.${userId},user_id.eq.${userId}`);
-
-
-  if(withdraws){
-    withdraws.forEach(w=>{
-      if(
-        w.status==="approved" ||
-        w.status==="pending" ||
-        w.status==="read"
-      ){
-        totalWithdrawn += Number(w.amount||0);
-      }
-    });
-  }
-
-
-  const withdrawableBalance=
-    Math.max(
-      0,
-      totalProfit-totalWithdrawn
-    );
-
-
-  document.getElementById(
-    "withdrawableBalance"
-  ).innerText=
-    `Rs ${withdrawableBalance.toLocaleString()}`;
-
-
-  document.getElementById(
-    "withdrawModalBalance"
-  ).innerText=
-    `Rs ${withdrawableBalance.toLocaleString()}`;
-
-
-  document.getElementById(
-    "totalInvested"
-  ).innerText=
-    `Rs ${totalInvested.toLocaleString()}`;
-
-
-  document.getElementById(
-    "totalProfit"
-  ).innerText=
-    `Rs ${totalProfit.toLocaleString()}`;
-
-}
-
-
-/* ================= DEPOSIT ================= */
-
-async function submitDepositRequest(){
-
-  const db=getSupabase();
-
-  const amount=
-    Number(document.getElementById("depAmount").value);
-
-  const trxId=
-    document.getElementById("depTrxId").value.trim();
-
-  const fileInput=
-    document.getElementById("depSlipFile");
-
-
-  if(
-    !amount ||
-    amount<1000 ||
-    amount>1000000
-  ){
-    return alert(
-      "Deposit Rs 1,000 se kam aur Rs 1,000,000 se zyada nahi ho sakta."
-    );
-  }
-
-
-  if(!trxId)
-    return alert("Transaction ID enter karein.");
-
-
-  if(!fileInput.files.length)
-    return alert("Payment slip upload karein.");
-
-
-  const {
-    data:{user}
-  }=await db.auth.getUser();
-
-
-  const {
-    data:pendingDeposits,
-    error:pendingError
-  }=await db
-    .from("investments")
-    .select("id")
-    .or(`investor_id.eq.${user.id},user_id.eq.${user.id}`)
-    .eq("status","pending")
-    .limit(1);
-
-
-  if(
-    pendingDeposits &&
-    pendingDeposits.length>0
-  ){
-    return alert(
-      "Aapki ek deposit request already pending hai. Admin verification complete hone ka wait karein."
-    );
-  }
-
-
-  const btn=
-    document.getElementById("btnSubmitDeposit");
-
-  btn.disabled=true;
-  btn.innerText="Uploading slip...";
-
-
-  try{
-
-    const file=fileInput.files[0];
-
-    const filePath=
-      `slips/${user.id}_${Date.now()}_${file.name}`;
-
-
-    const {
-      data:uploadData,
-      error:uploadErr
-    }=await db.storage
-      .from("slips")
-      .upload(filePath,file);
-
-
-    if(uploadErr)
-      throw uploadErr;
-
-
-    const {
-      data:publicUrlData
-    }=db.storage
-      .from("slips")
-      .getPublicUrl(filePath);
-
-
-    const slipUrl=
-      publicUrlData.publicUrl;
-
-
-    const payload={
-      user_id:user.id,
-      investor_id:user.id,
-      amount:amount,
-      trx_id:trxId,
-      slip_url:slipUrl,
-      status:"pending"
-    };
-
-
-    let {error}=await db
-      .from("investments")
-      .insert([payload]);
-
-
-    if(error && error.message.includes("investor_id")){
-      delete payload.investor_id;
-      const retry=await db.from("investments").insert([payload]);
-      error=retry.error;
+  try {
+    const { data: { user }, error } = await db.auth.getUser();
+    if (error || !user) {
+      window.location.href = "index.html";
+      return;
     }
 
+    document.getElementById("userGreeting").innerText = user.email ? user.email.split("@")[0] : "User";
+    document.getElementById("refLinkInput").value = `${window.location.origin}/signup.html?ref=${user.id}`;
 
-    if(error)
-      throw error;
-
-
-    alert(
-      "Deposit request successfully submit ho gayi."
-    );
-
-
-    closeModal("depositModal");
-    location.reload();
-
-
-  }catch(err){
-
-    alert(
-      "Deposit error: "+err.message
-    );
-
-  }finally{
-
-    btn.disabled=false;
-    btn.innerText="Submit Deposit";
-
+    await Promise.allSettled([
+      loadProfile(db, user.id),
+      loadUserBalances(db, user.id),
+      loadCampaigns(db),
+      loadHistory(db, user.id),
+      loadWhatsAppLink(db)
+    ]);
+  } catch(err) {
+    console.error("Dashboard Load Error:", err);
   }
-
 }
 
+async function loadProfile(db, userId) {
+  const { data } = await db.from("profiles").select("avatar_url").eq("id", userId).maybeSingle();
+  if (data && data.avatar_url) {
+    const img = document.getElementById("profilePreview");
+    img.src = data.avatar_url;
+    img.style.display = "block";
+  }
+}
 
-/* ================= WITHDRAW ================= */
+async function uploadProfilePicture() {
+  const db = getSupabase();
+  const { data: { user } } = await db.auth.getUser();
+  const file = document.getElementById("profileFile").files[0];
 
-async function openWithdrawModal(){
+  if (!file) return alert("Pehle picture select karein.");
+  if (file.size > 5 * 1024 * 1024) return alert("Picture 5MB se kam honi chahiye.");
 
-  const db=getSupabase();
+  const btn = document.getElementById("profileUploadBtn");
+  btn.disabled = true;
+  btn.innerText = "Uploading...";
 
-  const {
-    data:{user}
-  }=await db.auth.getUser();
+  try {
+    const path = `profiles/${user.id}_${Date.now()}_${file.name}`;
+    const { error: uploadErr } = await db.storage.from("profiles").upload(path, file, { upsert: true });
+    if (uploadErr) throw uploadErr;
 
-  if(!user)
+    const { data: publicData } = db.storage.from("profiles").getPublicUrl(path);
+    await db.from("profiles").upsert({ id: user.id, avatar_url: publicData.publicUrl });
+
+    document.getElementById("profilePreview").src = publicData.publicUrl;
+    document.getElementById("profilePreview").style.display = "block";
+    document.getElementById("profileStatus").innerText = "Picture uploaded successfully.";
+  } catch (err) {
+    alert("Upload Error: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "Profile Picture Upload";
+  }
+}
+
+async function loadUserBalances(db, userId) {
+  let totalInvested = 0, totalProfit = 0, totalWithdrawn = 0;
+
+  const { data: investments } = await db.from("investments").select("amount").or(`investor_id.eq.${userId},user_id.eq.${userId}`).eq("status", "approved");
+  if (investments) investments.forEach(i => totalInvested += Number(i.amount || 0));
+
+  const { data: txs } = await db.from("wallet_transactions").select("amount").or(`investor_id.eq.${userId},user_id.eq.${userId}`).eq("status", "approved");
+  if (txs) txs.forEach(t => totalProfit += Number(t.amount || 0));
+
+  const { data: withdraws } = await db.from("withdrawals").select("amount,status").or(`investor_id.eq.${userId},user_id.eq.${userId}`);
+  if (withdraws) withdraws.forEach(w => {
+    if (["approved", "pending", "read"].includes(w.status)) totalWithdrawn += Number(w.amount || 0);
+  });
+
+  const withdrawableBalance = Math.max(0, totalProfit - totalWithdrawn);
+
+  document.getElementById("withdrawableBalance").innerText = `Rs ${withdrawableBalance.toLocaleString()}`;
+  document.getElementById("withdrawModalBalance").innerText = `Rs ${withdrawableBalance.toLocaleString()}`;
+  document.getElementById("totalInvested").innerText = `Rs ${totalInvested.toLocaleString()}`;
+  document.getElementById("totalProfit").innerText = `Rs ${totalProfit.toLocaleString()}`;
+}
+
+async function loadCampaigns(db) {
+  const box = document.getElementById("campaignsContainer");
+  const { data } = await db.from("campaigns").select("*").eq("is_active", true);
+  if (!data || data.length === 0) {
+    box.innerHTML = `<div class="card">No active campaign.</div>`;
     return;
-
-
-  await loadUserBalances(db,user.id);
-
-
-  const since=
-    new Date(
-      Date.now()-24*60*60*1000
-    ).toISOString();
-
-
-  const {
-    data:recentWithdrawals
-  }=await db
-    .from("withdrawals")
-    .select("id,status,created_at")
-    .or(`investor_id.eq.${user.id},user_id.eq.${user.id}`)
-    .gte("created_at",since)
-    .in(
-      "status",
-      ["pending","approved","read"]
-    );
-
-
-  if(
-    recentWithdrawals &&
-    recentWithdrawals.length>0
-  ){
-    return alert(
-      "Aap pichle 24 ghanton mein withdrawal request submit kar chuke hain."
-    );
   }
-
-
-  openModal("withdrawModal");
-
+  box.innerHTML = data.map(c => `
+    <div class="card">
+      <strong>${c.title || c.name}</strong>
+      <div>Target: Rs ${Number(c.target || 0).toLocaleString()}</div>
+    </div>
+  `).join("");
 }
 
+async function loadHistory(db, userId) {
+  const box = document.getElementById("historyList");
+  const { data: deps } = await db.from("investments").select("*");
+  const { data: withs } = await db.from("withdrawals").select("*");
 
-/* ================= WITHDRAW SUBMIT ================= */
+  let list = [];
+  if (deps) deps.filter(d => d.investor_id === userId || d.user_id === userId).forEach(d => list.push({ title: "Deposit", amount: `+Rs ${d.amount}`, status: d.status }));
+  if (withs) withs.filter(w => w.investor_id === userId || w.user_id === userId).forEach(w => list.push({ title: "Withdrawal", amount: `-Rs ${w.amount}`, status: w.status }));
 
-async function submitWithdrawRequest(){
-
-  const db=getSupabase();
-
-  const amount=
-    Number(document.getElementById("withAmount").value);
-
-  const method=
-    document.getElementById("withMethod").value;
-
-  const title=
-    document.getElementById("withTitle").value.trim();
-
-  const number=
-    document.getElementById("withNumber").value.trim();
-
-
-  if(
-    !amount ||
-    amount<100 ||
-    amount>10000
-  ){
-    return alert(
-      "Withdrawal Rs 100 se kam aur Rs 10,000 se zyada nahi ho sakta."
-    );
+  if (list.length === 0) {
+    box.innerHTML = "No recent history.";
+    return;
   }
 
-  if(!title || !number){
-    return alert("تمام تفصیلات درج کریں۔");
+  box.innerHTML = list.map(i => `
+    <div class="hist-item">
+      <span>${i.title}</span>
+      <span><b>${i.amount}</b> <small class="badge-${i.status}">${i.status}</small></span>
+    </div>
+  `).join("");
+}
+
+async function loadWhatsAppLink(db) {
+  const { data } = await db.from("app_settings").select("value").eq("key", "whatsapp").maybeSingle();
+  if (data && data.value) {
+    document.getElementById("waSupportBtn").href = data.value.startsWith("http") ? data.value : `https://wa.me/${data.value}`;
   }
+}
 
-  const btn=document.getElementById("btnSubmitWithdraw");
-  btn.disabled=true;
-  btn.innerText="Submitting...";
+function copyReferralLink() {
+  const input = document.getElementById("refLinkInput");
+  input.select();
+  document.execCommand("copy");
+  alert("Referral link copied!");
+}
 
-  try{
-
-    const {
-      data:{user}
-    }=await db.auth.getUser();
-
-    let payload={
-      user_id:user.id,
-      investor_id:user.id,
-      amount:amount,
-      method:method,
-      account_title:title,
-      account_number:number,
-      status:"pending"
-    };
-
-    let {error}=await db
-      .from("withdrawals")
-      .insert([payload]);
-
-    if(error && error.message.includes("investor_id")){
-      delete payload.investor_id;
-      const 
+window.addEventListener("DOMContentLoaded", initDashboard);
+</script>
+</body>
+</html>
