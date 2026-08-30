@@ -15,18 +15,23 @@
   .logo-box { background: #e29d38; padding: 4px 8px; border-radius: 6px; }
 
   .nav-right { display: flex; align-items: center; gap: 10px; }
-  .btn-admin-link { background: #e29d38; color: #000; border: none; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-decoration: none; display: none; }
+  .btn-admin-link { background: #e29d38; color: #000; border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; text-decoration: none; display: none; }
 
   .container { max-width: 500px; margin: 0 auto; padding: 15px; }
 
-  /* Wallet Cards */
+  /* Wallet Cards Separated */
   .balance-card { background: linear-gradient(135deg, #0b3c36, #14532d); color: #fff; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
   .balance-title { font-size: 13px; opacity: 0.8; }
-  .balance-amount { font-size: 32px; font-weight: bold; margin: 8px 0; color: #facc15; }
+  .balance-amount { font-size: 32px; font-weight: bold; margin: 6px 0; color: #facc15; }
+
+  .sub-cards { display: flex; gap: 10px; margin-bottom: 15px; }
+  .mini-card { flex: 1; background: #ffffff; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; }
+  .mini-title { font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase; }
+  .mini-value { font-size: 18px; font-weight: bold; color: #0b3c36; margin-top: 4px; }
 
   .action-btns { display: flex; gap: 10px; margin-top: 15px; }
-  .btn-dep { flex: 1; background: #e29d38; color: #000; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-  .btn-with { flex: 1; background: #ffffff22; color: #fff; border: 1px solid #ffffff44; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+  .btn-dep { flex: 1; background: #e29d38; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+  .btn-with { flex: 1; background: #ffffff22; color: #fff; border: 1px solid #ffffff44; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
 
   /* Cards & Sections */
   .card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
@@ -64,19 +69,27 @@
 
   <div class="container">
 
-    <!-- WALLET BALANCE CARD -->
+    <!-- MAIN BALANCE CARD -->
     <div class="balance-card">
-      <div class="balance-title">کل موجودی (Total Balance)</div>
-      <div class="balance-amount" id="totalBalance">Rs 0</div>
-      
-      <div style="display: flex; justify-content: space-between; font-size: 12px; opacity: 0.9; margin-top: 10px;">
-        <span>انویسٹمنٹ: <strong id="totalInvested">Rs 0</strong></span>
-        <span>منافع/بونس: <strong id="totalProfit">Rs 0</strong></span>
-      </div>
+      <div class="balance-title">قابل ودڈرال موجودی (Withdrawable Balance)</div>
+      <div class="balance-amount" id="withdrawableBalance">Rs 0</div>
+      <div style="font-size: 11px; opacity: 0.8;">منافع اور بونس کی کل رقم جو نکلوائی جا سکتی ہے</div>
 
       <div class="action-btns">
         <button class="btn-dep" onclick="openModal('depositModal')">+ Deposit (ڈپازٹ)</button>
         <button class="btn-with" onclick="openModal('withdrawModal')">📤 Withdraw (ودڈرال)</button>
+      </div>
+    </div>
+
+    <!-- SEPARATE DETAILS CARDS -->
+    <div class="sub-cards">
+      <div class="mini-card">
+        <div class="mini-title">کل انویسٹمنٹ</div>
+        <div class="mini-value" id="totalInvested">Rs 0</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-title">کل منافع / بونس</div>
+        <div class="mini-value" id="totalProfit">Rs 0</div>
       </div>
     </div>
 
@@ -179,7 +192,7 @@
         return;
       }
 
-      // Show Admin Button if admin is logged in
+      // Show Admin Button for Admin Login
       if (user.email === "saimpk5227@gmail.com") {
         document.getElementById("adminBtn").style.display = "inline-block";
       }
@@ -189,7 +202,7 @@
       const refLink = `${window.location.origin}/signup.html?ref=${user.id}`;
       document.getElementById("refLinkInput").value = refLink;
 
-      // Load Data
+      // Load All Data
       loadUserBalances(db, user.id);
       loadPaymentMethods(db);
       loadCampaigns(db);
@@ -197,26 +210,26 @@
       loadWhatsAppLink(db);
     }
 
-    // 1. Calculate Balances Correctly
+    // 1. Separate Balances Logic
     async function loadUserBalances(db, userId) {
       let totalInvested = 0;
       let totalProfit = 0;
       let totalWithdrawn = 0;
 
-      // Approved Investments
-      const { data: investments } = await db.from("investments").select("amount").eq("investor_id", userId).eq("status", "approved");
+      // Investment Total
+      const { data: investments } = await db.from("investments").select("amount").or(`investor_id.eq.${userId},user_id.eq.${userId}`).eq("status", "approved");
       if (investments) {
         investments.forEach(i => totalInvested += Number(i.amount || 0));
       }
 
-      // Wallet Profits & Bonuses
-      const { data: txs } = await db.from("wallet_transactions").select("amount").eq("investor_id", userId).eq("status", "approved");
+      // Profits & Bonuses Total
+      const { data: txs } = await db.from("wallet_transactions").select("amount").or(`investor_id.eq.${userId},user_id.eq.${userId}`).eq("status", "approved");
       if (txs) {
         txs.forEach(t => totalProfit += Number(t.amount || 0));
       }
 
-      // Withdrawals (Both pending and approved reduce current balance)
-      const { data: withdraws } = await db.from("withdrawals").select("amount, status").eq("investor_id", userId);
+      // Withdrawals Total
+      const { data: withdraws } = await db.from("withdrawals").select("amount, status").or(`investor_id.eq.${userId},user_id.eq.${userId}`);
       if (withdraws) {
         withdraws.forEach(w => {
           if (w.status === "approved" || w.status === "pending" || w.status === "read") {
@@ -225,14 +238,15 @@
         });
       }
 
-      const totalBalance = (totalInvested + totalProfit) - totalWithdrawn;
+      // Withdrawable Balance = Profits/Bonus minus Withdrawn
+      const withdrawableBalance = Math.max(0, totalProfit - totalWithdrawn);
 
-      document.getElementById("totalBalance").innerText = `Rs ${totalBalance.toLocaleString()}`;
+      document.getElementById("withdrawableBalance").innerText = `Rs ${withdrawableBalance.toLocaleString()}`;
       document.getElementById("totalInvested").innerText = `Rs ${totalInvested.toLocaleString()}`;
       document.getElementById("totalProfit").innerText = `Rs ${totalProfit.toLocaleString()}`;
     }
 
-    // 2. Submit Deposit Fix
+    // 2. Deposit Submission
     async function submitDepositRequest() {
       const db = getSupabase();
       const amount = Number(document.getElementById("depAmount").value);
@@ -262,18 +276,26 @@
 
         const payload = {
           investor_id: user.id,
+          user_id: user.id,
           amount: amount,
           status: "pending"
         };
         if (trxId) payload.trx_id = trxId;
         if (slipUrl) payload.slip_url = slipUrl;
 
-        const { error } = await db.from("investments").insert([payload]);
+        let { error } = await db.from("investments").insert([payload]);
+
+        // Fallback retry if column mismatch
+        if (error && error.message.includes("investor_id")) {
+          delete payload.investor_id;
+          const retry = await db.from("investments").insert([payload]);
+          error = retry.error;
+        }
 
         if (error) {
           alert("ایرر: " + error.message);
         } else {
-          alert("آپ کی ڈپازٹ درخواست موصول ہو گئی ہے! ایڈمن کی منظوری کا انتظار کریں۔");
+          alert("آپ کی ڈپازٹ درخواست موصول ہو گئی ہے!");
           closeModal('depositModal');
           location.reload();
         }
@@ -285,7 +307,7 @@
       }
     }
 
-    // 3. Submit Withdraw Fix
+    // 3. Withdraw Submission Fix (Error Solved)
     async function submitWithdrawRequest() {
       const db = getSupabase();
       const amount = Number(document.getElementById("withAmount").value);
@@ -303,19 +325,34 @@
       try {
         const { data: { user } } = await db.auth.getUser();
 
-        const { error } = await db.from("withdrawals").insert([{
+        // Primary Payload
+        let payload = {
           investor_id: user.id,
+          user_id: user.id,
           amount: amount,
           method: method,
           account_title: title,
           account_number: number,
           status: "pending"
-        }]);
+        };
+
+        let { error } = await db.from("withdrawals").insert([payload]);
+
+        // Safe Fallback if schema has user_id or investor_id only
+        if (error && error.message.includes("investor_id")) {
+          delete payload.investor_id;
+          const retry = await db.from("withdrawals").insert([payload]);
+          error = retry.error;
+        } else if (error && error.message.includes("user_id")) {
+          delete payload.user_id;
+          const retry = await db.from("withdrawals").insert([payload]);
+          error = retry.error;
+        }
 
         if (error) {
           alert("ودڈرال ایرر: " + error.message);
         } else {
-          alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
+          alert("ودڈرال کی درخواست کامیابی سے موصول ہو گئی ہے!");
           closeModal('withdrawModal');
           location.reload();
         }
@@ -327,7 +364,7 @@
       }
     }
 
-    // 4. Payment Accounts
+    // 4. Payment Methods
     async function loadPaymentMethods(db) {
       const box = document.getElementById("officialAccountsList");
       const { data: methods } = await db.from("payment_methods").select("*");
@@ -367,8 +404,8 @@
     async function loadHistory(db, userId) {
       const box = document.getElementById("historyList");
       
-      const { data: deps } = await db.from("investments").select("*").eq("investor_id", userId);
-      const { data: withs } = await db.from("withdrawals").select("*").eq("investor_id", userId);
+      const { data: deps } = await db.from("investments").select("*").or(`investor_id.eq.${userId},user_id.eq.${userId}`);
+      const { data: withs } = await db.from("withdrawals").select("*").or(`investor_id.eq.${userId},user_id.eq.${userId}`);
 
       let list = [];
 
