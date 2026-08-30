@@ -6,128 +6,137 @@
 <title>Dashboard — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
 </head>
-<body>
-  <div class="header">
-    <div class="header-row">
-      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span id="userNameDisplay" style="font-size:12px;color:#fff;font-weight:700;">Loading...</span>
-        <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:4px 8px;font-size:11px;cursor:pointer;" onclick="logout()">Log out</button>
+<body style="background-color: #f4f6f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0;">
+
+  <div class="header" style="background: #0f172a; color: #fff; padding: 15px 20px;">
+    <div class="header-row" style="display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto 10px auto;">
+      <div class="brand" style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+        <span class="brand-badge">🚲</span> RozgarBike
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span id="userNameDisplay" style="font-size: 13px; color: #e2e8f0; font-weight: 700;">Loading...</span>
+        <button class="btn btn-outline" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;" onclick="logout()">Log out</button>
       </div>
     </div>
-    <div class="nav" id="navBar">
-      <a href="index.html">Bikes</a>
-      <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink" style="display:none;background:#e11d48;color:#fff;padding:3px 8px;border-radius:4px;font-weight:700;">Admin</a>
+    <div class="nav" id="navBar" style="display: flex; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto;">
+      <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 600; padding: 4px 8px;">Bikes</a>
+      <a href="dashboard.html" class="active" style="color: #38bdf8; text-decoration: none; font-size: 13px; font-weight: 700; border-bottom: 2px solid #38bdf8; padding: 4px 8px;">My Dashboard</a>
+      <a href="admin.html" id="adminLink" style="display: none; background: #e11d48; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; text-decoration: none;">Admin Panel</a>
     </div>
   </div>
 
-  <div class="wrap">
+  <div class="wrap" style="max-width: 600px; margin: 20px auto; padding: 0 15px;">
     
     <!-- 1. WITHDRAWAL SECTION -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div class="muted">Available for Withdrawal</div>
-      <div id="availAmount" style="font-size:28px;font-weight:900;margin:6px 0 14px;color:var(--ink);">Rs 0</div>
-      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
+    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">WITHDRAWAL</div>
+    <div class="card" style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
+      <div style="font-size: 13px; color: #64748b; font-weight: 600;">Available for Withdrawal</div>
+      <div id="availAmount" style="font-size: 32px; font-weight: 900; margin: 8px 0 16px; color: #0f172a;">Rs 0</div>
+      <button class="btn btn-dark" style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
 
     <!-- 2. REFERRAL & DYNAMIC 10-REFERRAL BONUS SECTION -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL & 10% EXTRA BONUS</div>
-    <div class="card" style="margin-bottom:24px;background:linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);border:2px solid #3b82f6;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);padding:18px;">
+    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">🎁 REFERRAL & 10% EXTRA BONUS</div>
+    <div class="card" style="margin-bottom: 24px; background: #fff; border: 2px solid #3b82f6; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 18px;">
       
-      <div id="bonusBox" style="padding:14px;border-radius:10px;margin-bottom:14px;font-size:14px;font-weight:800;text-align:center;background:#e0f2fe;color:#0369a1;border:1px dashed #0284c7;line-height:1.5;">
+      <div id="bonusBox" style="padding: 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; font-weight: 800; text-align: center; background: #e0f2fe; color: #0369a1; border: 1px dashed #0284c7; line-height: 1.5;">
         🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/>
-        <span style="font-size:12px;font-weight:600;color:#0369a1;">Aap ko 10% extra profit bonus haasil karne ke liye <span id="remCountText" style="color:#d97706;font-weight:900;">10</span> doston ko invite karna hai!</span>
+        <span style="font-size: 12px; font-weight: 600; color: #0369a1;">Aap ko 10% extra profit bonus haasil karne ke liye <span id="remCountText" style="color: #d97706; font-weight: 900;">10</span> doston ko invite karna hai!</span>
       </div>
 
-      <div style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;color:#334155;">
+      <div style="margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #334155;">
           <span>Target Progress:</span>
-          <span id="refCount" style="color:#2563eb;">0 / 10 Joined</span>
+          <span id="refCount" style="color: #2563eb;">0 / 10 Joined</span>
         </div>
-        <div style="width:100%;background:#e2e8f0;height:12px;border-radius:6px;overflow:hidden;">
-          <div id="progressBar" style="width:0%;height:100%;background:linear-gradient(90deg, #3b82f6, #16a34a);transition:width 0.4s ease;"></div>
+        <div style="width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; overflow: hidden;">
+          <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #16a34a); transition: width 0.4s ease;"></div>
         </div>
       </div>
 
-      <div class="muted" style="margin-bottom:6px;font-size:12px;font-weight:700;color:#1e293b;">📋 Aap Ka Unique Referral Link:</div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <input id="refLinkInput" readonly style="flex:1;padding:10px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;background:#fff;font-weight:600;color:#0f172a;" />
-        <button class="btn btn-primary" style="background:#16a34a;color:#fff;border:none;font-weight:800;padding:10px 16px;border-radius:8px;cursor:pointer;" onclick="copyRefLink()">🔗 Copy Link</button>
+      <div style="margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #1e293b;">📋 Aap Ka Unique Referral Link:</div>
+      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <input id="refLinkInput" readonly style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12px; background: #f8fafc; font-weight: 600; color: #0f172a;" />
+        <button class="btn btn-primary" style="background: #16a34a; color: #fff; border: none; font-weight: 800; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 12px;" onclick="copyRefLink()">🔗 Copy Link</button>
       </div>
 
-      <div style="font-weight:800;font-size:13px;margin-bottom:10px;border-top:1px solid #e2e8f0;padding-top:12px;color:#1e293b;">
+      <div style="font-weight: 800; font-size: 13px; margin-bottom: 10px; border-top: 1px solid #e2e8f0; padding-top: 12px; color: #1e293b;">
         👥 Aap Ke Link Se Join Hone Wale Log:
       </div>
-      <div id="referredUsersList" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;">
-        <p class="muted" style="font-size:12px;">Data load ho raha hai...</p>
+      <div id="referredUsersList" style="display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto;">
+        <p style="font-size: 12px; color: #64748b; margin: 0;">Data load ho raha hai...</p>
       </div>
 
     </div>
 
     <!-- 3. DEPOSIT / INVEST SECTION -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">INVEST IN ROZGARBIKE</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:6px;">Select a bike campaign:</div>
-      <select id="campaignSelect" style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);"></select>
-      <div class="muted" style="margin-bottom:6px;">Investment Amount (Min Rs 1,000)</div>
-      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom:12px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);" />
-      <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="startInvestment()">Continue to Payment</button>
+    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">INVEST IN ROZGARBIKE</div>
+    <div class="card" style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Select a bike campaign:</div>
+      <select id="campaignSelect" style="width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;"></select>
+      
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Investment Amount (Min Rs 1,000)</div>
+      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
+      
+      <button class="btn btn-primary" style="width: 100%; background: #eab308; color: #000; border: none; font-weight: 800; padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer;" onclick="startInvestment()">Continue to Payment</button>
     </div>
 
     <!-- PAYMENT DETAILS INSTRUCTION -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">SEND YOUR PAYMENT</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:8px;">Transfer amount to any payment method below:</div>
-      <div id="methodsDisplay" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">Loading accounts...</div>
+    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">SEND YOUR PAYMENT</div>
+    <div class="card" style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; font-weight: 600;">Transfer amount to any payment method below:</div>
+      <div id="methodsDisplay" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+        <p style="font-size: 12px; color: #64748b; margin: 0;">Loading accounts...</p>
+      </div>
       
-      <div class="muted" style="margin-bottom:6px;">Enter Transaction ID / Sender Number:</div>
-      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom:12px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);" />
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Enter Transaction ID / Sender Number:</div>
+      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
 
-      <div class="muted" style="margin-bottom:6px;">Upload Payment Receipt Photo (Optional):</div>
-      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Upload Payment Receipt Photo (Optional):</div>
+      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom: 16px; width: 100%; font-size: 12px;" />
 
-      <button id="submitBtn" class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitTrx()">Submit Payment Details</button>
+      <button id="submitBtn" class="btn btn-dark" style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="submitTrx()">Submit Payment Details</button>
     </div>
 
     <!-- 4. MY INVESTMENTS LIST -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
-    <div id="myInvestments" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
+    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">MY INVESTMENTS</div>
+    <div id="myInvestments" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+      <p style="font-size: 12px; color: #64748b; margin: 0;">Loading...</p>
+    </div>
 
   </div>
 
   <!-- WITHDRAW MODAL -->
-  <div id="withdrawModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
-    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;position:relative;">
-      <div style="font-weight:800;font-size:18px;margin-bottom:12px;">Request Withdrawal</div>
+  <div id="withdrawModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="card" style="width: 90%; max-width: 400px; background: #fff; padding: 20px; border-radius: 12px; position: relative;">
+      <div style="font-weight: 800; font-size: 18px; margin-bottom: 12px; color: #0f172a;">Request Withdrawal</div>
       
-      <div class="muted" style="margin-bottom:6px;">Select Payment Method:</div>
-      <select id="wMethod" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Select Payment Method:</div>
+      <select id="wMethod" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
         <option value="JazzCash">JazzCash</option>
         <option value="EasyPaisa">EasyPaisa</option>
         <option value="Bank Transfer">Bank Transfer</option>
       </select>
 
-      <div class="muted" style="margin-bottom:6px;">Account Title / Name:</div>
-      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Account Title / Name:</div>
+      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
 
-      <div class="muted" style="margin-bottom:6px;">Account / Phone Number:</div>
-      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Account / Phone Number:</div>
+      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
 
-      <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs 100 - Rs 10,000):</div>
-      <input id="wAmount" type="number" placeholder="Min 100, Max 10000" style="margin-bottom:14px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Withdrawal Amount (Rs 100 - Rs 10,000):</div>
+      <input id="wAmount" type="number" placeholder="Min 100, Max 10000" style="margin-bottom: 14px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
 
-      <div style="display:flex;gap:10px;">
-        <button id="wSubmitBtn" class="btn btn-dark" style="flex:1;cursor:pointer;" onclick="submitWithdrawal()">Submit</button>
-        <button class="btn btn-outline" style="flex:1;cursor:pointer;" onclick="closeWithdrawModal()">Cancel</button>
+      <div style="display: flex; gap: 10px;">
+        <button id="wSubmitBtn" class="btn btn-dark" style="flex: 1; background: #0f172a; color: #fff; padding: 10px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer;" onclick="submitWithdrawal()">Submit</button>
+        <button class="btn btn-outline" style="flex: 1; background: #fff; color: #64748b; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 700; cursor: pointer;" onclick="closeWithdrawModal()">Cancel</button>
       </div>
     </div>
   </div>
 
-  <script src="assets/config.js"></script>
-  <script src="assets/app.js"></script>
   <script>
     let currentBalance = 0;
     let selectedCampaignId = null;
@@ -155,6 +164,11 @@
 
     async function init() {
       try {
+        if (typeof supabaseClient === 'undefined') {
+          console.error("Supabase Client missing! Check assets/config.js");
+          return;
+        }
+
         const { data: { session } } = await supabaseClient.auth.getSession();
         currentUser = session?.user;
 
@@ -168,9 +182,13 @@
           return;
         }
 
-        // Show User Name / Email in Header
-        const { data: profile } = await supabaseClient.from("profiles").select("name").eq("id", currentUser.id).single();
-        const displayName = profile?.name || currentUser.email.split('@')[0];
+        // Display Name / Email
+        let displayName = currentUser.email ? currentUser.email.split('@')[0] : "User";
+        try {
+          const { data: profile } = await supabaseClient.from("profiles").select("name").eq("id", currentUser.id).maybeSingle();
+          if (profile && profile.name) displayName = profile.name;
+        } catch(e){}
+        
         document.getElementById("userNameDisplay").textContent = "👤 " + displayName;
 
         // Admin Link Check
@@ -180,10 +198,11 @@
           document.getElementById("adminLink").style.display = "none";
         }
 
-        // Set Referral Link with User Name or ID
+        // Set Referral Link
         const base = window.location.href.split('dashboard.html')[0];
         document.getElementById("refLinkInput").value = base + "index.html?ref=" + encodeURIComponent(displayName);
 
+        // Load modules independently
         loadReferralData();
         loadInvestmentsAndBalance();
         loadCampaignsSelect();
@@ -201,16 +220,16 @@
           .eq("referred_by", currentUser.id)
           .order("created_at", { ascending: false });
 
-        // Check bonuses released by admin
-        const { data: bonusData } = await supabaseClient
-          .from("referral_bonuses")
-          .select("*")
-          .eq("user_id", currentUser.id);
+        let claimedMilestones = 0;
+        try {
+          const { data: bonusData } = await supabaseClient
+            .from("referral_bonuses")
+            .select("*")
+            .eq("user_id", currentUser.id);
+          claimedMilestones = bonusData ? bonusData.length : 0;
+        } catch(e){}
 
-        const claimedMilestones = bonusData ? bonusData.length : 0;
         const totalRef = list ? list.length : 0;
-        
-        // Progress for current milestone (10-batch cycle)
         const currentBatchRef = totalRef - (claimedMilestones * 10);
         const count = Math.max(0, currentBatchRef);
 
@@ -238,17 +257,17 @@
             const maskedEmail = parts[0].substring(0, 3) + "***@" + (parts[1] || "gmail.com");
             const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recent';
             return `
-              <div style="display:flex;justify-content:space-between;background:#fff;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:12px;">
+              <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:12px;">
                 <span><strong>#${index + 1}</strong> ${maskedEmail}</span>
-                <span class="muted" style="color:#64748b;">${dateStr}</span>
+                <span style="color:#64748b;">${dateStr}</span>
               </div>
             `;
           }).join('');
         } else {
-          listContainer.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:10px;background:#fff;border-radius:6px;border:1px dashed #cbd5e1;">Abhi tak koi referral link se join nahi hua.</p>`;
+          listContainer.innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;padding:10px;background:#f8fafc;border-radius:6px;border:1px dashed #cbd5e1;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
         }
       } catch(e) {
-        document.getElementById("referredUsersList").innerHTML = `<p class="muted" style="font-size:12px;text-align:center;">No users yet.</p>`;
+        document.getElementById("referredUsersList").innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
       }
     }
 
@@ -276,9 +295,10 @@
             totalReceived += Number(inv.received || 0);
             const div = document.createElement("div");
             div.className = "card";
+            div.style.cssText = "background:#fff;padding:14px;border-radius:10px;border:1px solid #e2e8f0;";
             div.innerHTML = `
-              <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
-              <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
+              <div style="font-weight:700;font-size:15px;color:#0f172a;">${inv.campaigns?.name || "Bike Campaign"}</div>
+              <div style="font-size:12px;color:#64748b;margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
               <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
                 STATUS: ${(inv.status || 'pending').toUpperCase()}
               </div>
@@ -286,26 +306,26 @@
             container.appendChild(div);
           });
         } else {
-          container.innerHTML = `<p class="muted">No investments yet.</p>`;
+          container.innerHTML = `<p style="font-size:13px;color:#64748b;margin:0;">Abhi tak koi investment nahi hai.</p>`;
         }
-
-        const { data: withdrawals } = await supabaseClient
-          .from("withdrawal_requests")
-          .select("amount")
-          .eq("investor_id", currentUser.id)
-          .neq("status", "declined");
 
         let totalRequested = 0;
-        if (withdrawals && withdrawals.length > 0) {
-          withdrawals.forEach(w => {
-            totalRequested += Number(w.amount || 0);
-          });
-        }
+        try {
+          const { data: withdrawals } = await supabaseClient
+            .from("withdrawal_requests")
+            .select("amount")
+            .eq("investor_id", currentUser.id)
+            .neq("status", "declined");
+
+          if (withdrawals && withdrawals.length > 0) {
+            withdrawals.forEach(w => totalRequested += Number(w.amount || 0));
+          }
+        } catch(e){}
 
         currentBalance = Math.max(0, totalReceived - totalRequested);
         document.getElementById("availAmount").textContent = pkr(currentBalance);
       } catch(e) {
-        container.innerHTML = `<p class="muted">No investments yet.</p>`;
+        container.innerHTML = `<p style="font-size:13px;color:#64748b;margin:0;">Abhi tak koi investment nahi hai.</p>`;
       }
     }
 
@@ -314,91 +334,4 @@
       try {
         const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
         if (!data || !data.length) {
-          sel.innerHTML = `<option value="">No Active Campaigns</option>`;
-          return;
-        }
-        sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target: ${pkr(c.target)}</option>`).join('');
-      } catch(e) {
-        sel.innerHTML = `<option value="">No Active Campaigns</option>`;
-      }
-    }
-
-    async function loadPaymentMethods() {
-      const display = document.getElementById("methodsDisplay");
-      try {
-        const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-        if (!data || !data.length) {
-          display.innerHTML = `<p class="muted">No active payment methods currently.</p>`;
-          return;
-        }
-        display.innerHTML = data.map(m => `
-          <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
-            <div style="font-weight:700;font-size:13px;">${m.label}</div>
-            <div style="font-size:12px;" class="muted">Title: ${m.account_title}</div>
-            <div style="font-size:13px;font-weight:700;color:var(--brand);">${m.account_number}</div>
-          </div>
-        `).join('');
-      } catch(e) {
-        display.innerHTML = `<p class="muted">No active payment methods currently.</p>`;
-      }
-    }
-
-    function startInvestment() {
-      const campaignId = document.getElementById("campaignSelect").value;
-      const amount = Number(document.getElementById("investAmount").value);
-      if (!campaignId) return toast("Select a campaign first");
-      if (!amount || amount < 1000) return toast("Minimum investment amount is Rs 1,000");
-      
-      selectedCampaignId = campaignId;
-      toast("Now transfer money to given accounts and enter Transaction ID below.");
-    }
-
-    async function submitTrx() {
-      const trx = document.getElementById("trxInput").value.trim();
-      const amount = Number(document.getElementById("investAmount").value);
-      const campaignId = selectedCampaignId || document.getElementById("campaignSelect").value;
-      const fileInput = document.getElementById("receiptFileInput");
-
-      if (!campaignId || !amount) return toast("Please select campaign and enter amount above first.");
-      if (!trx) return toast("Please enter Transaction ID or Sender Phone Number.");
-
-      const btn = document.getElementById("submitBtn");
-      btn.textContent = "Uploading & Submitting...";
-      btn.disabled = true;
-
-      let receiptUrl = null;
-
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileExt = file.name.split('.').pop();
-        const filePath = `receipts/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        
-        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
-        if (!uploadError) {
-          const { data: publicData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-          receiptUrl = publicData.publicUrl;
-        }
-      }
-
-      const { error } = await supabaseClient.from("investments").insert({
-        investor_id: currentUser.id,
-        campaign_id: campaignId,
-        amount: amount,
-        transaction_id: trx,
-        receipt_url: receiptUrl,
-        status: "pending"
-      });
-
-      btn.textContent = "Submit Payment Details";
-      btn.disabled = false;
-
-      if (error) return toast(error.message);
-      toast("Investment request submitted! Admin will verify shortly.");
-      document.getElementById("trxInput").value = "";
-      document.getElementById("investAmount").value = "";
-      document.getElementById("receiptFileInput").value = "";
-      loadInvestmentsAndBalance();
-    }
-
-    async function submitWithdrawal() {
-      const method = document.get
+          sel.innerHTML = `<option value="">Standard Bik
