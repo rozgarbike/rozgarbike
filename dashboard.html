@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>My Dashboard — RozgarBike</title>
+<title>Dashboard — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -11,381 +11,394 @@
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;" onclick="logout()">Log out</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="userNameDisplay" style="font-size:12px;color:#fff;font-weight:700;">Loading...</span>
+        <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:4px 8px;font-size:11px;cursor:pointer;" onclick="logout()">Log out</button>
+      </div>
     </div>
-    <div class="nav">
+    <div class="nav" id="navBar">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
+      <a href="admin.html" id="adminLink" style="display:none;background:#e11d48;color:#fff;padding:3px 8px;border-radius:4px;font-weight:700;">Admin</a>
     </div>
   </div>
 
   <div class="wrap">
-
-    <div id="welcomeName" class="disp" style="font-size:20px;color:var(--petrol);margin-bottom:16px;"></div>
-
+    
+    <!-- 1. WITHDRAWAL SECTION -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
     <div class="card" style="margin-bottom:24px;">
       <div class="muted">Available for Withdrawal</div>
-      <div id="walletBalance" class="mono" style="font-size:28px;font-weight:700;margin:6px 0 14px;color:var(--ink);">Rs 0</div>
-      <button class="btn btn-dark" style="width:100%;" onclick="requestWithdraw()">Request Withdrawal</button>
+      <div id="availAmount" style="font-size:28px;font-weight:900;margin:6px 0 14px;color:var(--ink);">Rs 0</div>
+      <button class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
 
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL PROGRAM</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:10px;">Your name: <strong style="color:var(--ink);" id="myNameInline"></strong></div>
-
-      <div id="milestoneReadyBox" style="display:none;padding:16px;border-radius:12px;margin-bottom:14px;text-align:center;background:linear-gradient(135deg, var(--mustard), var(--mustard-deep));color:#fff;">
-        <div style="font-size:15px;font-weight:800;">🎉 10 Referrals Complete!</div>
-        <div style="font-size:12px;margin-top:4px;">Aap ka milestone bonus taiyar hai — admin jald dega.</div>
+    <!-- 2. REFERRAL & DYNAMIC 10-REFERRAL BONUS SECTION -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL & 10% EXTRA BONUS</div>
+    <div class="card" style="margin-bottom:24px;background:linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);border:2px solid #3b82f6;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);padding:18px;">
+      
+      <div id="bonusBox" style="padding:14px;border-radius:10px;margin-bottom:14px;font-size:14px;font-weight:800;text-align:center;background:#e0f2fe;color:#0369a1;border:1px dashed #0284c7;line-height:1.5;">
+        🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/>
+        <span style="font-size:12px;font-weight:600;color:#0369a1;">Aap ko 10% extra profit bonus haasil karne ke liye <span id="remCountText" style="color:#d97706;font-weight:900;">10</span> doston ko invite karna hai!</span>
       </div>
 
-      <div id="progressBox" style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
-          <span class="muted">Milestone Progress</span>
-          <span id="refCount" class="mono">0 / 10</span>
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;color:#334155;">
+          <span>Target Progress:</span>
+          <span id="refCount" style="color:#2563eb;">0 / 10 Joined</span>
         </div>
-        <div class="progress-track"><div id="progressBar" class="progress-fill" style="width:0%;"></div></div>
+        <div style="width:100%;background:#e2e8f0;height:12px;border-radius:6px;overflow:hidden;">
+          <div id="progressBar" style="width:0%;height:100%;background:linear-gradient(90deg, #3b82f6, #16a34a);transition:width 0.4s ease;"></div>
+        </div>
       </div>
 
-      <div class="muted" style="margin-bottom:6px;font-weight:700;font-size:12px;">Aap ka referral link:</div>
+      <div class="muted" style="margin-bottom:6px;font-size:12px;font-weight:700;color:#1e293b;">📋 Aap Ka Unique Referral Link:</div>
       <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <input id="refLinkInput" readonly style="flex:1;font-size:12px;" />
-        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap;" onclick="copyRefLink()">Copy</button>
+        <input id="refLinkInput" readonly style="flex:1;padding:10px;border-radius:8px;border:1px solid #cbd5e1;font-size:12px;background:#fff;font-weight:600;color:#0f172a;" />
+        <button class="btn btn-primary" style="background:#16a34a;color:#fff;border:none;font-weight:800;padding:10px 16px;border-radius:8px;cursor:pointer;" onclick="copyRefLink()">🔗 Copy Link</button>
       </div>
 
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px;border-top:1px solid var(--line);padding-top:12px;">
-        👥 Aap ke link se join hone wale log:
+      <div style="font-weight:800;font-size:13px;margin-bottom:10px;border-top:1px solid #e2e8f0;padding-top:12px;color:#1e293b;">
+        👥 Aap Ke Link Se Join Hone Wale Log:
       </div>
-      <div id="referredUsersList" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;">
-        <p class="muted" style="font-size:12px;">Loading...</p>
+      <div id="referredUsersList" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;">
+        <p class="muted" style="font-size:12px;">Data load ho raha hai...</p>
       </div>
+
     </div>
 
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">FUND A BIKE</div>
+    <!-- 3. DEPOSIT / INVEST SECTION -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">INVEST IN ROZGARBIKE</div>
     <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:6px;">Select a bike campaign</div>
-      <select id="campaignSelect" style="margin-bottom:14px;"></select>
-      <button class="btn btn-primary" style="width:100%;" onclick="startFromSelect()">Continue</button>
+      <div class="muted" style="margin-bottom:6px;">Select a bike campaign:</div>
+      <select id="campaignSelect" style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);"></select>
+      <div class="muted" style="margin-bottom:6px;">Investment Amount (Min Rs 1,000)</div>
+      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom:12px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);" />
+      <button class="btn btn-primary" style="width:100%;background:var(--gold);color:#000;border:none;font-weight:700;cursor:pointer;" onclick="startInvestment()">Continue to Payment</button>
     </div>
 
+    <!-- PAYMENT DETAILS INSTRUCTION -->
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">SEND YOUR PAYMENT</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:8px;">Transfer amount to any payment method below:</div>
+      <div id="methodsDisplay" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">Loading accounts...</div>
+      
+      <div class="muted" style="margin-bottom:6px;">Enter Transaction ID / Sender Number:</div>
+      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom:12px;width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);" />
+
+      <div class="muted" style="margin-bottom:6px;">Upload Payment Receipt Photo (Optional):</div>
+      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
+
+      <button id="submitBtn" class="btn btn-dark" style="width:100%;cursor:pointer;" onclick="submitTrx()">Submit Payment Details</button>
+    </div>
+
+    <!-- 4. MY INVESTMENTS LIST -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
-    <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <div id="myInvestments" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
+
   </div>
 
-  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div id="modalTitle" class="disp" style="font-size:18px;">FUND BIKE</div>
-        <button onclick="closeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:6px;">Choose your amount</div>
-      <div class="tier-row" id="tierRow"></div>
-      <div class="muted" style="margin-top:12px;margin-bottom:6px;">Or enter a custom amount (min Rs 1,000)</div>
-      <input id="customAmount" type="number" placeholder="1000" />
-      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="goToPaymentStep()">Continue</button>
-    </div>
-  </div>
-
-  <div id="paymentOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="disp" style="font-size:18px;">SEND YOUR PAYMENT</div>
-        <button onclick="closePaymentModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:10px;">Send <span id="payAmountText" class="mono" style="color:var(--ink);font-weight:700;"></span> to any one of these:</div>
-      <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
-
-      <div class="muted" style="margin-bottom:6px;">Transaction / receipt ID (required)</div>
-      <input id="transactionId" placeholder="e.g. TRX123456789" style="margin-bottom:12px;" />
-
-      <div class="muted" style="margin-bottom:6px;">Upload a screenshot of your payment (required)</div>
-      <input id="receiptFile" type="file" accept="image/*" style="margin-bottom:12px;" />
-
-      <div class="muted" style="line-height:1.5;">An admin will check this and approve it — then it'll show up in your investments.</div>
-      <button class="btn btn-primary" id="submitBtn" style="width:100%;margin-top:14px;" onclick="confirmContribute()">Submit for approval</button>
-    </div>
-  </div>
-
-  <div id="withdrawOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="disp" style="font-size:18px;">WITHDRAW</div>
-        <button onclick="closeWithdrawModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:6px;">Amount (min Rs 100)</div>
-      <input id="withdrawAmount" type="number" placeholder="1000" style="margin-bottom:12px;" />
-      <div class="muted" style="margin-bottom:6px;">Method</div>
-      <select id="withdrawMethod" style="margin-bottom:12px;">
+  <!-- WITHDRAW MODAL -->
+  <div id="withdrawModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+    <div class="card" style="width:90%;max-width:400px;background:#fff;padding:20px;border-radius:12px;position:relative;">
+      <div style="font-weight:800;font-size:18px;margin-bottom:12px;">Request Withdrawal</div>
+      
+      <div class="muted" style="margin-bottom:6px;">Select Payment Method:</div>
+      <select id="wMethod" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;">
         <option value="JazzCash">JazzCash</option>
-        <option value="Easypaisa">Easypaisa</option>
-        <option value="Bank">Bank Account</option>
+        <option value="EasyPaisa">EasyPaisa</option>
+        <option value="Bank Transfer">Bank Transfer</option>
       </select>
-      <div class="muted" style="margin-bottom:6px;">Your account / phone number</div>
-      <input id="withdrawAccount" placeholder="03xxxxxxxxx or account number" style="margin-bottom:12px;" />
-      <button class="btn btn-primary" style="width:100%;" onclick="submitWithdraw()">Submit request</button>
+
+      <div class="muted" style="margin-bottom:6px;">Account Title / Name:</div>
+      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+
+      <div class="muted" style="margin-bottom:6px;">Account / Phone Number:</div>
+      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom:10px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+
+      <div class="muted" style="margin-bottom:6px;">Withdrawal Amount (Rs 100 - Rs 10,000):</div>
+      <input id="wAmount" type="number" placeholder="Min 100, Max 10000" style="margin-bottom:14px;width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" />
+
+      <div style="display:flex;gap:10px;">
+        <button id="wSubmitBtn" class="btn btn-dark" style="flex:1;cursor:pointer;" onclick="submitWithdrawal()">Submit</button>
+        <button class="btn btn-outline" style="flex:1;cursor:pointer;" onclick="closeWithdrawModal()">Cancel</button>
+      </div>
     </div>
   </div>
-
-  <div id="toast" class="toast"></div>
 
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    let profile = null;
-    let activeCampaignId = null;
-    let pendingAmount = null;
-    let currentWalletBalance = 0;
+    let currentBalance = 0;
+    let selectedCampaignId = null;
+    let currentUser = null;
+
+    const ADMIN_EMAIL = "saimpk5227@gmail.com";
+
+    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
+    function toast(msg) { alert(msg); }
+
+    function logout() {
+      try { supabaseClient.auth.signOut(); } catch(e){}
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    function openWithdrawModal() {
+      document.getElementById("wAmount").value = (currentBalance >= 100 && currentBalance <= 10000) ? currentBalance : "";
+      document.getElementById("withdrawModal").style.display = "flex";
+    }
+
+    function closeWithdrawModal() {
+      document.getElementById("withdrawModal").style.display = "none";
+    }
 
     async function init() {
-      profile = await requireSession(false);
-      if (!profile) return;
-      if (profile.role === "admin") document.getElementById("adminLink").style.display = "inline-block";
-
-      document.getElementById("welcomeName").textContent = "Welcome, " + (profile.full_name || "Investor");
-      document.getElementById("myNameInline").textContent = profile.full_name || "Investor";
-
-      const base = window.location.href.replace("dashboard.html", "");
-      document.getElementById("refLinkInput").value = base + `index.html?ref=${profile.referral_code}`;
-
-      await loadWallet();
-      await loadReferrals();
-      await loadCampaignSelect();
-      await loadInvestments();
-
-      const params = new URLSearchParams(window.location.search);
-      const contributeId = params.get("contribute");
-      if (contributeId) openModalFor(contributeId);
-    }
-
-    async function loadWallet() {
-      const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
-      const earned = (txns || []).reduce((s, t) => s + Number(t.amount), 0);
-      const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
-      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount), 0);
-      const available = earned - withdrawn;
-      document.getElementById("walletBalance").textContent = pkr(available);
-      currentWalletBalance = available;
-    }
-
-    async function loadReferrals() {
       try {
-        const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", profile.id);
-        const confirmedCount = (refs || []).filter(r => r.bonus_paid).length;
-        const milestonesPaid = profile.milestones_paid || 0;
-        const withinCycle = confirmedCount - milestonesPaid * 10;
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        currentUser = session?.user;
 
-        const readyBox = document.getElementById("milestoneReadyBox");
-        const progressBox = document.getElementById("progressBox");
-
-        if (withinCycle >= 10) {
-          readyBox.style.display = "block";
-          progressBox.style.display = "none";
-        } else {
-          readyBox.style.display = "none";
-          progressBox.style.display = "block";
-          document.getElementById("refCount").textContent = `${withinCycle} / 10`;
-          document.getElementById("progressBar").style.width = (withinCycle / 10) * 100 + "%";
+        if (!currentUser) {
+          const res = await supabaseClient.auth.getUser();
+          currentUser = res?.data?.user;
         }
 
-        const { data: joined } = await supabaseClient
-          .from("profiles").select("full_name, created_at").eq("referred_by", profile.id)
+        if (!currentUser) {
+          window.location.href = "index.html";
+          return;
+        }
+
+        // Show User Name / Email in Header
+        const { data: profile } = await supabaseClient.from("profiles").select("name").eq("id", currentUser.id).single();
+        const displayName = profile?.name || currentUser.email.split('@')[0];
+        document.getElementById("userNameDisplay").textContent = "👤 " + displayName;
+
+        // Admin Link Check
+        if (currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+          document.getElementById("adminLink").style.display = "inline-block";
+        } else {
+          document.getElementById("adminLink").style.display = "none";
+        }
+
+        // Set Referral Link with User Name or ID
+        const base = window.location.href.split('dashboard.html')[0];
+        document.getElementById("refLinkInput").value = base + "index.html?ref=" + encodeURIComponent(displayName);
+
+        loadReferralData();
+        loadInvestmentsAndBalance();
+        loadCampaignsSelect();
+        loadPaymentMethods();
+      } catch(err) {
+        console.error("Init Error:", err);
+      }
+    }
+
+    async function loadReferralData() {
+      try {
+        const { data: list } = await supabaseClient
+          .from("profiles")
+          .select("email, created_at")
+          .eq("referred_by", currentUser.id)
           .order("created_at", { ascending: false });
 
-        const listEl = document.getElementById("referredUsersList");
-        if (joined && joined.length) {
-          listEl.innerHTML = joined.map((u, i) => {
-            const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : "";
-            return `<div class="card" style="padding:8px 10px;display:flex;justify-content:space-between;font-size:12px;">
-              <span><strong>#${i + 1}</strong> ${u.full_name || "Investor"}</span>
-              <span class="muted">${dateStr}</span>
-            </div>`;
-          }).join("");
+        // Check bonuses released by admin
+        const { data: bonusData } = await supabaseClient
+          .from("referral_bonuses")
+          .select("*")
+          .eq("user_id", currentUser.id);
+
+        const claimedMilestones = bonusData ? bonusData.length : 0;
+        const totalRef = list ? list.length : 0;
+        
+        // Progress for current milestone (10-batch cycle)
+        const currentBatchRef = totalRef - (claimedMilestones * 10);
+        const count = Math.max(0, currentBatchRef);
+
+        document.getElementById("refCount").textContent = `${Math.min(count, 10)} / 10 Joined`;
+        document.getElementById("progressBar").style.width = Math.min(100, (count / 10) * 100) + "%";
+
+        const bonusBox = document.getElementById("bonusBox");
+        if (count >= 10) {
+          bonusBox.style.background = "#fef3c7";
+          bonusBox.style.color = "#b45309";
+          bonusBox.style.borderColor = "#f59e0b";
+          bonusBox.innerHTML = `🎉 <strong>10 Referrals Completed!</strong><br/><span style="font-size:12px;">Bonus verification ke liye Admin panel ko bhej diya gaya hai. Admin approve karte hi aap ka new batch reset ho jayega!</span>`;
         } else {
-          listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:10px;">Abhi tak koi aap ke link se join nahi hua.</p>`;
+          const remaining = 10 - count;
+          bonusBox.style.background = "#e0f2fe";
+          bonusBox.style.color = "#0369a1";
+          bonusBox.style.borderColor = "#0284c7";
+          bonusBox.innerHTML = `🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/><span style="font-size:12px;">Aap ko 10% extra profit bonus haasil karne ke liye sirf <strong style="color:#d97706;">${remaining}</strong> aur doston ko invite karna hai!</span>`;
         }
-      } catch (err) {
-        document.getElementById("referredUsersList").innerHTML = `<p class="muted" style="font-size:12px;">Could not load referrals.</p>`;
+
+        const listContainer = document.getElementById("referredUsersList");
+        if (list && list.length > 0) {
+          listContainer.innerHTML = list.map((item, index) => {
+            const parts = (item.email || "user@gmail.com").split('@');
+            const maskedEmail = parts[0].substring(0, 3) + "***@" + (parts[1] || "gmail.com");
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recent';
+            return `
+              <div style="display:flex;justify-content:space-between;background:#fff;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:12px;">
+                <span><strong>#${index + 1}</strong> ${maskedEmail}</span>
+                <span class="muted" style="color:#64748b;">${dateStr}</span>
+              </div>
+            `;
+          }).join('');
+        } else {
+          listContainer.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:10px;background:#fff;border-radius:6px;border:1px dashed #cbd5e1;">Abhi tak koi referral link se join nahi hua.</p>`;
+        }
+      } catch(e) {
+        document.getElementById("referredUsersList").innerHTML = `<p class="muted" style="font-size:12px;text-align:center;">No users yet.</p>`;
       }
     }
 
     function copyRefLink() {
-      navigator.clipboard.writeText(document.getElementById("refLinkInput").value);
-      toast("Referral link copied");
+      const copyText = document.getElementById("refLinkInput");
+      if(!copyText.value) return toast("Referral link loading...");
+      copyText.select();
+      copyText.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(copyText.value);
+      toast("Referral Link Copy ho gaya hai!");
     }
 
-    async function loadCampaignSelect() {
-      const sel = document.getElementById("campaignSelect");
-      const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
-      if (!data || !data.length) {
-        sel.innerHTML = `<option value="">No active campaigns</option>`;
-        return;
-      }
-      sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target ${pkr(c.target)}</option>`).join("");
-    }
-
-    function startFromSelect() {
-      const id = document.getElementById("campaignSelect").value;
-      if (!id) return toast("No campaign selected");
-      openModalFor(id);
-    }
-
-    async function loadInvestments() {
-      const { data: myInv } = await supabaseClient
-        .from("investments").select("*, campaigns(*)").eq("investor_id", profile.id).order("created_at", { ascending: false });
-      const listEl = document.getElementById("investmentsList");
-      if (!myInv || !myInv.length) {
-        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:20px;">No investments yet — fund a bike above.</p>`;
-        return;
-      }
-      listEl.innerHTML = "";
-      for (const inv of myInv) {
-        const div = document.createElement("div");
-        div.className = "card";
-        if (inv.status === "pending") {
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike"}</div>
-                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
-              </div>
-              <span style="background:#FBF1DD;color:var(--mustard-deep);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
-            </div>
-          `;
-        } else if (inv.status === "declined") {
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike"}</div>
-                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
-              </div>
-              <span style="background:#FBE0DC;color:var(--rust);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
-            </div>
-          `;
-        } else {
-          div.style.cssText = "display:flex;justify-content:space-between;align-items:center;";
-          div.innerHTML = `
-            <div>
-              <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike"}</div>
-              <div class="muted" style="margin-top:2px;">You put in ${pkr(inv.amount)}</div>
-              <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">+${pkr(inv.received)} received so far</div>
-            </div>
-          `;
-        }
-        listEl.appendChild(div);
-      }
-    }
-
-    async function openModalFor(campaignId) {
-      activeCampaignId = campaignId;
-      const tierRow = document.getElementById("tierRow");
-      tierRow.innerHTML = "";
-      [1000, 2000, 4000].forEach(t => {
-        const b = document.createElement("button");
-        b.className = "tier-btn"; b.textContent = "Rs " + t.toLocaleString();
-        b.onclick = () => selectTier(t, b);
-        tierRow.appendChild(b);
-      });
-      document.getElementById("customAmount").value = "";
-      document.getElementById("modalOverlay").style.display = "flex";
-    }
-
-    function selectTier(amount, btn) {
-      document.getElementById("customAmount").value = amount;
-      document.querySelectorAll(".tier-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-    }
-
-    function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
-    function closePaymentModal() { document.getElementById("paymentOverlay").style.display = "none"; }
-    function closeWithdrawModal() { document.getElementById("withdrawOverlay").style.display = "none"; }
-
-    async function goToPaymentStep() {
-      const amt = Number(document.getElementById("customAmount").value);
-      if (!amt || amt < 1000) return toast("Minimum contribution is Rs 1,000");
-      pendingAmount = amt;
-      closeModal();
-
-      const { data: methods } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-      const listEl = document.getElementById("paymentMethodsList");
-      listEl.innerHTML = "";
-      (methods || []).forEach(m => {
-        const row = document.createElement("div");
-        row.className = "card";
-        row.style.padding = "12px";
-        row.innerHTML = `
-          <div style="font-weight:700;font-size:13px;">${m.label}</div>
-          <div class="muted" style="margin-top:2px;">${m.account_title}</div>
-          <div class="mono" style="font-size:15px;margin-top:2px;">${m.account_number}</div>
-        `;
-        listEl.appendChild(row);
-      });
-      document.getElementById("payAmountText").textContent = pkr(amt);
-      document.getElementById("transactionId").value = "";
-      document.getElementById("receiptFile").value = "";
-      document.getElementById("paymentOverlay").style.display = "flex";
-    }
-
-    async function confirmContribute() {
-      const transactionId = document.getElementById("transactionId").value.trim();
-      const fileInput = document.getElementById("receiptFile");
-      const file = fileInput.files[0];
-
-      if (!transactionId) return toast("Enter your transaction / receipt ID");
-      if (!file) return toast("Please upload a screenshot of your payment");
-
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Uploading...";
-
+    async function loadInvestmentsAndBalance() {
+      const container = document.getElementById("myInvestments");
       try {
-        const fileExt = file.name.split(".").pop();
-        const uniqueId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        const filePath = `${profile.id}-${uniqueId}.${fileExt}`;
+        const { data: invs } = await supabaseClient
+          .from("investments")
+          .select("*, campaigns(name)")
+          .eq("investor_id", currentUser.id);
 
-        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
-        if (uploadError) {
-          return toast("Upload failed: " + uploadError.message + " — please try again");
+        let totalReceived = 0;
+        if (invs && invs.length > 0) {
+          container.innerHTML = "";
+          invs.forEach(inv => {
+            totalReceived += Number(inv.received || 0);
+            const div = document.createElement("div");
+            div.className = "card";
+            div.innerHTML = `
+              <div style="font-weight:700;font-size:16px;">${inv.campaigns?.name || "Bike Campaign"}</div>
+              <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
+              <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
+                STATUS: ${(inv.status || 'pending').toUpperCase()}
+              </div>
+            `;
+            container.appendChild(div);
+          });
+        } else {
+          container.innerHTML = `<p class="muted">No investments yet.</p>`;
         }
 
-        const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-        const receiptUrl = urlData.publicUrl;
+        const { data: withdrawals } = await supabaseClient
+          .from("withdrawal_requests")
+          .select("amount")
+          .eq("investor_id", currentUser.id)
+          .neq("status", "declined");
 
-        const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
-          p_campaign_id: activeCampaignId,
-          p_amount: pendingAmount,
-          p_receipt_url: receiptUrl,
-          p_transaction_id: transactionId,
-        });
+        let totalRequested = 0;
+        if (withdrawals && withdrawals.length > 0) {
+          withdrawals.forEach(w => {
+            totalRequested += Number(w.amount || 0);
+          });
+        }
 
-        if (error) return toast(error.message);
-        toast("Submitted — waiting for admin to confirm your payment");
-        closePaymentModal();
-        await loadInvestments();
-      } catch (err) {
-        toast("Something went wrong — please check your connection and try again");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit for approval";
+        currentBalance = Math.max(0, totalReceived - totalRequested);
+        document.getElementById("availAmount").textContent = pkr(currentBalance);
+      } catch(e) {
+        container.innerHTML = `<p class="muted">No investments yet.</p>`;
       }
     }
 
-    function requestWithdraw() {
-      if (currentWalletBalance < 100) {
-        return toast(`Minimum withdrawal is Rs 100. Your balance: ${pkr(currentWalletBalance)}`);
+    async function loadCampaignsSelect() {
+      const sel = document.getElementById("campaignSelect");
+      try {
+        const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
+        if (!data || !data.length) {
+          sel.innerHTML = `<option value="">No Active Campaigns</option>`;
+          return;
+        }
+        sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target: ${pkr(c.target)}</option>`).join('');
+      } catch(e) {
+        sel.innerHTML = `<option value="">No Active Campaigns</option>`;
       }
-      document.getElementById("withdrawAmount").value = "";
-      document.getElementById("withdrawMethod").value = "JazzCash";
-      document.getElementById("withdrawAccount").value = "";
-      document.getElementById("withdrawOverlay").style.display = "flex";
     }
 
-    async function submitWithdraw() {
-      const amount = Number(document.getElementById("withdrawAmount").value);
-      const method = document.getElementById("withdrawMethod").value;
-      const account_number = document.getElementById("withdrawAccount").value.trim();
-      if (!amount) return toast("Enter an amount");
-      if (!account_number) return toast("Enter your account number");
-      const { error } = await supabaseClient.rpc("request_withdrawal", { p_amount: amount, p_method: method, p_account_number: account_number });
+    async function loadPaymentMethods() {
+      const display = document.getElementById("methodsDisplay");
+      try {
+        const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
+        if (!data || !data.length) {
+          display.innerHTML = `<p class="muted">No active payment methods currently.</p>`;
+          return;
+        }
+        display.innerHTML = data.map(m => `
+          <div style="background:#f8fafc;padding:10px;border-radius:8px;border:1px solid #e2e8f0;">
+            <div style="font-weight:700;font-size:13px;">${m.label}</div>
+            <div style="font-size:12px;" class="muted">Title: ${m.account_title}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--brand);">${m.account_number}</div>
+          </div>
+        `).join('');
+      } catch(e) {
+        display.innerHTML = `<p class="muted">No active payment methods currently.</p>`;
+      }
+    }
+
+    function startInvestment() {
+      const campaignId = document.getElementById("campaignSelect").value;
+      const amount = Number(document.getElementById("investAmount").value);
+      if (!campaignId) return toast("Select a campaign first");
+      if (!amount || amount < 1000) return toast("Minimum investment amount is Rs 1,000");
+      
+      selectedCampaignId = campaignId;
+      toast("Now transfer money to given accounts and enter Transaction ID below.");
+    }
+
+    async function submitTrx() {
+      const trx = document.getElementById("trxInput").value.trim();
+      const amount = Number(document.getElementById("investAmount").value);
+      const campaignId = selectedCampaignId || document.getElementById("campaignSelect").value;
+      const fileInput = document.getElementById("receiptFileInput");
+
+      if (!campaignId || !amount) return toast("Please select campaign and enter amount above first.");
+      if (!trx) return toast("Please enter Transaction ID or Sender Phone Number.");
+
+      const btn = document.getElementById("submitBtn");
+      btn.textContent = "Uploading & Submitting...";
+      btn.disabled = true;
+
+      let receiptUrl = null;
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const filePath = `receipts/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file);
+        if (!uploadError) {
+          const { data: publicData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
+          receiptUrl = publicData.publicUrl;
+        }
+      }
+
+      const { error } = await supabaseClient.from("investments").insert({
+        investor_id: currentUser.id,
+        campaign_id: campaignId,
+        amount: amount,
+        transaction_id: trx,
+        receipt_url: receiptUrl,
+        status: "pending"
+      });
+
+      btn.textContent = "Submit Payment Details";
+      btn.disabled = false;
+
       if (error) return toast(error.message);
-      toast("Withdrawal request 
+      toast("Investment request submitted! Admin will verify shortly.");
+      document.getElementById("trxInput").value = "";
+      document.getElementById("investAmount").value = "";
+      document.getElementById("receiptFileInput").value = "";
+      loadInvestmentsAndBalance();
+    }
+
+    async function submitWithdrawal() {
+      const method = document.get
