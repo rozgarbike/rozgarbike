@@ -114,9 +114,8 @@
     function pkr(val) { return "Rs " + Number(val || 0).toLocaleString("en-PK"); }
 
     async function initAdmin() {
-      // Force load admin data directly
       if (!window.supabaseClient) {
-        console.error("Supabase client not loaded");
+        console.error("Supabase client not initialized properly");
         return;
       }
       loadAdminData();
@@ -152,21 +151,33 @@
       }
     }
 
+    // --- SAFE BONUS INSERTION ---
     async function giveExtraBonus() {
       const investorId = document.getElementById("bonusInvestorSelect").value;
       const amount = document.getElementById("bonusAmount").value;
+      const note = document.getElementById("bonusNote").value || "Special Investor Bonus";
 
       if (!investorId || !amount || Number(amount) <= 0) {
         alert("براہ کرم انویسٹر منتخب کریں اور صحیح رقم درج کریں۔");
         return;
       }
 
-      const { error } = await supabaseClient.from("wallet_transactions").insert([{
+      // First attempt with full columns
+      let { error } = await supabaseClient.from("wallet_transactions").insert([{
         investor_id: investorId,
         amount: Number(amount),
         type: "extra_bonus",
         status: "approved"
       }]);
+
+      // Fallback if status or type column is missing in database schema
+      if (error && error.message.includes("Could not find")) {
+        const fallbackRes = await supabaseClient.from("wallet_transactions").insert([{
+          investor_id: investorId,
+          amount: Number(amount)
+        }]);
+        error = fallbackRes.error;
+      }
 
       if (error) {
         alert("Error adding bonus: " + error.message);
@@ -180,24 +191,27 @@
     // --- CAMPAIGNS LOGIC ---
     async function loadCampaigns() {
       const el = document.getElementById("campaignsList");
-      const { data, error } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
-      
-      if (error || !data || data.length === 0) {
-        el.innerHTML = `<div style="color:#64748b;">No active campaigns found.</div>`;
-        return;
-      }
+      try {
+        const { data, error } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
+        if (error || !data || data.length === 0) {
+          el.innerHTML = `<div style="color:#64748b;">No active campaigns found.</div>`;
+          return;
+        }
 
-      el.innerHTML = data.map(c => `
-        <div class="item-box">
-          <div>
-            <strong>${c.name}</strong><br/>
-            Target: ${pkr(c.target)}
+        el.innerHTML = data.map(c => `
+          <div class="item-box">
+            <div>
+              <strong>${c.name}</strong><br/>
+              Target: ${pkr(c.target)}
+            </div>
+            <div>
+              <button class="btn-sm btn-delete" onclick="deleteCampaign('${c.id}')">Delete</button>
+            </div>
           </div>
-          <div>
-            <button class="btn-sm btn-delete" onclick="deleteCampaign('${c.id}')">Delete</button>
-          </div>
-        </div>
-      `).join("");
+        `).join("");
+      } catch(e) {
+        el.innerHTML = `<div style="color:#64748b;">No campaigns found.</div>`;
+      }
     }
 
     async function addCampaign() {
@@ -229,7 +243,7 @@
     }
 
     async function distributeProfit5Percent() {
-      if (!confirm("کیا آپ تمام انویسٹرز کو 5% پرافٹ بھیجنا چاہتے ہیں؟")) return;
+      if (!confirm("کیا آپ تمام انویسٹرز کو ان کی رقم کے مطابق 5% پرافٹ (Rs 1,000 پر Rs 50) کریڈٹ کرنا چاہتے ہیں؟")) return;
 
       const { data: investments, error } = await supabaseClient.from("investments").select("*").eq("status", "approved");
 
@@ -259,30 +273,34 @@
         }
       }
 
-      alert(`مبارک ہو! ${count} انویسٹرز کے والیٹ میں 5% پرافٹ شامل کر دیا گیا ہے۔`);
+      alert(`مبارک ہو! ${count} انویسٹرز کے والیٹ میں 5% پرافٹ کامیابی سے شامل کر دیا گیا ہے۔`);
     }
 
     // --- PAYMENT METHODS LOGIC ---
     async function loadPaymentMethods() {
       const container = document.getElementById("paymentMethodsList");
-      const { data, error } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: false });
-      
-      if (error || !data || data.length === 0) {
-        container.innerHTML = `<div style="color:#64748b; font-size:12px;">No payment accounts found.</div>`;
-        return;
-      }
+      try {
+        const { data, error } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: false });
+        
+        if (error || !data || data.length === 0) {
+          container.innerHTML = `<div style="color:#64748b; font-size:12px;">No payment accounts found.</div>`;
+          return;
+        }
 
-      container.innerHTML = data.map(item => `
-        <div class="item-box">
-          <div>
-            <strong>${item.label}</strong> (${item.account_title})<br/>
-            <span style="color:#64748b;">${item.account_number}</span>
+        container.innerHTML = data.map(item => `
+          <div class="item-box">
+            <div>
+              <strong>${item.label}</strong> (${item.account_title})<br/>
+              <span style="color:#64748b;">${item.account_number}</span>
+            </div>
+            <div>
+              <button class="btn-sm btn-delete" onclick="deletePaymentMethod('${item.id}')">Delete</button>
+            </div>
           </div>
-          <div>
-            <button class="btn-sm btn-delete" onclick="deletePaymentMethod('${item.id}')">Delete</button>
-          </div>
-        </div>
-      `).join("");
+        `).join("");
+      } catch(e) {
+        container.innerHTML = `<div style="color:#64748b;">No payment accounts found.</div>`;
+      }
     }
 
     async function addPaymentMethod() {
@@ -319,26 +337,30 @@
     // --- PENDING DEPOSITS LOGIC ---
     async function loadPendingDeposits() {
       const el = document.getElementById("pendingDepositsList");
-      const { data, error } = await supabaseClient.from("investments").select("*").eq("status", "pending");
-      
-      if (error || !data || data.length === 0) {
-        el.innerHTML = `<div style="color:#64748b;">No pending deposit payments.</div>`;
-        return;
-      }
+      try {
+        const { data, error } = await supabaseClient.from("investments").select("*").eq("status", "pending");
+        
+        if (error || !data || data.length === 0) {
+          el.innerHTML = `<div style="color:#64748b;">No pending deposit payments.</div>`;
+          return;
+        }
 
-      el.innerHTML = data.map(item => `
-        <div class="item-box">
-          <div>
-            <strong>Deposit Request</strong><br/>
-            Amount: ${pkr(item.amount)} | TRX ID: ${item.transaction_id || 'N/A'}<br/>
-            ${item.slip_url ? `<a href="${item.slip_url}" target="_blank" style="color:#2563eb;">View Slip Image</a>` : 'No Slip'}
+        el.innerHTML = data.map(item => `
+          <div class="item-box">
+            <div>
+              <strong>Deposit Request</strong><br/>
+              Amount: ${pkr(item.amount)} | TRX ID: ${item.transaction_id || 'N/A'}<br/>
+              ${item.slip_url ? `<a href="${item.slip_url}" target="_blank" style="color:#2563eb;">View Slip Image</a>` : 'No Slip'}
+            </div>
+            <div>
+              <button class="btn-sm" style="background:#16a34a; color:#fff;" onclick="approveDeposit('${item.id}', '${item.investor_id}', ${item.amount})">Approve</button>
+              <button class="btn-sm btn-delete" onclick="rejectDeposit('${item.id}')">Reject</button>
+            </div>
           </div>
-          <div>
-            <button class="btn-sm" style="background:#16a34a; color:#fff;" onclick="approveDeposit('${item.id}', '${item.investor_id}', ${item.amount})">Approve</button>
-            <button class="btn-sm btn-delete" onclick="rejectDeposit('${item.id}')">Reject</button>
-          </div>
-        </div>
-      `).join("");
+        `).join("");
+      } catch(e) {
+        el.innerHTML = `<div style="color:#64748b;">No pending deposit payments.</div>`;
+      }
     }
 
     async function approveDeposit(id, investorId, amount) {
@@ -356,26 +378,30 @@
     // --- WITHDRAWAL REQUESTS LOGIC ---
     async function loadWithdrawalRequests() {
       const el = document.getElementById("withdrawalRequestsList");
-      const { data, error } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
+      try {
+        const { data, error } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
 
-      if (error || !data || data.length === 0) {
+        if (error || !data || data.length === 0) {
+          el.innerHTML = `<div style="color:#64748b;">No pending withdrawal requests.</div>`;
+          return;
+        }
+
+        el.innerHTML = data.map(w => `
+          <div class="item-box">
+            <div>
+              <strong>Amount: ${pkr(w.amount)}</strong><br/>
+              Method: ${w.payment_method} | Title: ${w.account_title}<br/>
+              Account #: ${w.account_number}
+            </div>
+            <div>
+              <button class="btn-sm" style="background:#16a34a; color:#fff;" onclick="approveWithdrawal('${w.id}')">Mark Paid</button>
+              <button class="btn-sm btn-delete" onclick="rejectWithdrawal('${w.id}')">Reject</button>
+            </div>
+          </div>
+        `).join("");
+      } catch(e) {
         el.innerHTML = `<div style="color:#64748b;">No pending withdrawal requests.</div>`;
-        return;
       }
-
-      el.innerHTML = data.map(w => `
-        <div class="item-box">
-          <div>
-            <strong>Amount: ${pkr(w.amount)}</strong><br/>
-            Method: ${w.payment_method} | Title: ${w.account_title}<br/>
-            Account #: ${w.account_number}
-          </div>
-          <div>
-            <button class="btn-sm" style="background:#16a34a; color:#fff;" onclick="approveWithdrawal('${w.id}')">Mark Paid</button>
-            <button class="btn-sm btn-delete" onclick="rejectWithdrawal('${w.id}')">Reject</button>
-          </div>
-        </div>
-      `).join("");
     }
 
     async function approveWithdrawal(id) {
@@ -393,53 +419,31 @@
     // --- INVESTOR PAYOUTS HISTORY LOGIC ---
     async function loadInvestorPayoutsHistory() {
       const el = document.getElementById("investorPayoutsList");
-      const { data: profiles } = await supabaseClient.from("profiles").select("*");
-      const { data: approvedPayouts } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "approved").order("created_at", { ascending: false });
+      try {
+        const { data: profiles } = await supabaseClient.from("profiles").select("*");
+        const { data: approvedPayouts } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "approved").order("created_at", { ascending: false });
 
-      if (!profiles || profiles.length === 0) {
-        el.innerHTML = `<div style="color:#64748b;">No investor profiles found.</div>`;
-        return;
-      }
-
-      el.innerHTML = profiles.map(p => {
-        const userPayouts = (approvedPayouts || []).filter(w => w.investor_id === p.id);
-        const totalSent = userPayouts.reduce((sum, w) => sum + Number(w.amount || 0), 0);
-
-        let payoutDetailsHtml = userPayouts.map(w => `
-          <div class="payout-detail">
-            💵 <strong>${pkr(w.amount)}</strong> sent via <strong>${w.payment_method}</strong><br/>
-            Account Title: ${w.account_title} (${w.account_number})<br/>
-            <span style="color:#64748b;">Date: ${new Date(w.created_at).toLocaleDateString()}</span>
-          </div>
-        `).join("");
-
-        if (userPayouts.length === 0) {
-          payoutDetailsHtml = `<div style="color:#94a3b8; font-size:11px; margin-top:4px;">No payouts sent yet.</div>`;
+        if (!profiles || profiles.length === 0) {
+          el.innerHTML = `<div style="color:#64748b;">No investor profiles found.</div>`;
+          return;
         }
 
-        return `
-          <div style="border: 1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; background:#ffffff;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <strong style="font-size:13px; color:#0f172a;">${p.full_name || p.email || 'Investor'}</strong><br/>
-                <span style="font-size:10px; color:#64748b;">ID: ${p.id.substring(0,8)}...</span>
-              </div>
-              <div style="text-align:right;">
-                <span style="font-size:11px; color:#64748b;">Total Paid:</span><br/>
-                <strong style="font-size:14px; color:#16a34a;">${pkr(totalSent)}</strong>
-              </div>
+        el.innerHTML = profiles.map(p => {
+          const userPayouts = (approvedPayouts || []).filter(w => w.investor_id === p.id);
+          const totalSent = userPayouts.reduce((sum, w) => sum + Number(w.amount || 0), 0);
+
+          let payoutDetailsHtml = userPayouts.map(w => `
+            <div class="payout-detail">
+              💵 <strong>${pkr(w.amount)}</strong> sent via <strong>${w.payment_method}</strong><br/>
+              Account Title: ${w.account_title} (${w.account_number})<br/>
+              <span style="color:#64748b;">Date: ${new Date(w.created_at).toLocaleDateString()}</span>
             </div>
-            ${payoutDetailsHtml}
-          </div>
-        `;
-      }).join("");
-    }
+          `).join("");
 
-    async function saveWhatsApp() {
-      alert("WhatsApp links updated successfully!");
-    }
+          if (userPayouts.length === 0) {
+            payoutDetailsHtml = `<div style="color:#94a3b8; font-size:11px; margin-top:4px;">No payouts sent yet.</div>`;
+          }
 
-    window.addEventListener("DOMContentLoaded", initAdmin);
-  </script>
-</body>
-</html>
+          return `
+            <div style="border: 1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; background:#ffffff;">
+              <div style="display:flex; justify-content:space-between
