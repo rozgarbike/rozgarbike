@@ -17,6 +17,8 @@
   .status-badge { padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; text-transform:uppercase; }
   .status-pending { background:#ffeaa7; color:#d63031; }
   .status-approved, .status-active { background:#55efc4; color:#00b894; }
+  .status-rejected { background:#ff7675; color:#fff; }
+  .input-field { width:100%; padding:9px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px; font-size:13px; box-sizing:border-box; }
 </style>
 </head>
 <body>
@@ -45,7 +47,7 @@
       <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <span class="muted" style="font-size:12px;">Available for Withdrawal</span>
-          <div id="availBalance" class="disp" style="font-size:28px; color:var(--petrol); margin:4px 0;">Rs 500</div>
+          <div id="availBalance" class="disp" style="font-size:28px; color:var(--petrol); margin:4px 0;">Rs 0</div>
         </div>
         <button class="btn btn-primary" onclick="openDepositModal()" style="padding:8px 16px;">+ Deposit</button>
       </div>
@@ -87,9 +89,15 @@
     </div>
 
     <!-- RECENT DEPOSITS STATUS -->
-    <div class="card">
-      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:10px;">RECENT DEPOSITS & TRANSACTIONS</div>
+    <div class="card" style="margin-bottom:15px;">
+      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:10px;">RECENT DEPOSITS</div>
       <div id="myDepositsList" style="font-size:13px;" class="muted">Loading deposits...</div>
+    </div>
+
+    <!-- RECENT WITHDRAWALS STATUS -->
+    <div class="card">
+      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:10px;">RECENT WITHDRAWALS</div>
+      <div id="myWithdrawalsList" style="font-size:13px;" class="muted">Loading withdrawals...</div>
     </div>
 
   </div>
@@ -98,17 +106,32 @@
   <div id="withdrawModal" class="modal">
     <div class="modal-content">
       <h3 style="margin-top:0;">Request Withdrawal</h3>
-      <p style="font-size:12px; color:#666; margin-bottom:8px;">Min: Rs 100 | Max: Rs 10,000 (Daily 1 Request Limit)</p>
+      <p style="font-size:12px; color:#666; margin-bottom:10px;">Min: Rs 100 | Max: Rs 10,000 (1 Request Daily)</p>
       
-      <input type="number" id="withdrawAmount" placeholder="Enter Amount (Rs 100 - 10,000)" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px;" />
-      <input type="text" id="withdrawAccount" placeholder="Account Number & Name" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px;" />
+      <label style="font-size:12px; font-weight:bold;">Withdrawal Amount (PKR):</label>
+      <input type="number" id="withdrawAmount" class="input-field" placeholder="e.g. 1000" />
+
+      <label style="font-size:12px; font-weight:bold;">Account Holder Title / Name:</label>
+      <input type="text" id="withdrawAccountName" class="input-field" placeholder="e.g. Muhammad Safdar" />
+
+      <label style="font-size:12px; font-weight:bold;">Account / Mobile Number:</label>
+      <input type="text" id="withdrawAccountNumber" class="input-field" placeholder="e.g. 03245380453" />
+
+      <label style="font-size:12px; font-weight:bold;">Select Payment / Bank Platform:</label>
+      <select id="withdrawBankName" class="input-field">
+        <option value="JazzCash">JazzCash</option>
+        <option value="SadaPay">SadaPay</option>
+        <option value="EasyPaisa">EasyPaisa</option>
+        <option value="Meezan Bank">Meezan Bank</option>
+        <option value="Other Bank">Other Bank</option>
+      </select>
 
       <button class="btn-pay btn-jazzcash" onclick="submitWithdrawal()">Submit Request</button>
       <button onclick="closeWithdrawModal()" style="width:100%; padding:8px; margin-top:8px; background:none; border:none; color:#666; cursor:pointer;">Cancel</button>
     </div>
   </div>
 
-  <!-- DEPOSIT PAYMENT MODAL WITH PIC UPLOAD -->
+  <!-- DEPOSIT MODAL -->
   <div id="depositModal" class="modal">
     <div class="modal-content">
       <h3 style="margin-top:0;">Deposit Funds</h3>
@@ -126,11 +149,11 @@
         • Title: <b>Naveed Ahmed</b>
       </div>
 
-      <input type="number" id="depositAmount" placeholder="Enter Amount (Rs 1,000 - 150,000)" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px;" />
-      <input type="text" id="trxIdInput" placeholder="Transaction ID (TID)" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px;" />
+      <input type="number" id="depositAmount" class="input-field" placeholder="Enter Amount (Rs 1,000 - 150,000)" />
+      <input type="text" id="trxIdInput" class="input-field" placeholder="Transaction ID (TID)" />
       
       <label style="font-size:12px; font-weight:bold; color:#333;">Upload Payment Screenshot / Receipt Pic:</label>
-      <input type="file" id="receiptPic" accept="image/*" style="width:100%; padding:6px; margin-bottom:12px; border:1px solid #ccc; border-radius:6px; font-size:12px;" />
+      <input type="file" id="receiptPic" accept="image/*" class="input-field" />
 
       <button class="btn-pay btn-jazzcash" onclick="submitDeposit('JazzCash')">Submit JazzCash Payment</button>
       <button class="btn-pay btn-sadapay" onclick="submitDeposit('SadaPay')">Submit SadaPay Payment</button>
@@ -164,7 +187,7 @@
         if (profile.role === 'admin') {
           document.getElementById("adminTabLink").style.display = "inline-block";
         }
-        if (profile.balance !== null && profile.balance !== undefined && profile.balance > 0) {
+        if (profile.balance !== null && profile.balance !== undefined) {
           currentBalance = profile.balance;
         }
         const refCode = profile.referral_code || currentUser.id.substring(0, 8);
@@ -176,6 +199,7 @@
       await loadReferrals();
       await loadInvestments();
       await loadDeposits();
+      await loadWithdrawals();
     }
 
     async function loadReferrals() {
@@ -203,7 +227,7 @@
           <div style="padding:10px; background:#fff3cd; border-radius:6px; color:#856404;">
             <b>Active Bike Campaign:</b> Full Bike Investment Joined<br>
             • Status: <span class="status-badge status-active">ACTIVE</span><br>
-            • Total Profit / Withdrawal Received: <b>Rs 500</b>
+            • Total Profit Received: <b>Rs 500</b>
           </div>`;
       } else {
         el.innerHTML = invs.map(i => `
@@ -240,6 +264,25 @@
       }
     }
 
+    async function loadWithdrawals() {
+      const { data: w } = await supabaseClient.from("withdrawal_requests").select("*").eq("user_id", currentUser.id);
+      const el = document.getElementById("myWithdrawalsList");
+
+      if (!w || w.length === 0) {
+        el.innerHTML = "Koi withdrawal record nahi mila.";
+      } else {
+        el.innerHTML = w.map(x => `
+          <div style="padding:8px 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <b>${x.bank_name || 'Bank'}</b> (${x.account_name || 'Title'} - ${x.account_number || 'No'})<br>
+              <small style="color:#777;">Amount: Rs ${Number(x.amount).toLocaleString()}</small>
+            </div>
+            <span class="status-badge status-${x.status}">${x.status}</span>
+          </div>
+        `).join("");
+      }
+    }
+
     function openDepositModal() { document.getElementById("depositModal").style.display = "flex"; }
     function closeDepositModal() { document.getElementById("depositModal").style.display = "none"; }
 
@@ -248,10 +291,12 @@
 
     async function submitWithdrawal() {
       const amount = parseFloat(document.getElementById("withdrawAmount").value);
-      const accountDetails = document.getElementById("withdrawAccount").value;
+      const accName = document.getElementById("withdrawAccountName").value.trim();
+      const accNumber = document.getElementById("withdrawAccountNumber").value.trim();
+      const bankName = document.getElementById("withdrawBankName").value;
 
-      if (!amount || !accountDetails) {
-        alert("Please enter amount and account details!");
+      if (!amount || !accName || !accNumber) {
+        alert("Tamam fields (Amount, Title Name, Account Number) fill karein!");
         return;
       }
       if (amount < 100 || amount > 10000) {
@@ -267,23 +312,26 @@
       const lastWithdrawDate = localStorage.getItem("last_withdraw_date_" + currentUser.id);
 
       if (lastWithdrawDate === todayStr) {
-        alert("Aap aaj ki 1 withdrawal request submit kar chuke hain. Agli request raat 12 baje ke baad hogi!");
+        alert("Aap aaj ki 1 withdrawal request submit kar chuke hain. Agli request kal kar sakty hain!");
         return;
       }
 
-      const { error } = await supabaseClient.from("withdrawals").insert([{
+      const { error } = await supabaseClient.from("withdrawal_requests").insert([{
         user_id: currentUser.id,
         amount: amount,
-        account: accountDetails,
+        account_name: accName,
+        account_number: accNumber,
+        bank_name: bankName,
         status: "pending"
       }]);
 
-      if (error && error.code !== "42P01") {
-        alert("Error: " + error.message);
+      if (error) {
+        alert("Withdrawal Error: " + error.message);
       } else {
         localStorage.setItem("last_withdraw_date_" + currentUser.id, todayStr);
-        toast("Withdrawal Request Submitted Successfully!");
+        toast("Withdrawal Request Submitted! Admin Approval Pending.");
         closeWithdrawModal();
+        await loadWithdrawals();
       }
     }
 
@@ -352,4 +400,5 @@
     initDashboard();
   </script>
 </body>
-</html>
+  </html>
+  
