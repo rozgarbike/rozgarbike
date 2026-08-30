@@ -12,7 +12,6 @@
 </head>
 <body>
 
-  <!-- SAB SE TOP PAR URDU BANNER AD -->
   <div id="promoUrduAd" style="position: relative; background: linear-gradient(135deg, #0d3232 0%, #175252 100%); color: #ffffff; padding: 16px 14px; border-bottom: 2px solid #ffc107; box-shadow: 0 4px 12px rgba(0,0,0,0.3); direction: rtl; text-align: right; font-family: inherit; z-index: 999; pointer-events: none;">
     <button onclick="closePromoAd()" aria-label="Close Ad" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 14px; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; pointer-events: auto; z-index: 1000;">✕</button>
     <div style="max-width: 600px; margin: 0 auto; padding-left: 30px; pointer-events: auto;">
@@ -52,7 +51,6 @@
       Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.
     </p>
 
-    <!-- WhatsApp Buttons -->
     <div style="display:flex;gap:8px;margin:10px 0 18px;flex-wrap:wrap;">
       <a id="whatsappChatBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:#25D366;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
         <span style="font-size:15px;">💬</span> WhatsApp Chat
@@ -68,7 +66,6 @@
       abi humri team ka hissa bny
     </p>
 
-    <!-- AUTH BOX (LOGIN & SIGNUP TOGGLE) -->
     <div id="authBox" class="card" style="margin-bottom:20px; display:none;">
       <div id="authTitle" class="disp" style="font-size:18px;margin-bottom:10px;">SIGN UP</div>
       
@@ -87,7 +84,6 @@
       
       <div id="authMsg" class="muted" style="margin-top:8px;"></div>
       
-      <!-- Download Button -->
       <div style="margin-top:15px; border-top:1px solid #eee; padding-top:12px; text-align:center;">
         <a href="rozgarbike.apk" download class="app-download-btn" style="display:block;width:100%;background:#123D3D;color:#fff;padding:12px;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none;box-sizing:border-box;">
           📲 Download Android App (APK)
@@ -98,7 +94,6 @@
     <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
   </div>
 
-  <!-- INTRO OVERLAY -->
   <div id="introOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.55);align-items:center;justify-content:center;z-index:3000;padding:20px;">
     <div class="card" style="max-width:380px;width:100%;text-align:center;">
       <div class="disp" style="font-size:20px;margin-bottom:4px;">YE KAISE KAAM KARTA HAI</div>
@@ -142,7 +137,7 @@
       if (adBox) adBox.style.display = 'none';
     }
 
-    // Toggle Login vs Sign Up
+    // Toggle Login vs Sign Up Functionality
     function toggleAuthMode() {
       isSignUpMode = !isSignUpMode;
       const title = document.getElementById("authTitle");
@@ -151,18 +146,18 @@
       const toggleBtn = document.getElementById("toggleAuthBtn");
       const msg = document.getElementById("authMsg");
 
-      msg.textContent = "";
+      if (msg) msg.textContent = "";
 
       if (isSignUpMode) {
-        title.textContent = "SIGN UP";
-        fullNameGroup.style.display = "block";
-        mainBtn.textContent = "Create account";
-        toggleBtn.textContent = "Log in instead";
+        if (title) title.textContent = "SIGN UP";
+        if (fullNameGroup) fullNameGroup.style.display = "block";
+        if (mainBtn) mainBtn.textContent = "Create account";
+        if (toggleBtn) toggleBtn.textContent = "Log in instead";
       } else {
-        title.textContent = "LOG IN";
-        fullNameGroup.style.display = "none";
-        mainBtn.textContent = "Log In";
-        toggleBtn.textContent = "Create an account instead";
+        if (title) title.textContent = "LOG IN";
+        if (fullNameGroup) fullNameGroup.style.display = "none";
+        if (mainBtn) mainBtn.textContent = "Log In";
+        if (toggleBtn) toggleBtn.textContent = "Create an account instead";
       }
     }
 
@@ -199,7 +194,8 @@
       if (data?.session) {
         window.location.href = "dashboard.html";
       } else {
-        document.getElementById("authMsg").textContent = "Account created! If email confirmation is enabled, check your inbox or log in.";
+        document.getElementById("authMsg").textContent = "Account created! Logging in...";
+        setTimeout(() => { doSignIn(); }, 1000);
       }
     }
 
@@ -287,7 +283,6 @@
           const refCode = getReferralCodeFromURL();
           if (refCode) toast("Referral code applied: " + refCode);
         } else {
-          // If already logged in
           document.getElementById("authBox").style.display = "none";
         }
         await loadWhatsAppLinks();
