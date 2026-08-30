@@ -160,7 +160,7 @@ th{ background:#111827; color:#9ca3af }
   <!-- MANUAL BONUS SENDER -->
   <div class="card">
     <div class="card-title">🎁 Send Manual Bonus</div>
-    <label style="font-size:12px;color:#9ca3af">Select Investor (With ID):</label>
+    <label style="font-size:12px;color:#9ca3af">Select Investor (Includes ID):</label>
     <select id="bonusUserSelect">
       <option value="">-- Select Investor --</option>
     </select>
@@ -285,7 +285,7 @@ function getSupabase() {
 
 let userMap = {};
 
-// LOCAL STORAGE FALLBACKS (Ensure Data Never Disappears)
+// LOCAL STORAGE PERSISTENCE
 let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
   { id: "inv_101", name: "Ali Khan (03001234567)" },
   { id: "inv_102", name: "Muhammad Usman (03129876543)" }
@@ -310,7 +310,7 @@ function initAdmin() {
   loadCampaigns();
 }
 
-// ADD MANUAL INVESTOR
+// ADD & DELETE INVESTORS
 async function addManualInvestor() {
   const name = document.getElementById("newInvestorName").value.trim();
   const contact = document.getElementById("newInvestorEmail").value.trim();
@@ -372,7 +372,7 @@ async function saveWhatsAppLink() {
   alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-// LOAD INVESTORS MAP, TABLE, AND BONUS DROPDOWN WITH SHOWING ID
+// LOAD INVESTOR MAP, TABLE & BONUS DROPDOWN WITH DISPLAYING ID
 async function loadUsersMap() {
   const select = document.getElementById("bonusUserSelect");
   const tbody = document.getElementById("investorsTableBody");
@@ -402,8 +402,8 @@ async function loadUsersMap() {
       seen.add(inv.id);
       uniqueList.push(inv);
       userMap[inv.id] = inv.name;
-      // Option includes Name and ID clearly for Bonus Selection
-      select.innerHTML += `<option value="${inv.id}">${inv.name} (ID: ${inv.id})</option>`;
+      // Option includes Name & ID clearly
+      select.innerHTML += `<option value="${inv.id}">${inv.name} - (ID: ${inv.id})</option>`;
     }
   });
 
@@ -447,12 +447,12 @@ async function sendManualBonus() {
   const amount = document.getElementById("bonusAmount").value;
   const note = document.getElementById("bonusNote").value || "Special Bonus";
 
-  if(!userId) return alert("انوسٹر کو منتخب کریں۔");
+  if(!userId) return alert("انوسٹر منتخب کریں۔");
   if(!amount || Number(amount) <= 0) return alert("درست رقم درج کریں۔");
 
   await insertBonusRecord(userId, Number(amount), note);
 
-  alert(`انوسٹر (ID: ${userId}) کو Rs ${amount} کا بونس منتقل کر دیا گیا ہے!`);
+  alert(`انوسٹر (ID: ${userId}) کو Rs ${amount} کا بونس بھیج دیا گیا!`);
   document.getElementById("bonusAmount").value = "";
   document.getElementById("bonusNote").value = "";
 }
@@ -544,7 +544,7 @@ async function updateWithdrawStatus(id, status) {
   loadWithdrawals();
 }
 
-// MANAGE DEPOSIT PAYMENT ACCOUNTS
+// PAYMENT ACCOUNTS
 async function loadAccounts() {
   const tbody = document.getElementById("paymentAccountsBody");
   let dbAccs = [];
@@ -600,4 +600,6 @@ async function addPaymentAccount() {
   }
 
   defaultAccounts.push(newAcc);
-  localStorage.setItem('admin_accoun
+  localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
+
+  alert("نیا ڈیپازٹ اکاؤنٹ ک
