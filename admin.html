@@ -159,23 +159,24 @@
       loadWhatsAppSetting(db);
     }
 
-    // 1. Fetch All Users Dynamically (Fixes Empty Dropdown)
+    // 1. Fetch Real User Names & Emails Dynamically
     async function loadUsersDropdown(db) {
       const select = document.getElementById("investorSelect");
       select.innerHTML = `<option value="">-- یوزر لوڈ ہو رہے ہیں... --</option>`;
 
       try {
-        let { data: profiles } = await db.from("profiles").select("id, full_name, email");
+        // Fetch profiles
+        let { data: profiles, error } = await db.from("profiles").select("id, full_name, email, name, username");
 
-        // Fallback to Investments table if Profiles table returns empty due to RLS
-        if (!profiles || profiles.length === 0) {
+        if (error || !profiles || profiles.length === 0) {
+          // Fallback if profiles table is empty or restricted
           const { data: investments } = await db.from("investments").select("investor_id");
           if (investments && investments.length > 0) {
             const uniqueUserIds = [...new Set(investments.map(item => item.investor_id))];
-            profiles = uniqueUserIds.map((id, index) => ({
+            profiles = uniqueUserIds.map((id) => ({
               id: id,
-              full_name: `Investor User #${index + 1}`,
-              email: id.substring(0, 8) + "..."
+              full_name: "Investor (" + id.substring(0, 6) + ")",
+              email: ""
             }));
           }
         }
@@ -185,11 +186,12 @@
           return;
         }
 
+        // Render Users with actual full_name, username or email
         select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
           profiles.map(u => {
-            const name = u.full_name || u.email || "User";
-            const shortId = u.id ? `(${u.id.substring(0, 6)}...)` : "";
-            return `<option value="${u.id}">${name} ${shortId}</option>`;
+            const realName = u.full_name || u.name || u.username || u.email || ("User #" + u.id.substring(0, 5));
+            const subDetail = u.email ? ` (${u.email})` : ` (${u.id.substring(0, 6)}...)`;
+            return `<option value="${u.id}">${realName}${subDetail}</option>`;
           }).join("");
 
       } catch (err) {
