@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/style.css" />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 
-<!-- Supabase SDK (Loaded FIRST) -->
+<!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Custom Config File -->
@@ -69,7 +69,7 @@
     margin: 0 auto;
   }
 
-  /* URDU POSTER BANNER (ONLY URDU SECTION) */
+  /* URDU POSTER BANNER */
   .urdu-poster-card {
     background: #ffffff;
     border: 2px solid #0f3932;
@@ -163,7 +163,7 @@
     display: block;
   }
 
-  /* ENGLISH CARDS & FORMS */
+  /* CARDS & FORMS */
   .card {
     background: #ffffff;
     padding: 18px;
@@ -255,7 +255,7 @@
 
   <div class="wrap">
     
-    <!-- 1. URDU POSTER BANNER (KEEPING POSTER EXACTLY IN URDU) -->
+    <!-- 1. URDU POSTER BANNER -->
     <div class="urdu-poster-card">
       <div class="poster-header">
         <h2>تجارتی بائیک فلیٹ پارٹنرشپ</h2>
@@ -297,23 +297,24 @@
       <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
-    <!-- 2. AUTH BOX (ENGLISH LOGIN / SIGNUP) -->
+    <!-- 2. AUTH BOX (LOGIN / SIGNUP) -->
     <div id="authBox" class="card">
       <div class="form-title" id="authTitle">Login to Account</div>
       
       <input id="authEmail" type="email" class="form-control" placeholder="Email Address" />
       <input id="authPass" type="password" class="form-control" placeholder="Password" />
       
-      <button id="authPrimaryBtn" class="btn btn-primary" onclick="handleAuth()">Login</button>
+      <button id="authPrimaryBtn" type="button" class="btn btn-primary" onclick="handleAuth()">Login</button>
       
       <div style="text-align:center; font-size:12px; color:#64748b; margin:12px 0;">— OR —</div>
       
-      <button id="authToggleBtn" class="btn btn-outline" onclick="toggleAuthMode()">Create New Account</button>
+      <button id="authToggleBtn" type="button" class="btn btn-outline" onclick="toggleAuthMode()">Create New Account</button>
       
-      <a href="#" class="btn btn-apk">📲 Download Android App (APK)</a>
+      <!-- APP DOWNLOAD BUTTON -->
+      <a href="app-release.apk" id="appDownloadBtn" class="btn btn-apk">📲 Download Android App (APK)</a>
     </div>
 
-    <!-- 3. CAMPAIGNS / BIKES LIST (ENGLISH) -->
+    <!-- 3. CAMPAIGNS / BIKES LIST -->
     <div style="font-size:18px; font-weight:700; margin-bottom:12px; color:#0f3932;">Available Bike Fleets</div>
     <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px;">
       <div class="card" style="text-align:center; color:#64748b;">Loading Available Fleets...</div>
@@ -334,11 +335,11 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- FIXED JS SCRIPT WITH SUPABASE ERROR PREVENTION -->
+  <!-- SCRIPT -->
   <script>
     let isSignUp = false;
 
-    // Helper to securely fetch Supabase Client
+    // Securely Fetch or Create Supabase Client
     function getDb() {
       if (window.supabaseClient) return window.supabaseClient;
       if (typeof supabase !== 'undefined' && supabase.createClient) {
@@ -385,24 +386,24 @@
     async function handleAuth() {
       const db = getDb();
       if (!db || !db.auth) {
-        return toast("Database not initialized. Check your assets/config.js file!");
+        return toast("Supabase load nahi hua. Apna assets/config.js check karein!");
       }
 
       const email = document.getElementById("authEmail").value.trim();
       const password = document.getElementById("authPass").value.trim();
 
-      if (!email || !password) return toast("Please enter both Email and Password!");
+      if (!email || !password) return toast("Email aur Password dono daalein!");
 
       try {
         if (isSignUp) {
           const { data, error } = await db.auth.signUp({ email, password });
           if (error) throw error;
-          toast("Account created successfully! Logging in...");
+          toast("Account ban gaya! Page reload ho raha hai...");
           setTimeout(() => window.location.reload(), 1000);
         } else {
           const { data, error } = await db.auth.signInWithPassword({ email, password });
           if (error) throw error;
-          toast("Login Successful!");
+          toast("Login Kamyab!");
           setTimeout(() => window.location.reload(), 1000);
         }
       } catch (err) {
@@ -432,12 +433,12 @@
           .order("created_at", { ascending: false });
 
         if (error) {
-          listEl.innerHTML = `<div class="card" style="text-align:center; color:red;">Failed to load fleets. Please refresh page.</div>`;
+          listEl.innerHTML = `<div class="card" style="text-align:center; color:red;">Fleets load nahi ho sake. Refresh karein.</div>`;
           return;
         }
 
         if (!campaigns || campaigns.length === 0) {
-          listEl.innerHTML = `<div class="card" style="text-align:center;">No active bike fleet available right now.</div>`;
+          listEl.innerHTML = `<div class="card" style="text-align:center;">Koi active bike fleet majood nahi hai.</div>`;
           return;
         }
 
@@ -485,7 +486,7 @@
       if (!db) return;
       const { data: { session } } = await db.auth.getSession();
       if (!session) {
-        toast("Please login first to invest!");
+        toast("Pehle Login karein!");
         window.scrollTo({ top: document.getElementById("authBox").offsetTop, behavior: 'smooth' });
         return;
       }
