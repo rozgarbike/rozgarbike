@@ -7,46 +7,93 @@
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: system-ui, -apple-system, sans-serif; background: #0b1329; color: #f8fafc; margin: 0; padding: 15px; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 12px; }
   .wrap { max-width: 600px; margin: 0 auto; }
-  .navbar { display: flex; justify-content: space-between; align-items: center; background: #131f37; padding: 12px 16px; border-radius: 10px; border: 1px solid #1e293b; margin-bottom: 15px; }
-  .card { background: #131f37; padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e293b; }
-  .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; color: #fff; font-size: 14px; }
-  .input-field { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #2e3e5c; background: #0b1329; color: #fff; box-sizing: border-box; font-size: 14px; }
-  .ref-box { background: #0284c71a; border: 1px dashed #38bdf8; padding: 12px; border-radius: 8px; text-align: center; word-break: break-all; font-weight: bold; color: #38bdf8; font-size: 13px; }
-  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
-  .badge-active { background: #16a34a22; color: #4ade80; border: 1px solid #16a34a; }
-  .badge-inactive { background: #dc262622; color: #f87171; border: 1px solid #dc2626; }
-  .acc-display-box { background: #0b1329; border: 1px solid #2e3e5c; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: #38bdf8; }
+  .navbar { display: flex; justify-content: space-between; align-items: center; background: #1e293b; padding: 12px 16px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 15px; }
+  .card { background: #1e293b; padding: 16px; border-radius: 14px; margin-bottom: 15px; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+  .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; color: #fff; font-size: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .input-field { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; font-size: 14px; outline: none; }
+  .input-field:focus { border-color: #38bdf8; }
+  .ref-box { background: #0284c722; border: 1px dashed #38bdf8; padding: 12px; border-radius: 8px; text-align: center; word-break: break-all; font-weight: bold; color: #38bdf8; font-size: 13px; }
+  .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
+  .badge-active { background: #16a34a33; color: #4ade80; border: 1px solid #22c55e; }
+  .badge-inactive { background: #dc262633; color: #f87171; border: 1px solid #ef4444; }
+  .acc-display-box { background: #0f172a; border: 1px solid #38bdf8; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: #7dd3fc; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .stat-card { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; text-align: center; }
 </style>
 </head>
 <body>
 
   <div class="wrap">
     
-    <!-- TOP NAVBAR WITH ADMIN BUTTON -->
+    <!-- TOP NAVBAR -->
     <div class="navbar">
-      <h3 style="margin:0; color:#38bdf8;">🚲 RozgarBike</h3>
+      <h3 style="margin:0; color:#38bdf8; font-size:20px;">🚲 RozgarBike</h3>
       <div>
-        <a id="adminBtn" href="admin.html" style="display:none; background:#eab308; color:#000; padding:6px 12px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:12px; margin-right:5px;">🛠️ Admin Panel</a>
-        <button onclick="handleLogout()" style="background:#dc2626; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Logout</button>
+        <a id="adminBtn" href="admin.html" style="display:none; background:#f59e0b; color:#000; padding:7px 14px; border-radius:8px; font-weight:bold; text-decoration:none; font-size:12px; margin-right:5px;">🛠️ Admin Panel</a>
+        <button onclick="handleLogout()" style="background:#ef4444; color:#fff; border:none; padding:7px 14px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:12px;">Logout</button>
       </div>
     </div>
 
-    <!-- WELCOME & USER STATUS CARD -->
-    <div class="card" style="border-left: 4px solid #38bdf8;">
+    <!-- WELCOME CARD -->
+    <div class="card" style="border-left: 5px solid #38bdf8;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <span style="color:#94a3b8; font-size:12px;">خوش آمدید،</span>
-          <h2 style="margin:2px 0 0 0; font-size:18px; color:#fff;" id="userName">Loading...</h2>
+          <span style="color:#94a3b8; font-size:13px;">خوش آمدید،</span>
+          <h2 style="margin:2px 0 0 0; font-size:19px; color:#fff;" id="userName">Loading...</h2>
         </div>
         <div>
-          <span id="userStatusBadge" class="status-badge badge-inactive">Checking Status...</span>
+          <span id="userStatusBadge" class="status-badge badge-inactive">Checking...</span>
         </div>
       </div>
     </div>
-    
-    <!-- REFERRAL BOX -->
+
+    <!-- 1. WITHDRAW SECTION (MOVED TO TOP) -->
+    <div class="card" style="border-top: 4px solid #f43f5e;">
+      <h3 style="color:#fb7185; margin-top:0; margin-bottom:10px;">📤 رقم نکلوا لیں (Withdraw System)</h3>
+      
+      <!-- Withdraw Balances Display -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div style="font-size:11px; color:#94a3b8;">دستیاب وڈڈرال بیلنس</div>
+          <div style="font-size:16px; font-weight:bold; color:#4ade80;" id="withdrawableBal">Rs 0</div>
+        </div>
+        <div class="stat-card">
+          <div style="font-size:11px; color:#94a3b8;">کل وڈڈرال لیا جا چکا</div>
+          <div style="font-size:16px; font-weight:bold; color:#38bdf8;" id="totalWithdrawn">Rs 0</div>
+        </div>
+      </div>
+
+      <p style="font-size:12px; color:#cbd5e1; margin-top:0;">حدود: Rs 100 سے Rs 10,000 (روزانہ صرف 1 بار)</p>
+      
+      <select id="wMethod" class="input-field">
+        <option value="JazzCash">JazzCash</option>
+        <option value="EasyPaisa">EasyPaisa</option>
+        <option value="Bank">Bank Account</option>
+      </select>
+      <input id="wTitle" class="input-field" placeholder="Account Title (نام)" />
+      <input id="wNumber" class="input-field" placeholder="Account Number (نمبر)" />
+      <input id="wAmount" type="number" class="input-field" placeholder="رقم (100 - 10,000 PKR)" />
+      <button class="btn" style="background:#e11d48;" onclick="submitWithdrawal()">Request Withdrawal</button>
+    </div>
+
+    <!-- 2. DEPOSIT SECTION WITH ACCOUNTS -->
+    <div class="card" style="border-top: 4px solid #22c55e;">
+      <h3 style="color:#4ade80; margin-top:0; margin-bottom:10px;">📥 رقم جمع کروائیں (Deposit)</h3>
+      <p style="font-size:12px; color:#cbd5e1; margin-top:0;">حدود: Rs 1,000 سے Rs 200,000</p>
+      
+      <div style="font-size:12px; color:#facc15; font-weight:bold; margin-bottom:6px;">💳 رقم بھیجنے کے لیے آفیشل اکاؤنٹس:</div>
+      <div id="paymentAccountsContainer" class="acc-display-box">
+        اکاؤنٹ کی تفصیلات لوڈ ہو رہی ہیں...
+      </div>
+
+      <input id="depAmount" type="number" class="input-field" placeholder="جمع کرنے والی رقم (Rs 1,000 - 200,000)" />
+      <input id="depSlip" type="text" class="input-field" placeholder="ڈپازٹ سلیپ تصویر کا لنک (Slip URL)" />
+      <button class="btn" style="background:#16a34a;" onclick="submitDeposit()">Submit Deposit</button>
+    </div>
+
+    <!-- 3. REFERRAL LINK -->
     <div class="card">
       <h3 style="color:#38bdf8; margin-top:0;">🔗 آپ کا ریفرل لنک (Referral Link)</h3>
       <div class="ref-box" id="refLink">Loading...</div>
@@ -56,36 +103,19 @@
       </p>
     </div>
 
-    <!-- DEPOSIT SECTION WITH ADMIN PAYMENT ACCOUNTS -->
-    <div class="card">
-      <h3 style="color:#4ade80; margin-top:0;">📥 رقم جمع کروائیں (Deposit)</h3>
-      <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 1,000 سے Rs 200,000 (ایک وقت میں 1 ہی ریکوئسٹ)</p>
-      
-      <!-- Display Admin Payment Accounts -->
-      <div style="font-size:12px; color:#94a3b8; margin-bottom:5px;">رقم بھیجنے کے لیے نیچے دیے گئے اکاؤنٹس استعمال کریں:</div>
-      <div id="paymentAccountsContainer" class="acc-display-box">
-        اکاؤنٹ کی تفصیلات لوڈ ہو رہی ہیں...
+    <!-- 4. APPROVED INVESTMENT & TOTAL WITHDRAWN SUMMARY (AT BOTTOM) -->
+    <div class="card" style="background:#0f172a; border: 1px solid #38bdf8;">
+      <h4 style="margin:0 0 10px 0; color:#38bdf8; text-align:center;">📊 آپ کی اکاؤٹ سمری (Account Summary)</h4>
+      <div class="stat-grid" style="margin-bottom:0;">
+        <div class="stat-card" style="background:#1e293b;">
+          <div style="font-size:12px; color:#94a3b8;">منظور شدہ انویسٹمنٹ</div>
+          <div style="font-size:18px; font-weight:bold; color:#facc15;" id="approvedInvestBal">Rs 0</div>
+        </div>
+        <div class="stat-card" style="background:#1e293b;">
+          <div style="font-size:12px; color:#94a3b8;">ٹوٹل نکلوا چکے ہیں</div>
+          <div style="font-size:18px; font-weight:bold; color:#4ade80;" id="summaryTotalWithdrawn">Rs 0</div>
+        </div>
       </div>
-
-      <input id="depAmount" type="number" class="input-field" placeholder="رقم (Rs 1,000 - 200,000)" />
-      <input id="depSlip" type="text" class="input-field" placeholder="ڈپازٹ سلیپ تصویر کا لنک (Slip URL)" />
-      <button class="btn" style="background:#16a34a;" onclick="submitDeposit()">Submit Deposit</button>
-    </div>
-
-    <!-- WITHDRAWAL SECTION -->
-    <div class="card">
-      <h3 style="color:#f87171; margin-top:0;">📤 رقم نکلوا لیں (Withdraw)</h3>
-      <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 100 سے Rs 10,000 (دن میں صرف 1 بار)</p>
-      
-      <select id="wMethod" class="input-field">
-        <option value="JazzCash">JazzCash</option>
-        <option value="EasyPaisa">EasyPaisa</option>
-        <option value="Bank">Bank Account</option>
-      </select>
-      <input id="wTitle" class="input-field" placeholder="Account Title" />
-      <input id="wNumber" class="input-field" placeholder="Account Number" />
-      <input id="wAmount" type="number" class="input-field" placeholder="رقم (Rs 100 - 10,000)" />
-      <button class="btn" style="background:#dc2626;" onclick="submitWithdrawal()">Request Withdrawal</button>
     </div>
 
   </div>
@@ -107,31 +137,51 @@
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = "index.html"; return; }
 
-      // 1. Set User Profile Name & Status
+      // 1. Fetch Profile & Name
       const { data: profile } = await db.from("profiles").select("*").eq("id", user.id).single();
       const userName = profile?.full_name || profile?.email || user.email || "Investor";
       document.getElementById("userName").innerText = userName;
 
-      // Check Active Status (Has approved investment)
-      const { data: approvedDeps } = await db.from("investments").select("id").eq("investor_id", user.id).eq("status", "approved");
+      // Check Active Status & Approved Investments
+      const { data: approvedDeps } = await db.from("investments").select("amount").eq("investor_id", user.id).eq("status", "approved");
       const statusBadge = document.getElementById("userStatusBadge");
       
+      let totalApprovedInv = 0;
       if (approvedDeps && approvedDeps.length > 0) {
         statusBadge.innerText = "● Active Account";
         statusBadge.className = "status-badge badge-active";
+        totalApprovedInv = approvedDeps.reduce((sum, item) => sum + Number(item.amount), 0);
       } else {
-        statusBadge.innerText = "○ Inactive (Deposit Required)";
+        statusBadge.innerText = "○ Inactive";
         statusBadge.className = "status-badge badge-inactive";
       }
+      document.getElementById("approvedInvestBal").innerText = `Rs ${totalApprovedInv.toLocaleString()}`;
 
-      // 2. Check Admin Role to Show Admin Button
+      // Calculate Total Withdrawn
+      const { data: approvedWiths } = await db.from("withdrawal_requests").select("amount").eq("investor_id", user.id).eq("status", "approved");
+      let totalW = 0;
+      if (approvedWiths) {
+        totalW = approvedWiths.reduce((sum, item) => sum + Number(item.amount), 0);
+      }
+      document.getElementById("totalWithdrawn").innerText = `Rs ${totalW.toLocaleString()}`;
+      document.getElementById("summaryTotalWithdrawn").innerText = `Rs ${totalW.toLocaleString()}`;
+
+      // Calculate Profit / Wallet Balance
+      const { data: txs } = await db.from("wallet_transactions").select("amount").eq("investor_id", user.id).eq("status", "approved");
+      let totalProfit = 0;
+      if (txs) {
+        totalProfit = txs.reduce((sum, item) => sum + Number(item.amount), 0);
+      }
+      let currentBal = totalProfit - totalW;
+      document.getElementById("withdrawableBal").innerText = `Rs ${Math.max(0, currentBal).toLocaleString()}`;
+
+      // Check Admin Role
       if (profile?.role === "admin" || user.email?.includes("admin")) {
         document.getElementById("adminBtn").style.display = "inline-block";
       }
 
-      // 3. Generate Referral Link & Count 10 Referrals
+      // Referral Link & Count
       document.getElementById("refLink").innerText = window.location.origin + "/register.html?ref=" + user.id;
-
       const { data: refs } = await db.from("profiles").select("id").eq("referred_by", user.id);
       let activeCount = 0;
       if (refs) {
@@ -142,7 +192,7 @@
       }
       document.getElementById("refCount").innerText = `${activeCount} / 10`;
 
-      // 4. Load Payment Accounts inside Deposit Box
+      // Load Payment Accounts
       loadPaymentAccounts(db);
     }
 
@@ -151,13 +201,13 @@
       const { data: methods } = await db.from("payment_methods").select("*");
       
       if (!methods || methods.length === 0) {
-        container.innerHTML = `<span style="color:#94a3b8;">ایڈمن کی طرف سے فی الحال کوئی اکاؤنٹ ایڈ نہیں ہے۔</span>`;
+        container.innerHTML = `<span style="color:#94a3b8;">ایڈمن کی طرف سے کوئی اکاؤنٹ ایڈ نہیں ہے۔</span>`;
         return;
       }
 
       container.innerHTML = methods.map(m => `
-        <div style="margin-bottom:6px; border-bottom:1px solid #1e293b; padding-bottom:4px;">
-          <strong>${m.label}:</strong> ${m.account_title} (${m.account_number})
+        <div style="margin-bottom:6px; border-bottom:1px solid #334155; padding-bottom:4px;">
+          <strong style="color:#facc15;">${m.label}:</strong> ${m.account_title} (${m.account_number})
         </div>
       `).join("");
     }
@@ -168,17 +218,16 @@
       const amount = Number(document.getElementById("depAmount").value);
       const slipUrl = document.getElementById("depSlip").value.trim();
 
-      if (amount < 1000 || amount > 200000) return alert("ڈپازٹ کی رقم کم سے کم Rs 1,000 اور زیادہ سے زیادہ Rs 200,000 ہونی چاہیے۔");
+      if (amount < 1000 || amount > 200000) return alert("ڈپازٹ Rs 1,000 سے Rs 200,000 کے درمیان ہونا چاہیے۔");
       if (!slipUrl) return alert("براہ کرم سلیپ کا لنک درج کریں۔");
 
-      // Check for pending deposit restriction
       const { data: pending } = await db.from("investments").select("id").eq("investor_id", user.id).eq("status", "pending");
-      if (pending && pending.length > 0) return alert("آپ کی پہلی ڈپازٹ درخواست پروسیسنگ میں ہے۔ اس کے ختم ہونے کا انتظار کریں۔");
+      if (pending && pending.length > 0) return alert("آپ کی پہلی ڈپازٹ درخواست جاری ہے۔");
 
       const { error } = await db.from("investments").insert([{ investor_id: user.id, amount, slip_url: slipUrl, status: "pending" }]);
       if (error) alert(error.message);
       else {
-        alert("ڈپازٹ کی درخواست بھیج دی گئی ہے!");
+        alert("ڈپازٹ کی درخواست جمع ہو گئی!");
         document.getElementById("depAmount").value = "";
         document.getElementById("depSlip").value = "";
       }
@@ -192,13 +241,12 @@
       const title = document.getElementById("wTitle").value.trim();
       const number = document.getElementById("wNumber").value.trim();
 
-      if (amount < 100 || amount > 10000) return alert("ودڈرال کم سے کم Rs 100 اور زیادہ سے زیادہ Rs 10,000 ہو سکتا ہے۔");
-      if (!title || !number) return alert("اکاؤنٹ کی مکمل معلومات لکھیں۔");
+      if (amount < 100 || amount > 10000) return alert("ودڈرال Rs 100 سے Rs 10,000 ہو سکتا ہے۔");
+      if (!title || !number) return alert("اکاؤنٹ کی معلومات مکمل فراہم کریں۔");
 
-      // Check 1 withdrawal per day limit
       const today = new Date().toISOString().split("T")[0];
       const { data: dailyReqs } = await db.from("withdrawal_requests").select("created_at").eq("investor_id", user.id).gte("created_at", today);
-      if (dailyReqs && dailyReqs.length > 0) return alert("آپ آج کے دن میں 1 بار ودڈرال کی درخواست بھیج چکے ہیں۔");
+      if (dailyReqs && dailyReqs.length > 0) return alert("آپ آج کے دن کی وڈڈرال ریکوئسٹ بھیج چکے ہیں۔");
 
       const { error } = await db.from("withdrawal_requests").insert([{
         investor_id: user.id, payment_method: method, account_title: title, account_number: number, amount, status: "pending"
