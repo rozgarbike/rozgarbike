@@ -251,7 +251,11 @@ th{ background:#111827; color:#9ca3af }
 
 <script>
 function getSupabase() {
-  return window.supabaseClient || window.supabase;
+  if (window.supabaseClient) return window.supabaseClient;
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    return window.supabase;
+  }
+  return null;
 }
 
 let userMap = {};
@@ -259,7 +263,10 @@ let userMap = {};
 async function initAdmin() {
   const db = getSupabase();
   if(!db){
-    alert("Supabase initialize nahi hua. config.js check karein.");
+    console.error("Supabase client not initialized.");
+    document.getElementById("bonusUserSelect").innerHTML = `<option value="">-- DB Error --</option>`;
+    document.getElementById("depositTableBody").innerHTML = `<tr><td colspan="6">Database connection error. Check config.js</td></tr>`;
+    document.getElementById("withdrawTableBody").innerHTML = `<tr><td colspan="6">Database connection error. Check config.js</td></tr>`;
     return;
   }
 
@@ -279,10 +286,15 @@ async function initAdmin() {
 
 // WHATSAPP LINK
 async function loadWhatsAppLink() {
-  const db = getSupabase();
-  const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").maybeSingle();
-  if (data && data.value) {
-    document.getElementById("whatsappInput").value = data.value;
+  try {
+    const db = getSupabase();
+    if(!db) return;
+    const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").maybeSingle();
+    if (data && data.value) {
+      document.getElementById("whatsappInput").value = data.value;
+    }
+  } catch(e) {
+    console.log("WhatsApp link load error:", e);
   }
 }
 
@@ -300,43 +312,49 @@ async function saveWhatsAppLink() {
 
 // USER MAP
 async function loadUsersMap() {
-  const db = getSupabase();
   const select = document.getElementById("bonusUserSelect");
   select.innerHTML = `<option value="">-- Loading Investors... --</option>`;
 
-  let { data: profiles } = await db.from("profiles").select("*");
+  try {
+    const db = getSupabase();
+    if(!db) return;
 
-  if (profiles && profiles.length > 0) {
-    select.innerHTML = `<option value="">-- Select Investor --</option>`;
-    profiles.forEach(p => {
-      const uId = p.id || p.user_id;
-      const name = p.full_name || p.name || p.email || ("User " + String(uId).substring(0, 6));
-      userMap[uId] = name;
-      select.innerHTML += `<option value="${uId}">${name}</option>`;
-    });
-    return;
-  }
+    let { data: profiles, error: pErr } = await db.from("profiles").select("*");
 
-  let { data: invs } = await db.from("investments").select("*");
-  if (invs && invs.length > 0) {
-    select.innerHTML = `<option value="">-- Select Investor --</option>`;
-    invs.forEach(i => {
-      const uId = i.investor_id || i.user_id;
-      if (uId && !userMap[uId]) {
-        const name = i.user_name || i.email || ("Investor (" + String(uId).substring(0, 6) + ")");
+    if (!pErr && profiles && profiles.length > 0) {
+      select.innerHTML = `<option value="">-- Select Investor --</option>`;
+      profiles.forEach(p => {
+        const uId = p.id || p.user_id;
+        const name = p.full_name || p.name || p.email || ("User " + String(uId).substring(0, 6));
         userMap[uId] = name;
         select.innerHTML += `<option value="${uId}">${name}</option>`;
-      }
-    });
-  } else {
-    select.innerHTML = `<option value="">-- No Investors Found --</option>`;
+      });
+      return;
+    }
+
+    let { data: invs, error: iErr } = await db.from("investments").select("*");
+    if (!iErr && invs && invs.length > 0) {
+      select.innerHTML = `<option value="">-- Select Investor --</option>`;
+      invs.forEach(i => {
+        const uId = i.investor_id || i.user_id;
+        if (uId && !userMap[uId]) {
+          const name = i.user_name || i.email || ("Investor (" + String(uId).substring(0, 6) + ")");
+          userMap[uId] = name;
+          select.innerHTML += `<option value="${uId}">${name}</option>`;
+        }
+      });
+    } else {
+      select.innerHTML = `<option value="">-- No Investors Found --</option>`;
+    }
+  } catch(e) {
+    console.error("User map error:", e);
+    select.innerHTML = `<option value="">-- Error Loading Users --</option>`;
   }
 }
 
 // HELPER FUNCTION TO INSERT BONUS TO SUPABASE WITH MULTIPLE FALLBACKS
 async function insertBonusRecord(uId, bonusAmount, noteText) {
   const db = getSupabase();
-  let success = false;
   let lastError = null;
 
   // Try 1: wallet_transactions with investor_id
@@ -385,9 +403,10 @@ async function insertBonusRecord(uId, bonusAmount, noteText) {
   return { success: false, error: lastError };
 }
 
-// AUTO BONUS (UPDATED WITH ROBUST FALLBACKS)
+// AUTO BONUS
 async function distributeAutoBonus() {
   const db = getSupabase();
+  if(!db) return alert("Database error!");
   if(!confirm("تمام approved انوسٹرز کو بونس بھیجیں؟")) return;
 
   const { data: investments, error } = await db.from("investments").select("*").eq("status", "approved");
@@ -428,7 +447,7 @@ async function distributeAutoBonus() {
   }
 }
 
-// MANUAL BONUS SENDER (UPDATED WITH ROBUST FALLBACKS)
+// MANUAL BONUS SENDER
 async function sendManualBonus() {
   const userId = document.getElementById("bonusUserSelect").value;
   const amount = document.getElementById("bonusAmount").value;
@@ -450,47 +469,54 @@ async function sendManualBonus() {
 
 // DEPOSITS
 async function loadDeposits() {
-  const db = getSupabase();
   const tbody = document.getElementById("depositTableBody");
 
-  const { data, error } = await db
-    .from("investments")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  try {
+    const db = getSupabase();
+    if(!db) return;
 
-  if(error) {
-    tbody.innerHTML = `<tr><td colspan="6">Error loading deposits.</td></tr>`;
-    return;
+    const { data, error } = await db
+      .from("investments")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if(error) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">ایررا: ${error.message}</td></tr>`;
+      return;
+    }
+
+    if(!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ نہیں ہے۔</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(d => {
+      const uId = d.investor_id || d.user_id;
+      const userName = userMap[uId] || d.user_name || "Investor";
+
+      const slipHtml = d.slip_url 
+        ? `<a href="${d.slip_url}" target="_blank" class="slip-link">👁️ View Slip</a>` 
+        : `<span style="color:#6b7280">No Slip</span>`;
+
+      return `
+        <tr>
+          <td><b>${userName}</b></td>
+          <td>Rs ${Number(d.amount).toLocaleString()}</td>
+          <td>${d.trx_id || '-'}</td>
+          <td>${slipHtml}</td>
+          <td><span class="badge badge-pending">pending</span></td>
+          <td>
+            <button onclick="updateDepositStatus('${d.id}', 'approved')" class="btn-act btn-approve">Approve</button>
+            <button onclick="updateDepositStatus('${d.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch(e) {
+    console.error("Load deposits error:", e);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">لوڈنگ میں مسئلہ آیا</td></tr>`;
   }
-
-  if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ نہیں ہے۔</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(d => {
-    const uId = d.investor_id || d.user_id;
-    const userName = userMap[uId] || d.user_name || "Investor";
-
-    const slipHtml = d.slip_url 
-      ? `<a href="${d.slip_url}" target="_blank" class="slip-link">👁️ View Slip</a>` 
-      : `<span style="color:#6b7280">No Slip</span>`;
-
-    return `
-      <tr>
-        <td><b>${userName}</b></td>
-        <td>Rs ${Number(d.amount).toLocaleString()}</td>
-        <td>${d.trx_id || '-'}</td>
-        <td>${slipHtml}</td>
-        <td><span class="badge badge-pending">pending</span></td>
-        <td>
-          <button onclick="updateDepositStatus('${d.id}', 'approved')" class="btn-act btn-approve">Approve</button>
-          <button onclick="updateDepositStatus('${d.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
-        </td>
-      </tr>
-    `;
-  }).join("");
 }
 
 async function updateDepositStatus(id, status) {
@@ -508,43 +534,50 @@ async function updateDepositStatus(id, status) {
 
 // WITHDRAWALS
 async function loadWithdrawals() {
-  const db = getSupabase();
   const tbody = document.getElementById("withdrawTableBody");
 
-  const { data, error } = await db
-    .from("withdrawals")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  try {
+    const db = getSupabase();
+    if(!db) return;
 
-  if(error) {
-    tbody.innerHTML = `<tr><td colspan="6">Error loading withdrawals.</td></tr>`;
-    return;
+    const { data, error } = await db
+      .from("withdrawals")
+      .select("*")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    if(error) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">ایررا: ${error.message}</td></tr>`;
+      return;
+    }
+
+    if(!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(w => {
+      const uId = w.investor_id || w.user_id;
+      const userName = userMap[uId] || "Investor";
+
+      return `
+        <tr>
+          <td><b>${userName}</b></td>
+          <td>Rs ${Number(w.amount).toLocaleString()}</td>
+          <td>${w.payment_method || 'Method'}</td>
+          <td>${w.account_title || ''}<br><small>${w.account_number || ''}</small></td>
+          <td><span class="badge badge-pending">pending</span></td>
+          <td>
+            <button onclick="updateWithdrawStatus('${w.id}', 'approved')" class="btn-act btn-approve">Approve</button>
+            <button onclick="updateWithdrawStatus('${w.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch(e) {
+    console.error("Load withdrawals error:", e);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">لوڈنگ میں مسئلہ آیا</td></tr>`;
   }
-
-  if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(w => {
-    const uId = w.investor_id || w.user_id;
-    const userName = userMap[uId] || "Investor";
-
-    return `
-      <tr>
-        <td><b>${userName}</b></td>
-        <td>Rs ${Number(w.amount).toLocaleString()}</td>
-        <td>${w.payment_method || 'Method'}</td>
-        <td>${w.account_title || ''}<br><small>${w.account_number || ''}</small></td>
-        <td><span class="badge badge-pending">pending</span></td>
-        <td>
-          <button onclick="updateWithdrawStatus('${w.id}', 'approved')" class="btn-act btn-approve">Approve</button>
-          <button onclick="updateWithdrawStatus('${w.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
-        </td>
-      </tr>
-    `;
-  }).join("");
 }
 
 async function updateWithdrawStatus(id, status) {
@@ -562,23 +595,28 @@ async function updateWithdrawStatus(id, status) {
 
 // ACCOUNTS
 async function loadAccounts() {
-  const db = getSupabase();
   const tbody = document.getElementById("paymentAccountsBody");
-  const { data } = await db.from("payment_methods").select("*");
+  try {
+    const db = getSupabase();
+    if(!db) return;
+    const { data } = await db.from("payment_methods").select("*");
 
-  if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4">No accounts found.</td></tr>`;
-    return;
+    if(!data || data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af">No accounts found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(a => `
+      <tr>
+        <td>${a.label || a.method}</td>
+        <td>${a.account_title}</td>
+        <td>${a.account_number}</td>
+        <td><button onclick="deleteAccount('${a.id}')" class="btn-act btn-delete">Delete</button></td>
+      </tr>
+    `).join("");
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4">Error loading accounts.</td></tr>`;
   }
-
-  tbody.innerHTML = data.map(a => `
-    <tr>
-      <td>${a.label || a.method}</td>
-      <td>${a.account_title}</td>
-      <td>${a.account_number}</td>
-      <td><button onclick="deleteAccount('${a.id}')" class="btn-act btn-delete">Delete</button></td>
-    </tr>
-  `).join("");
 }
 
 async function addPaymentAccount() {
@@ -600,53 +638,4 @@ async function addPaymentAccount() {
   }
 }
 
-async function deleteAccount(id) {
-  const db = getSupabase();
-  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
-  const { error } = await db.from("payment_methods").delete().eq("id", id);
-  if(error) alert("Error: " + error.message);
-  else loadAccounts();
-}
-
-// CAMPAIGNS
-async function loadCampaigns() {
-  const db = getSupabase();
-  const tbody = document.getElementById("campaignsTableBody");
-  const { data } = await db.from("campaigns").select("*");
-
-  if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3">No active campaigns.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = data.map(c => `
-    <tr>
-      <td><b>${c.title || c.name}</b></td>
-      <td>Rs ${Number(c.target || c.target_amount || 0).toLocaleString()}</td>
-      <td><button onclick="deleteCampaign('${c.id}')" class="btn-act btn-delete">Delete</button></td>
-    </tr>
-  `).join("");
-}
-
-async function addCampaign() {
-  const db = getSupabase();
-  const title = document.getElementById("campTitle").value;
-  const target = document.getElementById("campTarget").value;
-
-  if(!title || !target) return alert("عنوان اور ٹارگٹ درج کریں۔");
-
-  const { error } = await db.from("campaigns").insert([{ title, target: Number(target), is_active: true }]);
-  if(error) alert("Error: " + error.message);
-  else {
-    alert("Campaign added!");
-    document.getElementById("campTitle").value = "";
-    document.getElementById("campTarget").value = "";
-    loadCampaigns();
-  }
-}
-
-async function deleteCampaign(id) {
-  const db = getSupabase();
-  if(!confirm("کیا آپ واقعی اس کمپین کو ڈیلیٹ کرنا چاہتے ہیں؟")) return;
-
-  await db.from("investments").update({ campai
+  
