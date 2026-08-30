@@ -3,151 +3,417 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admin Panel — RozgarBike</title>
+<title>Admin — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  .admin-card { background:#fff; padding:15px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px; }
-  .btn-approve { background:#2ecc71; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
-  .btn-reject { background:#e74c3c; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
-</style>
 </head>
 <body>
-
   <div class="header">
     <div class="header-row">
-      <div class="brand"><span class="brand-badge">⚙️</span> Admin Panel</div>
-      <a href="dashboard.html" style="color:#fff; text-decoration:none; font-size:13px;">Back to Dashboard</a>
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike Panel</div>
+      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="logout()">Log out</button>
+    </div>
+    <div class="nav">
+      <a href="index.html">Bikes</a>
+      <a href="dashboard.html">My Dashboard</a>
+      <a href="admin.html" class="active">Admin</a>
     </div>
   </div>
 
   <div class="wrap">
-    
-    <!-- ALL CAMPAIGNS & INVESTMENTS -->
-    <div class="admin-card">
-      <h3>🚲 User Investments & Campaigns</h3>
-      <div id="adminCampaignsList" style="font-size:13px;">Loading investments...</div>
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Number — e.g. 923245380453</div>
+      <input id="waNumber" placeholder="923245380453" style="margin-bottom:12px;" />
+      <div class="muted" style="margin-bottom:6px;">WhatsApp Channel Link</div>
+      <input id="waChannel" placeholder="https://whatsapp.com/channel/xxxx" style="margin-bottom:12px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
 
-    <!-- PENDING DEPOSITS -->
-    <div class="admin-card">
-      <h3>💳 Pending Deposit Requests</h3>
-      <div id="adminDepositsList" style="font-size:13px;">Loading deposits...</div>
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS (DEPOSITS)</div>
+    <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
+    <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRAL TEAMS & BONUSES</div>
+    <div id="referralsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
+    <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">Loading...</div>
+    <div class="card" style="margin-bottom:24px;">
+      <div class="muted" style="margin-bottom:8px;font-weight:700;">Add A New Payment Account</div>
+      <input id="newLabel" placeholder="Label, e.g. JazzCash / Easypaisa / Meezan Bank" style="margin-bottom:8px;" />
+      <input id="newTitle" placeholder="Account Title / Name" style="margin-bottom:8px;" />
+      <input id="newNumber" placeholder="Account / Phone Number" style="margin-bottom:10px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="addMethod()">Add Account</button>
     </div>
 
-    <!-- PENDING WITHDRAWALS -->
-    <div class="admin-card">
-      <h3>💸 Pending Withdrawal Requests</h3>
-      <div id="adminWithdrawalsList" style="font-size:13px;">Loading withdrawals...</div>
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">CREATE A CAMPAIGN</div>
+    <div class="card" style="margin-bottom:20px;">
+      <input id="newName" placeholder="Bike name, e.g. Bike #14" style="margin-bottom:8px;" />
+      <input id="newTarget" type="number" placeholder="Target amount (Rs)" style="margin-bottom:8px;" />
+      <input id="newMargin" type="number" placeholder="Margin on top of target (Rs)" style="margin-bottom:10px;" />
+      <button class="btn btn-dark" style="width:100%;" onclick="createCampaign()">Create Campaign</button>
     </div>
 
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS (PERCENTAGE PROFIT & BONUS)</div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">Loading...</div>
+
+    <div class="disp" style="font-size:16px;margin-bottom:8px;">CLOSED CAMPAIGNS</div>
+    <div id="closedList" style="display:flex;flex-direction:column;gap:12px;">Loading...</div>
   </div>
+
+  <div id="toast" class="toast"></div>
 
   <script src="assets/config.js"></script>
   <script>
+    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
+    
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg;
+        t.className = "toast show";
+        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
+      } else { alert(msg); }
+    }
+
+    async function logout() {
+      try {
+        if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
+          await supabaseClient.auth.signOut();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
     async function initAdmin() {
-      if (typeof supabaseClient === 'undefined') return;
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "index.html";
+          return;
+        }
 
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session) { window.location.href = "index.html"; return; }
+        const { data: profile } = await supabaseClient.from("profiles").select("role").eq("id", session.user.id).single();
+        if (!profile || profile.role !== 'admin') {
+          alert("Access Denied! Sirf Admin is page ko access kar sakta hai.");
+          window.location.href = "dashboard.html";
+          return;
+        }
 
-      const { data: profile } = await supabaseClient.from("profiles").select("role").eq("id", session.user.id).single();
-      if (!profile || profile.role !== 'admin') {
-        alert("Access Denied!");
-        window.location.href = "dashboard.html";
-        return;
-      }
-
-      await loadAdminCampaigns();
-      await loadAdminDeposits();
-      await loadAdminWithdrawals();
-    }
-
-    async function loadAdminCampaigns() {
-      const { data: invs } = await supabaseClient.from("investments").select("*, profiles(email), campaigns(name)");
-      const el = document.getElementById("adminCampaignsList");
-
-      if (!invs || invs.length === 0) {
-        el.innerHTML = "Koi investment record nahi hai.";
-      } else {
-        el.innerHTML = invs.map(i => `
-          <div style="padding:10px 0; border-bottom:1px solid #eee;">
-            <b>User:</b> ${i.profiles ? i.profiles.email : i.user_id}<br>
-            <b>Campaign:</b> ${i.campaigns ? i.campaigns.name : 'Campaign'}<br>
-            <b>Amount:</b> Rs ${Number(i.amount).toLocaleString()}<br>
-            <b>Status:</b> <b>${i.status || 'PENDING'}</b>
-          </div>
-        `).join("");
+        await Promise.allSettled([
+          loadWhatsApp(),
+          loadPending(),
+          loadWithdrawals(),
+          loadReferrals(),
+          loadMethods(),
+          loadCampaigns()
+        ]);
+      } catch (err) {
+        console.error("Init error:", err);
       }
     }
 
-    async function loadAdminDeposits() {
-      const { data: deps } = await supabaseClient.from("deposits").select("*, profiles(email)").eq("status", "pending");
-      const el = document.getElementById("adminDepositsList");
+    async function loadWhatsApp() {
+      try {
+        const { data } = await supabaseClient.from("site_settings").select("*");
+        const map = {};
+        (data || []).forEach(row => map[row.key] = row.value);
+        if (document.getElementById("waNumber")) document.getElementById("waNumber").value = map["whatsapp_number"] || "";
+        if (document.getElementById("waChannel")) document.getElementById("waChannel").value = map["whatsapp_channel"] || "";
+      } catch(e) {}
+    }
 
-      if (!deps || deps.length === 0) {
-        el.innerHTML = "Koi pending deposit nahi hai.";
-      } else {
-        el.innerHTML = deps.map(d => `
-          <div style="padding:10px 0; border-bottom:1px solid #eee;">
-            <b>User:</b> ${d.profiles ? d.profiles.email : d.user_id}<br>
-            <b>Method:</b> ${d.method} | <b>Amount:</b> Rs ${Number(d.amount).toLocaleString()}<br>
-            <b>TID:</b> <code>${d.trx_id}</code><br>
-            <div style="margin-top:8px;">
-              <button class="btn-approve" onclick="updateDepositStatus('${d.id}', '${d.user_id}', ${d.amount}, 'approved')">Approve</button>
-              <button class="btn-reject" onclick="updateDepositStatus('${d.id}', '${d.user_id}', ${d.amount}, 'rejected')">Reject</button>
+    async function saveWhatsApp() {
+      const number = document.getElementById("waNumber").value.trim();
+      const channel = document.getElementById("waChannel").value.trim();
+      await supabaseClient.from("site_settings").upsert({ key: "whatsapp_number", value: number });
+      await supabaseClient.from("site_settings").upsert({ key: "whatsapp_channel", value: channel });
+      toast("WhatsApp links saved");
+    }
+
+    async function loadPending() {
+      const listEl = document.getElementById("pendingList");
+      try {
+        const { data: pending } = await supabaseClient
+          .from("deposits")
+          .select("*, profiles(email)")
+          .eq("status", "pending")
+          .order("created_at", { ascending: true });
+
+        if (!pending || !pending.length) {
+          listEl.innerHTML = `<p class="muted">No pending payments right now.</p>`;
+          return;
+        }
+        listEl.innerHTML = "";
+        pending.forEach(p => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="font-weight:700;font-size:14px;">${pkr(p.amount)} — ${p.method || "Deposit"}</div>
+            <div class="muted" style="margin-top:2px;">User: ${p.profiles?.email || p.user_id}</div>
+            <div class="muted" style="margin-top:6px;">Transaction ID: <span class="mono" style="color:var(--ink);">${p.trx_id || "—"}</span></div>
+            ${p.proof_img ? `<a href="${p.proof_img}" target="_blank"><img src="${p.proof_img}" style="width:100%;max-width:220px;border-radius:10px;margin-top:8px;border:1px solid var(--line);" /></a>` : ""}
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="approveDeposit('${p.id}', '${p.user_id}', ${p.amount})">Approve</button>
+              <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="declineDeposit('${p.id}')">Decline</button>
             </div>
-          </div>
-        `).join("");
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No pending deposits.</p>`;
       }
     }
 
-    async function loadAdminWithdrawals() {
-      const { data: w } = await supabaseClient.from("withdrawal_requests").select("*, profiles(email)").eq("status", "pending");
-      const el = document.getElementById("adminWithdrawalsList");
+    async function approveDeposit(depositId, userId, amount) {
+      await supabaseClient.from("deposits").update({ status: "approved" }).eq("id", depositId);
+      const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", userId).single();
+      const oldBal = prof ? (prof.balance || 0) : 0;
+      await supabaseClient.from("profiles").update({ balance: oldBal + amount }).eq("id", userId);
+      toast("Deposit approved & added to balance");
+      await loadPending();
+    }
 
-      if (!w || w.length === 0) {
-        el.innerHTML = "Koi pending withdrawal request nahi hai.";
-      } else {
-        el.innerHTML = w.map(x => `
-          <div style="padding:10px 0; border-bottom:1px solid #eee;">
-            <b>User:</b> ${x.profiles ? x.profiles.email : x.user_id}<br>
-            <b>Bank:</b> ${x.bank_name || 'Bank'}<br>
-            <b>Title:</b> ${x.account_name || 'N/A'} | <b>Account:</b> ${x.account_number || 'N/A'}<br>
-            <b>Amount:</b> Rs ${Number(x.amount).toLocaleString()}<br>
-            <div style="margin-top:8px;">
-              <button class="btn-approve" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'approved')">Approve & Pay</button>
-              <button class="btn-reject" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'rejected')">Reject</button>
+    async function declineDeposit(depositId) {
+      await supabaseClient.from("deposits").update({ status: "rejected" }).eq("id", depositId);
+      toast("Deposit declined");
+      await loadPending();
+    }
+
+    async function loadWithdrawals() {
+      const listEl = document.getElementById("withdrawList");
+      try {
+        const { data: reqs } = await supabaseClient
+          .from("withdrawal_requests")
+          .select("*, profiles(email)")
+          .eq("status", "pending")
+          .order("created_at", { ascending: true });
+
+        if (!reqs || !reqs.length) {
+          listEl.innerHTML = `<p class="muted">No withdrawal requests right now.</p>`;
+          return;
+        }
+        listEl.innerHTML = "";
+        reqs.forEach(r => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="font-weight:700;font-size:14px;">${pkr(r.amount)}</div>
+            <div class="muted" style="margin-top:2px;">User: ${r.profiles?.email || r.user_id}</div>
+            <div class="muted" style="margin-top:6px;">${r.bank_name}: ${r.account_name} — <span class="mono" style="color:var(--ink);">${r.account_number}</span></div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="btn btn-primary" style="flex:1;" onclick="markWithdrawPaid('${r.id}', '${r.user_id}', ${r.amount})">Mark as paid</button>
+              <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="rejectWithdraw('${r.id}')">Reject</button>
             </div>
-          </div>
-        `).join("");
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No withdrawal requests.</p>`;
       }
     }
 
-    async function updateDepositStatus(id, userId, amount, status) {
-      await supabaseClient.from("deposits").update({ status: status }).eq("id", id);
-      if (status === 'approved') {
-        const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", userId).single();
-        const oldBal = prof ? (prof.balance || 0) : 0;
-        await supabaseClient.from("profiles").update({ balance: oldBal + amount }).eq("id", userId);
-      }
-      alert("Status updated: " + status);
-      await loadAdminDeposits();
+    async function markWithdrawPaid(requestId, userId, amount) {
+      await supabaseClient.from("withdrawal_requests").update({ status: "approved" }).eq("id", requestId);
+      const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", userId).single();
+      const oldBal = prof ? (prof.balance || 0) : 0;
+      const newBal = Math.max(0, oldBal - amount);
+      await supabaseClient.from("profiles").update({ balance: newBal }).eq("id", userId);
+      toast("Marked as paid");
+      await loadWithdrawals();
     }
 
-    async function updateWithdrawStatus(id, userId, amount, status) {
-      await supabaseClient.from("withdrawal_requests").update({ status: status }).eq("id", id);
-      if (status === 'approved') {
-        const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", userId).single();
-        const oldBal = prof ? (prof.balance || 0) : 0;
-        const newBal = Math.max(0, oldBal - amount);
-        await supabaseClient.from("profiles").update({ balance: newBal }).eq("id", userId);
-      }
-      alert("Status updated: " + status);
-      await loadAdminWithdrawals();
+    async function rejectWithdraw(requestId) {
+      await supabaseClient.from("withdrawal_requests").update({ status: "rejected" }).eq("id", requestId);
+      toast("Withdrawal rejected");
+      await loadWithdrawals();
     }
 
-    initAdmin();
-  </script>
-</body>
-</html>
+    async function loadReferrals() {
+      const listEl = document.getElementById("referralsList");
+      try {
+        const { data: refs } = await supabaseClient
+          .from("referrals")
+          .select("*, referrer:referrer_id(email), referred:referred_id(email)")
+          .order("created_at", { ascending: true });
+
+        if (!refs || !refs.length) {
+          listEl.innerHTML = `<p class="muted">No referrals yet.</p>`;
+          return;
+        }
+
+        const groups = {};
+        refs.forEach(r => {
+          const key = r.referrer_id;
+          if (!groups[key]) groups[key] = { name: r.referrer?.email || "User", members: [] };
+          groups[key].members.push({ name: r.referred?.email || "User", paid: r.bonus_paid });
+        });
+
+        listEl.innerHTML = "";
+        Object.entries(groups).forEach(([referrerId, g]) => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-weight:700;font-size:14px;">${g.name}</div>
+              <span style="background:#f1f5f9;color:#334155;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;">${g.members.length} referrals</span>
+            </div>
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+              ${g.members.map(m => `<div class="muted" style="font-size:12px;">${m.name}</div>`).join("")}
+            </div>
+            <div style="display:flex;gap:6px;margin-top:10px;">
+              <input id="refbonus-${referrerId}" type="number" placeholder="Bonus amount (Rs)" style="flex:1;padding:8px;font-size:12px;" />
+              <button class="btn btn-dark" style="padding:0 12px;font-size:12px;" onclick="giveReferralBonus('${referrerId}')">Give Bonus</button>
+            </div>
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No referrals found.</p>`;
+      }
+    }
+
+    async function giveReferralBonus(referrerId) {
+      const input = document.getElementById(`refbonus-${referrerId}`);
+      const amount = Number(input.value);
+      if (!amount) return toast("Enter a bonus amount");
+
+      const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", referrerId).single();
+      const oldBal = prof ? (prof.balance || 0) : 0;
+      await supabaseClient.from("profiles").update({ balance: oldBal + amount }).eq("id", referrerId);
+
+      toast(pkr(amount) + " referral bonus sent");
+      input.value = "";
+    }
+
+    async function loadMethods() {
+      const listEl = document.getElementById("methodsList");
+      try {
+        const { data: methods } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: true });
+        listEl.innerHTML = "";
+        (methods || []).forEach(m => {
+          const div = document.createElement("div");
+          div.className = "card";
+          div.innerHTML = `
+            <input value="${m.name || m.label || ""}" id="label-${m.id}" style="margin-bottom:6px;" />
+            <input value="${m.account_title || ""}" id="title-${m.id}" style="margin-bottom:6px;" placeholder="Title" />
+            <input value="${m.account_number || ""}" id="number-${m.id}" style="margin-bottom:8px;" placeholder="Number" />
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-dark" style="flex:1;" onclick="updateMethod('${m.id}')">Save</button>
+              <button class="btn btn-outline" style="flex:1;border-color:var(--rust);color:var(--rust);" onclick="deleteMethod('${m.id}')">Delete</button>
+            </div>
+          `;
+          listEl.appendChild(div);
+        });
+      } catch(e) {
+        listEl.innerHTML = `<p class="muted">No payment methods found.</p>`;
+      }
+    }
+
+    async function addMethod() {
+      const name = document.getElementById("newLabel").value.trim();
+      const account_title = document.getElementById("newTitle").value.trim();
+      const account_number = document.getElementById("newNumber").value.trim();
+      if (!name) return toast("Fill method name");
+
+      await supabaseClient.from("payment_methods").insert({ name, account_title, account_number });
+      toast("Account added");
+      document.getElementById("newLabel").value = "";
+      document.getElementById("newTitle").value = "";
+      document.getElementById("newNumber").value = "";
+      await loadMethods();
+    }
+
+    async function updateMethod(id) {
+      const name = document.getElementById(`label-${id}`).value;
+      const account_title = document.getElementById(`title-${id}`).value;
+      const account_number = document.getElementById(`number-${id}`).value;
+      await supabaseClient.from("payment_methods").update({ name, account_title, account_number }).eq("id", id);
+      toast("Saved");
+      await loadMethods();
+    }
+
+    async function deleteMethod(id) {
+      await supabaseClient.from("payment_methods").delete().eq("id", id);
+      toast("Account removed");
+      await loadMethods();
+    }
+
+    async function createCampaign() {
+      const name = document.getElementById("newName").value.trim();
+      const target = Number(document.getElementById("newTarget").value || 0);
+      const margin = Number(document.getElementById("newMargin").value || 0);
+      if (!name) return toast("Name is required");
+
+      await supabaseClient.from("campaigns").insert({ name, target, margin, status: "active" });
+      toast("Campaign created");
+      document.getElementById("newName").value = "";
+      document.getElementById("newTarget").value = "";
+      document.getElementById("newMargin").value = "";
+      await loadCampaigns();
+    }
+
+    async function loadCampaigns() {
+      const activeEl = document.getElementById("campaignsList");
+      const closedEl = document.getElementById("closedList");
+
+      try {
+        const { data: campaigns } = await supabaseClient
+          .from("campaigns")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        activeEl.innerHTML = "";
+        closedEl.innerHTML = "";
+
+        if (!campaigns || campaigns.length === 0) {
+          activeEl.innerHTML = `<p class="muted">No active campaigns.</p>`;
+          closedEl.innerHTML = `<p class="muted">No closed campaigns.</p>`;
+          return;
+        }
+
+        for (const c of campaigns) {
+          const { data: investors } = await supabaseClient
+            .from("investments")
+            .select("*, profiles(email)")
+            .eq("campaign_id", c.id);
+
+          const isClosed = c.status === "complete" || c.status === "closed";
+          const totalPool = (investors || []).reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+
+          const div = document.createElement("div");
+          div.className = "card";
+          div.style.border = "1px solid #cbd5e1";
+          div.innerHTML = `
+            <div style="font-weight:800;font-size:16px;color:var(--brand);">${c.name}
+              <span class="muted" style="font-weight:400;font-size:12px;"> ${isClosed ? "· CLOSED" : "· ACTIVE"}</span>
+            </div>
+            <div class="muted" style="margin-top:2px;">Target: ${pkr(c.target || 0)} | Total Raised: ${pkr(totalPool)}</div>
+
+            ${isClosed ? "" : `
+            <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:10px;border:1px solid #e2e8f0;">
+              <div style="font-size:12px;font-weight:700;margin-bottom:6px;">🏍️ RIDER PAYMENT TODAY (DISTRIBUTE PROFIT BY SHARE %)</div>
+              <input id="sim-${c.id}" type="number" placeholder="Enter Total Amount (e.g. 2800)" style="width:100%;margin-bottom:8px;padding:8px;" />
+              <button class="btn btn-dark" style="width:100%;font-size:12px;" onclick="distributeProportional('${c.id}', ${totalPool})">Distribute Profit by Share %</button>
+            </div>
+            `}
+
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;" id="investorList-${c.id}">
+              ${(investors || []).map(inv => `
+                <div style="font-size:12px;padding:6px;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;">
+                  <span>${inv.profiles?.email || 'User'}</span>
+                  <b>Rs ${Number(inv.amount).toLocaleString()}</b>
+                </div>
+              `).join("")}
+            </div>
+
+            ${isClosed ? "" : `<button class="btn btn-outline" style="width:100%;margin-top:12px;border-color:var(--rust);color:var(--rust);" onclick="closeCampaign('${c.id}')">Close Campaign</button>`}
+          `;
+
+          (isClosed ? closedEl : activeEl).appendChil
