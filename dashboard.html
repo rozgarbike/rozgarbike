@@ -7,10 +7,10 @@
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/config.js"></script>
-<script src="assets/app.js"></script>
 </head>
 <body style="background-color: #f4f6f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0;">
 
+  <!-- HEADER & NAVIGATION -->
   <div class="header" style="background: #0f172a; color: #fff; padding: 15px 20px;">
     <div class="header-row" style="display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto 10px auto;">
       <div class="brand" style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
@@ -21,9 +21,10 @@
         <button class="btn btn-outline" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;" onclick="logout()">Log out</button>
       </div>
     </div>
-    <div class="nav" id="navBar" style="display: flex; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto;">
+    <div class="nav" id="navBar" style="display: flex; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto; flex-wrap: wrap;">
       <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 600; padding: 4px 8px;">Bikes</a>
       <a href="dashboard.html" class="active" style="color: #38bdf8; text-decoration: none; font-size: 13px; font-weight: 700; border-bottom: 2px solid #38bdf8; padding: 4px 8px;">My Dashboard</a>
+      <!-- Admin Button -->
       <a href="admin.html" id="adminLink" style="display: none; background: #e11d48; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; text-decoration: none;">Admin Panel</a>
     </div>
   </div>
@@ -38,7 +39,7 @@
       <button class="btn btn-dark" style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
 
-    <!-- 2. REFERRAL & DYNAMIC 10-REFERRAL BONUS SECTION -->
+    <!-- 2. REFERRAL SECTION -->
     <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">🎁 REFERRAL & 10% EXTRA BONUS</div>
     <div class="card" style="margin-bottom: 24px; background: #fff; border: 2px solid #3b82f6; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 18px;">
       
@@ -89,7 +90,7 @@
     <div class="card" style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
       <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; font-weight: 600;">Transfer amount to any payment method below:</div>
       <div id="methodsDisplay" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-        <p style="font-size: 12px; color: #64748b; margin: 0;">Loading accounts...</p>
+        <p style="font-size: 12px; color: #64748b; margin: 0;">Accounts loading...</p>
       </div>
       
       <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Enter Transaction ID / Sender Number:</div>
@@ -142,6 +143,7 @@
     let selectedCampaignId = null;
     let currentUser = null;
 
+    // ADMIN EMAIL ADDRESS (Yeh aapki Admin Email hai)
     const ADMIN_EMAIL = "saimpk5227@gmail.com";
 
     function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
@@ -166,6 +168,7 @@
       try {
         if (typeof supabaseClient === 'undefined') {
           console.error("Supabase Client missing! Check assets/config.js");
+          alert("Supabase client initialize nahi hua. Please assets/config.js check karein.");
           return;
         }
 
@@ -182,16 +185,11 @@
           return;
         }
 
-        // Display Name / Email
+        // Display User Email/Name
         let displayName = currentUser.email ? currentUser.email.split('@')[0] : "User";
-        try {
-          const { data: profile } = await supabaseClient.from("profiles").select("name").eq("id", currentUser.id).maybeSingle();
-          if (profile && profile.name) displayName = profile.name;
-        } catch(e){}
-        
         document.getElementById("userNameDisplay").textContent = "👤 " + displayName;
 
-        // Admin Link Check
+        // CHECK ADMIN PERMISSION - HAR HAAL MEIN CHECK HOGA
         if (currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
           document.getElementById("adminLink").style.display = "inline-block";
         } else {
@@ -202,17 +200,19 @@
         const base = window.location.href.split('dashboard.html')[0];
         document.getElementById("refLinkInput").value = base + "index.html?ref=" + encodeURIComponent(displayName);
 
-        // Load modules independently
-        loadReferralData();
-        loadInvestmentsAndBalance();
-        loadCampaignsSelect();
-        loadPaymentMethods();
+        // Individual modules load (fail-safe mode)
+        loadPaymentMethods().catch(e => console.log(e));
+        loadCampaignsSelect().catch(e => console.log(e));
+        loadInvestmentsAndBalance().catch(e => console.log(e));
+        loadReferralData().catch(e => console.log(e));
+
       } catch(err) {
-        console.error("Init Error:", err);
+        console.error("Init Exception Error:", err);
       }
     }
 
     async function loadReferralData() {
+      const listContainer = document.getElementById("referredUsersList");
       try {
         const { data: list } = await supabaseClient
           .from("profiles")
@@ -241,16 +241,15 @@
           bonusBox.style.background = "#fef3c7";
           bonusBox.style.color = "#b45309";
           bonusBox.style.borderColor = "#f59e0b";
-          bonusBox.innerHTML = `🎉 <strong>10 Referrals Completed!</strong><br/><span style="font-size:12px;">Bonus verification ke liye Admin panel ko bhej diya gaya hai. Admin approve karte hi aap ka new batch reset ho jayega!</span>`;
+          bonusBox.innerHTML = `🎉 <strong>10 Referrals Completed!</strong><br/><span style="font-size:12px;">Bonus verification ke liye Admin panel ko bhej diya gaya hai!</span>`;
         } else {
           const remaining = 10 - count;
           bonusBox.style.background = "#e0f2fe";
           bonusBox.style.color = "#0369a1";
           bonusBox.style.borderColor = "#0284c7";
-          bonusBox.innerHTML = `🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/><span style="font-size:12px;">Aap ko 10% extra profit bonus haasil karne ke liye sirf <strong style="color:#d97706;">${remaining}</strong> aur doston ko invite karna hai!</span>`;
+          bonusBox.innerHTML = `🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/><span style="font-size:12px;">Aap ko 10% profit bonus ke liye sirf <strong style="color:#d97706;">${remaining}</strong> aur doston ko invite karna hai!</span>`;
         }
 
-        const listContainer = document.getElementById("referredUsersList");
         if (list && list.length > 0) {
           listContainer.innerHTML = list.map((item, index) => {
             const parts = (item.email || "user@gmail.com").split('@');
@@ -267,7 +266,7 @@
           listContainer.innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;padding:10px;background:#f8fafc;border-radius:6px;border:1px dashed #cbd5e1;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
         }
       } catch(e) {
-        document.getElementById("referredUsersList").innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
+        listContainer.innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
       }
     }
 
@@ -334,4 +333,4 @@
       try {
         const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
         if (!data || !data.length) {
-          sel.innerHTML = `<option value="">Standard Bik
+          sel.innerHTML = `<option value="">Standard Bike Plan — Min Rs 1,00
