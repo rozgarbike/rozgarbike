@@ -58,7 +58,6 @@
     <div class="card" style="max-width:380px;width:100%;text-align:center;">
       <div class="disp" style="font-size:20px;margin-bottom:4px;">YE KAISE KAAM KARTA HAI</div>
       <div class="muted" style="margin-bottom:18px;">3 simple steps</div>
-
       <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
         <div style="font-size:28px;">🪙</div>
         <div style="font-size:13px;">Aap ek bike fund karte hain, Rs 1,000 se shuru</div>
@@ -71,7 +70,6 @@
         <div style="font-size:28px;">💰</div>
         <div style="font-size:13px;">Rider jitna wapis kare, aapko uska share milta hai — transparent, koi fix promise nahi</div>
       </div>
-
       <button class="btn btn-primary" style="width:100%;" onclick="closeIntro()">Bikes Dekhein</button>
     </div>
   </div>
@@ -87,7 +85,6 @@
       const { data } = await supabaseClient.from("site_settings").select("*");
       const map = {};
       (data || []).forEach(row => map[row.key] = row.value);
-
       if (map["whatsapp_number"]) {
         const btn = document.getElementById("whatsappChatBtn");
         btn.href = `https://wa.me/${map["whatsapp_number"]}`;
@@ -139,12 +136,10 @@
       const password = document.getElementById("password").value;
       if (!email || !password) return toast("Email and password required");
       const refCode = getReferralCodeFromURL();
-
       const { data, error } = await supabaseClient.auth.signUp({
         email, password, options: { data: { full_name } },
       });
       if (error) return toast(error.message);
-
       if (refCode && data.user) {
         const { data: refProfile } = await supabaseClient.from("profiles").select("id").eq("referral_code", refCode).single();
         if (refProfile) {
@@ -169,7 +164,6 @@
       const listEl = document.getElementById("campaignsList");
       if (error) { listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; return; }
       if (!campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
-
       listEl.innerHTML = "";
       for (const c of campaigns) {
         const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id).eq("status", "approved");
@@ -181,7 +175,7 @@
           <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div>
               <div class="disp" style="font-size:20px;">${c.name}</div>
-              <div class="muted" style="margin-top:2px;">${c.rider_tag}</div>
+              <div class="muted" style="margin-top:2px;">${c.rider_tag || ""}</div>
               <div style="margin-top:10px;font-size:12.5px;"><span class="mono" style="font-weight:600;">${pkr(funded)}</span><span class="muted"> raised of ${pkr(c.target)} target</span></div>
             </div>
             <div class="gauge-wrap">${gaugeSVG(pct)}</div>
@@ -196,7 +190,6 @@
 
     function startContribute(id, name, target, funded) {
       if (!currentSession) { document.getElementById("authBox").scrollIntoView({behavior:"smooth"}); toast("Log in or sign up first"); return; }
-      if (funded >= target) return;
       window.location.href = `dashboard.html?contribute=${id}`;
     }
 
