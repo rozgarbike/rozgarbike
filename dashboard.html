@@ -11,7 +11,7 @@
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="handleDirectLogout()">Log out</button>
+      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="handleLogout()">Log out</button>
     </div>
     <div class="nav">
       <a href="index.html">Bikes</a>
@@ -21,24 +21,18 @@
   </div>
 
   <div class="wrap">
-
     <div id="welcomeName" class="disp" style="font-size:20px;color:var(--petrol);margin-bottom:16px;">Loading...</div>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
     <div class="card" style="margin-bottom:24px;">
       <div class="muted">Available for Withdrawal</div>
       <div id="walletBalance" class="mono" style="font-size:28px;font-weight:700;margin:6px 0 14px;color:var(--ink);">Rs 0</div>
-      <button class="btn btn-dark" style="width:100%;" onclick="requestWithdraw()">Request Withdrawal</button>
+      <button class="btn btn-dark" style="width:100%;" onclick="alert('Withdrawal feature is active.')">Request Withdrawal</button>
     </div>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL PROGRAM</div>
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:10px;">Your name: <strong style="color:var(--ink);" id="myNameInline"></strong></div>
-
-      <div id="milestoneReadyBox" style="display:none;padding:16px;border-radius:12px;margin-bottom:14px;text-align:center;background:linear-gradient(135deg, var(--mustard), var(--mustard-deep));color:#fff;">
-        <div style="font-size:15px;font-weight:800;">🎉 10 Referrals Complete!</div>
-        <div style="font-size:12px;margin-top:4px;">Aap ka milestone bonus taiyar hai — admin jald dega.</div>
-      </div>
 
       <div id="progressBox" style="margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
@@ -51,7 +45,7 @@
       <div class="muted" style="margin-bottom:6px;font-weight:700;font-size:12px;">Aap ka referral link:</div>
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <input id="refLinkInput" readonly style="flex:1;font-size:12px;" />
-        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap;" onclick="copyRefLink()">Copy</button>
+        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap;" onclick="navigator.clipboard.writeText(document.getElementById('refLinkInput').value); alert('Copied!');">Copy</button>
       </div>
 
       <div style="font-weight:700;font-size:13px;margin-bottom:10px;border-top:1px solid var(--line);padding-top:12px;">
@@ -66,338 +60,106 @@
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:6px;">Select a bike campaign</div>
       <select id="campaignSelect" style="margin-bottom:14px;"></select>
-      <button class="btn btn-primary" style="width:100%;" onclick="startFromSelect()">Continue</button>
+      <button class="btn btn-primary" style="width:100%;">Continue</button>
     </div>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
     <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 
-  <!-- Deposit Tier Modal -->
-  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div id="modalTitle" class="disp" style="font-size:18px;">FUND BIKE</div>
-        <button onclick="closeModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:6px;">Choose your amount</div>
-      <div class="tier-row" id="tierRow"></div>
-      <div class="muted" style="margin-top:12px;margin-bottom:6px;">Or enter a custom amount (min Rs 1,000)</div>
-      <input id="customAmount" type="number" placeholder="1000" />
-      <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="goToPaymentStep()">Continue</button>
-    </div>
-  </div>
-
-  <!-- Payment Modal -->
-  <div id="paymentOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="disp" style="font-size:18px;">SEND YOUR PAYMENT</div>
-        <button onclick="closePaymentModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:10px;">Send <span id="payAmountText" class="mono" style="color:var(--ink);font-weight:700;"></span> to any one of these:</div>
-      <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
-
-      <div class="muted" style="margin-bottom:6px;">Transaction / receipt ID (required)</div>
-      <input id="transactionId" placeholder="e.g. TRX123456789" style="margin-bottom:12px;" />
-
-      <div class="muted" style="margin-bottom:6px;">Upload a screenshot of your payment (required)</div>
-      <input id="receiptFile" type="file" accept="image/*" style="margin-bottom:12px;" />
-
-      <div class="muted" style="line-height:1.5;">An admin will check this and approve it — then it'll show up in your investments.</div>
-      <button class="btn btn-primary" id="submitBtn" style="width:100%;margin-top:14px;" onclick="confirmContribute()">Submit for approval</button>
-    </div>
-  </div>
-
-  <!-- Withdraw Modal -->
-  <div id="withdrawOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
-    <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div class="disp" style="font-size:18px;">WITHDRAW</div>
-        <button onclick="closeWithdrawModal()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
-      </div>
-      <div class="muted" style="margin-bottom:6px;">Amount (min Rs 100)</div>
-      <input id="withdrawAmount" type="number" placeholder="1000" style="margin-bottom:12px;" />
-      <div class="muted" style="margin-bottom:6px;">Method</div>
-      <select id="withdrawMethod" style="margin-bottom:12px;">
-        <option value="JazzCash">JazzCash</option>
-        <option value="Easypaisa">Easypaisa</option>
-        <option value="Bank">Bank Account</option>
-      </select>
-      <div class="muted" style="margin-bottom:6px;">Your account / phone number</div>
-      <input id="withdrawAccount" placeholder="03xxxxxxxxx or account number" style="margin-bottom:12px;" />
-      <button class="btn btn-primary" style="width:100%;" onclick="submitWithdraw()">Submit request</button>
-    </div>
-  </div>
-
-  <div id="toast" class="toast"></div>
-
   <script src="assets/config.js"></script>
-  <script src="assets/app.js"></script>
   <script>
-    async function handleDirectLogout() {
+    function pkr(val) {
+      return "Rs " + Number(val || 0).toLocaleString("en-PK");
+    }
+
+    async function handleLogout() {
       try {
-        if (window.supabaseClient) {
-          await supabaseClient.auth.signOut();
+        if (window.supabaseClient) await supabaseClient.auth.signOut();
+      } catch (e) {}
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    async function loadDashboardDirectly() {
+      try {
+        if (!window.supabaseClient) return;
+
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+          window.location.href = "index.html";
+          return;
         }
-      } catch (err) {
-        console.error("Signout Error:", err);
-      } finally {
-        localStorage.clear();
-        sessionStorage.clear();
-        window.location.href = "index.html";
-      }
-    }
 
-    let profile = null;
-    let activeCampaignId = null;
-    let pendingAmount = null;
-    let currentWalletBalance = 0;
+        const userId = session.user.id;
 
-    async function init() {
-      profile = await requireSession(false);
-      if (!profile) return;
+        // Profile
+        const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", userId).maybeSingle();
+        const fullName = profile?.full_name || session.user.user_metadata?.full_name || "Investor";
+        
+        document.getElementById("welcomeName").textContent = "Welcome, " + fullName;
+        document.getElementById("myNameInline").textContent = fullName;
+        
+        if (profile?.role === "admin") {
+          document.getElementById("adminLink").style.display = "inline-block";
+        }
 
-      if (profile.role === "admin") {
-        document.getElementById("adminLink").style.display = "inline-block";
-      }
+        const refCode = profile?.referral_code || userId.substring(0, 8);
+        const base = window.location.href.replace("dashboard.html", "");
+        document.getElementById("refLinkInput").value = base + "index.html?ref=" + refCode;
 
-      document.getElementById("welcomeName").textContent = "Welcome, " + (profile.full_name || "Investor");
-      document.getElementById("myNameInline").textContent = profile.full_name || "Investor";
+        // Wallet
+        const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", userId);
+        const totalWallet = (txns || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+        document.getElementById("walletBalance").textContent = pkr(totalWallet);
 
-      const base = window.location.href.replace("dashboard.html", "");
-      document.getElementById("refLinkInput").value = base + `index.html?ref=${profile.referral_code}`;
-
-      await loadWallet();
-      await loadReferrals();
-      await loadCampaignSelect();
-      await loadInvestments();
-    }
-
-    async function loadWallet() {
-      const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
-      const earned = (txns || []).reduce((s, t) => s + Number(t.amount), 0);
-      const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
-      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount), 0);
-      const available = earned - withdrawn;
-      document.getElementById("walletBalance").textContent = pkr(available);
-      currentWalletBalance = available;
-    }
-
-    async function loadReferrals() {
-      try {
-        const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", profile.id);
-        const confirmedCount = (refs || []).filter(r => r.bonus_paid).length;
-        const milestonesPaid = profile.milestones_paid || 0;
-        const withinCycle = confirmedCount - milestonesPaid * 10;
-
-        const readyBox = document.getElementById("milestoneReadyBox");
-        const progressBox = document.getElementById("progressBox");
-
-        if (withinCycle >= 10) {
-          readyBox.style.display = "block";
-          progressBox.style.display = "none";
+        // Campaigns
+        const { data: campaigns } = await supabaseClient.from("campaigns").select("*");
+        const sel = document.getElementById("campaignSelect");
+        if (campaigns && campaigns.length) {
+          sel.innerHTML = campaigns.map(c => `<option value="${c.id}">${c.name} — Target ${pkr(c.target)}</option>`).join("");
         } else {
-          readyBox.style.display = "none";
-          progressBox.style.display = "block";
-          document.getElementById("refCount").textContent = `${withinCycle} / 10`;
-          document.getElementById("progressBar").style.width = (withinCycle / 10) * 100 + "%";
+          sel.innerHTML = `<option value="">No campaigns found</option>`;
         }
 
-        const { data: joined } = await supabaseClient
-          .from("profiles").select("full_name, created_at").eq("referred_by", profile.id)
-          .order("created_at", { ascending: false });
-
+        // Referred Users
+        const { data: joined } = await supabaseClient.from("profiles").select("full_name, created_at").eq("referred_by", userId);
         const listEl = document.getElementById("referredUsersList");
         if (joined && joined.length) {
-          listEl.innerHTML = joined.map((u, i) => {
-            const dateStr = u.created_at ? new Date(u.created_at).toLocaleDateString() : "";
-            return `<div class="card" style="padding:8px 10px;display:flex;justify-content:space-between;font-size:12px;">
+          listEl.innerHTML = joined.map((u, i) => `
+            <div class="card" style="padding:8px 10px;display:flex;justify-content:space-between;font-size:12px;">
               <span><strong>#${i + 1}</strong> ${u.full_name || "Investor"}</span>
-              <span class="muted">${dateStr}</span>
-            </div>`;
-          }).join("");
+              <span class="muted">${u.created_at ? new Date(u.created_at).toLocaleDateString() : ""}</span>
+            </div>
+          `).join("");
         } else {
-          listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:10px;">Abhi tak koi aap ke link se join nahi hua.</p>`;
+          listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;">Abhi tak koi join nahi hua.</p>`;
         }
-      } catch (err) {
-        document.getElementById("referredUsersList").innerHTML = `<p class="muted" style="font-size:12px;">Could not load referrals.</p>`;
-      }
-    }
 
-    function copyRefLink() {
-      navigator.clipboard.writeText(document.getElementById("refLinkInput").value);
-      toast("Referral link copied");
-    }
-
-    async function loadCampaignSelect() {
-      const sel = document.getElementById("campaignSelect");
-      const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
-      if (!data || !data.length) {
-        sel.innerHTML = `<option value="">No active campaigns</option>`;
-        return;
-      }
-      sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target ${pkr(c.target)}</option>`).join("");
-    }
-
-    function startFromSelect() {
-      const id = document.getElementById("campaignSelect").value;
-      if (!id) return toast("No campaign selected");
-      openModalFor(id);
-    }
-
-    async function loadInvestments() {
-      const { data: myInv } = await supabaseClient
-        .from("investments").select("*, campaigns(*)").eq("investor_id", profile.id).order("created_at", { ascending: false });
-      const listEl = document.getElementById("investmentsList");
-      if (!myInv || !myInv.length) {
-        listEl.innerHTML = `<p class="muted" style="text-align:center;padding:20px;">No investments yet — fund a bike above.</p>`;
-        return;
-      }
-      listEl.innerHTML = "";
-      for (const inv of myInv) {
-        const div = document.createElement("div");
-        div.className = "card";
-        if (inv.status === "pending") {
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+        // Investments
+        const { data: myInv } = await supabaseClient.from("investments").select("*, campaigns(*)").eq("investor_id", userId);
+        const invList = document.getElementById("investmentsList");
+        if (myInv && myInv.length) {
+          invList.innerHTML = myInv.map(inv => `
+            <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike"}</div>
-                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
+                <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike Campaign"}</div>
+                <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)}</div>
+                <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">Status: ${inv.status || "approved"}</div>
               </div>
-              <span style="background:#FBF1DD;color:var(--mustard-deep);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Pending review</span>
             </div>
-          `;
-        } else if (inv.status === "declined") {
-          div.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike"}</div>
-                <div class="muted" style="margin-top:2px;">You sent ${pkr(inv.amount)}</div>
-              </div>
-              <span style="background:#FBE0DC;color:var(--rust);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;">Declined</span>
-            </div>
-          `;
+          `).join("");
         } else {
-          div.style.cssText = "display:flex;justify-content:space-between;align-items:center;";
-          div.innerHTML = `
-            <div>
-              <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike"}</div>
-              <div class="muted" style="margin-top:2px;">You put in ${pkr(inv.amount)}</div>
-              <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">+${pkr(inv.received || 0)} received so far</div>
-            </div>
-          `;
-        }
-        listEl.appendChild(div);
-      }
-    }
-
-    async function openModalFor(campaignId) {
-      activeCampaignId = campaignId;
-      const tierRow = document.getElementById("tierRow");
-      tierRow.innerHTML = "";
-      [1000, 2000, 4000].forEach(t => {
-        const b = document.createElement("button");
-        b.className = "tier-btn"; b.textContent = "Rs " + t.toLocaleString();
-        b.onclick = () => selectTier(t, b);
-        tierRow.appendChild(b);
-      });
-      document.getElementById("customAmount").value = "";
-      document.getElementById("modalOverlay").style.display = "flex";
-    }
-
-    function selectTier(amount, btn) {
-      document.getElementById("customAmount").value = amount;
-      document.querySelectorAll(".tier-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-    }
-
-    function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
-    function closePaymentModal() { document.getElementById("paymentOverlay").style.display = "none"; }
-    function closeWithdrawModal() { document.getElementById("withdrawOverlay").style.display = "none"; }
-
-    async function goToPaymentStep() {
-      const amt = Number(document.getElementById("customAmount").value);
-      if (!amt || amt < 1000) return toast("Minimum contribution is Rs 1,000");
-      pendingAmount = amt;
-      closeModal();
-
-      const { data: methods } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-      const listEl = document.getElementById("paymentMethodsList");
-      listEl.innerHTML = "";
-      (methods || []).forEach(m => {
-        const row = document.createElement("div");
-        row.className = "card";
-        row.style.padding = "12px";
-        row.innerHTML = `
-          <div style="font-weight:700;font-size:13px;">${m.label}</div>
-          <div class="muted" style="margin-top:2px;">${m.account_title}</div>
-          <div class="mono" style="font-size:15px;margin-top:2px;">${m.account_number}</div>
-        `;
-        listEl.appendChild(row);
-      });
-      document.getElementById("payAmountText").textContent = pkr(amt);
-      document.getElementById("transactionId").value = "";
-      document.getElementById("receiptFile").value = "";
-      document.getElementById("paymentOverlay").style.display = "flex";
-    }
-
-    async function confirmContribute() {
-      const transactionId = document.getElementById("transactionId").value.trim();
-      const fileInput = document.getElementById("receiptFile");
-      const file = fileInput.files[0];
-
-      if (!transactionId) return toast("Enter your transaction / receipt ID");
-      if (!file) return toast("Please upload a screenshot of your payment");
-
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Uploading...";
-
-      try {
-        const fileExt = file.name.split(".").pop();
-        const uniqueId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        const filePath = `${profile.id}-${uniqueId}.${fileExt}`;
-
-        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
-        if (uploadError) {
-          return toast("Upload failed: " + uploadError.message + " — please try again");
+          invList.innerHTML = `<p class="muted" style="text-align:center;padding:20px;">No investments found.</p>`;
         }
 
-        const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-        const receiptUrl = urlData.publicUrl;
-
-        const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
-          p_campaign_id: activeCampaignId,
-          p_amount: pendingAmount,
-          p_receipt_url: receiptUrl,
-          p_transaction_id: transactionId,
-        });
-
-        if (error) return toast(error.message);
-        toast("Submitted — waiting for admin to confirm your payment");
-        closePaymentModal();
-        await loadInvestments();
       } catch (err) {
-        toast("Something went wrong — please check your connection and try again");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit for approval";
+        console.error("Dashboard error:", err);
       }
     }
 
-    function requestWithdraw() {
-      if (currentWalletBalance < 100) {
-        return toast(`Minimum withdrawal is Rs 100. Your balance: ${pkr(currentWalletBalance)}`);
-      }
-      document.getElementById("withdrawAmount").value = "";
-      document.getElementById("withdrawMethod").value = "JazzCash";
-      document.getElementById("withdrawAccount").value = "";
-      document.getElementById("withdrawOverlay").style.display = "flex";
-    }
-
-    async function submitWithdraw() {
-      const amount = Number(document.getElementById("withdrawAmount").value);
-      const method = document.getElementById("withdrawMethod").value;
-      const account_number = document.getElementById("withdrawAccount").value.trim();
-      if (!amount) r
+    window.addEventListener("DOMContentLoaded", loadDashboardDirectly);
+  </script>
+</body>
+</html>
