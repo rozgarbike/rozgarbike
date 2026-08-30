@@ -1,12 +1,15 @@
-// Supabase Configuration
-const SUPABASE_URL = "YOUR_SUPABASE_URL"; // Example: https://xyz.supabase.co
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // Example: eyJhbGciOiJIUzI1NiI...
+// Supabase Project Credentials
+const SUPABASE_URL = "https://iqwknfpmwekxdpmaykse.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Q4q2sgleePgGeoevraRKTw_UqNuvhV_";
 
-// Initialize Supabase Client
-if (typeof supabase !== 'undefined') {
+// Global Exposure
+window.SUPABASE_URL = SUPABASE_URL;
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+
+// Auto Client Initialization
+(function initSupabase() {
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
     window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-} else {
-    console.error("Supabase SDK not loaded. Make sure the CDN script is included before config.js");
-}
-const SUPABASE_URL = "https://your-supabase-url.supabase.co";
-const SUPABASE_ANON_KEY = "your-actual-anon-key-here";
+    console.log("Supabase connected successfully!");
+  }
+})();
