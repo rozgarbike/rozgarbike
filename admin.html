@@ -36,10 +36,9 @@
       <button class="btn btn-primary" style="background:#eab308; color:#000; font-size:15px;" onclick="distributeAutoProfit()">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CUSTOM BONUS BOX (SHOWING NAMES NOW) -->
+    <!-- 2. CUSTOM BONUS BOX -->
     <div class="card">
       <div class="section-title">🎁 Custom Giveaway / Special Bonus Box</div>
-      <!-- Bright visible dropdown for Mobile -->
       <select id="userSelect" class="input-field" style="background:#f8fafc; color:#000; font-weight:bold;">
         <option value="">-- Select Investor User --</option>
       </select>
@@ -48,24 +47,11 @@
       <button class="btn btn-primary" style="background:#9333ea;" onclick="sendCustomBonus()">Send Bonus To User</button>
     </div>
 
-    <!-- 3. REFERRAL WINNERS -->
-    <div class="card">
-      <div class="section-title" style="color:#4ade80;">🎉 Referral Winners (10 Active Depositors)</div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>Investor Name</th><th>Active Referrals</th><th>Status</th></tr>
-          </thead>
-          <tbody id="refWinnersTable"><tr><td colspan="3">Checking targets...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 4. PAYMENT ACCOUNTS -->
+    <!-- 3. PAYMENT ACCOUNTS -->
     <div class="card">
       <div class="section-title">💳 Add / Delete Payment Accounts</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-        <input id="accLabel" class="input-field" placeholder="Method Name (JazzCash/Bank)" />
+        <input id="accLabel" class="input-field" placeholder="Method (JazzCash/Bank)" />
         <input id="accTitle" class="input-field" placeholder="Account Title" />
         <input id="accNumber" class="input-field" placeholder="Account Number" />
       </div>
@@ -81,20 +67,20 @@
       </div>
     </div>
 
-    <!-- 5. PENDING DEPOSITS & SLIPS -->
+    <!-- 4. PENDING DEPOSITS WITH TRX ID & SLIPS -->
     <div class="card">
-      <div class="section-title">📥 Pending Deposits & Slip Pictures</div>
+      <div class="section-title">📥 Pending Deposits (Trx ID & Slips)</div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>Investor Name</th><th>Amount</th><th>Slip Link</th><th>Action</th></tr>
+            <tr><th>Investor Name</th><th>Amount</th><th>Trx ID</th><th>Slip Image</th><th>Action</th></tr>
           </thead>
-          <tbody id="depositsTable"><tr><td colspan="4">Loading...</td></tr></tbody>
+          <tbody id="depositsTable"><tr><td colspan="5">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 6. PENDING WITHDRAWALS -->
+    <!-- 5. PENDING WITHDRAWALS -->
     <div class="card">
       <div class="section-title">📤 Pending Withdrawals</div>
       <div style="overflow-x:auto;">
@@ -116,13 +102,11 @@
     async function initAdmin() {
       const db = getSupabase();
       loadUsersDropdown(db);
-      loadReferralWinners(db);
       loadAccounts(db);
       loadDeposits(db);
       loadWithdrawals(db);
     }
 
-    // Fetches NAMES instead of raw IDs in Admin view
     async function loadUsersDropdown(db) {
       const { data: users } = await db.from("profiles").select("id, email, full_name");
       const select = document.getElementById("userSelect");
@@ -162,32 +146,6 @@
       alert("بونس منتقل کر دیا گیا!");
     }
 
-    async function loadReferralWinners(db) {
-      const tbody = document.getElementById("refWinnersTable");
-      const { data: users } = await db.from("profiles").select("id, full_name, email");
-      let winners = [];
-
-      if (users) {
-        for (let u of users) {
-          const { data: refs } = await db.from("profiles").select("id").eq("referred_by", u.id);
-          let activeCount = 0;
-          if (refs) {
-            for (let r of refs) {
-              const { data: dep } = await db.from("investments").select("id").eq("investor_id", r.id).eq("status", "approved").limit(1);
-              if (dep && dep.length > 0) activeCount++;
-            }
-          }
-          if (activeCount >= 10) winners.push({ name: u.full_name || u.email, count: activeCount });
-        }
-      }
-
-      if (winners.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">کسی کا ریفرل ٹارگٹ ابھی پورا نہیں ہوا۔</td></tr>`;
-      } else {
-        tbody.innerHTML = winners.map(w => `<tr><td>${w.name}</td><td><strong style="color:#4ade80;">${w.count} / 10 Approved</strong></td><td><span style="color:#fde047;">Goal Completed!</span></td></tr>`).join("");
-      }
-    }
-
     async function loadAccounts(db) {
       const tbody = document.getElementById("accountsTable");
       const { data } = await db.from("payment_methods").select("*");
@@ -213,8 +171,19 @@
     async function loadDeposits(db) {
       const tbody = document.getElementById("depositsTable");
       const { data } = await db.from("investments").select("*, profiles(full_name, email)").eq("status", "pending");
-      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="4">کوئی پینڈنگ ڈپازٹ نہیں ہے۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(d => `<tr><td>${d.profiles?.full_name || d.profiles?.email || d.investor_id}</td><td>Rs ${d.amount}</td><td><a href="${d.slip_url}" target="_blank" style="color:#38bdf8; font-weight:bold;">🖼️ View Slip Picture</a></td><td><button class="btn btn-approve" onclick="updateDep('${d.id}', 'approved')">Approve</button><button class="btn btn-reject" onclick="updateDep('${d.id}', 'rejected')">Reject</button></td></tr>`).join("");
+      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5">کوئی پینڈنگ ڈپازٹ نہیں ہے۔</td></tr>`; return; }
+      tbody.innerHTML = data.map(d => `
+        <tr>
+          <td>${d.profiles?.full_name || d.profiles?.email || d.investor_id}</td>
+          <td>Rs ${d.amount}</td>
+          <td><strong style="color:#facc15;">${d.trx_id || 'N/A'}</strong></td>
+          <td><a href="${d.slip_url}" target="_blank" style="color:#38bdf8; font-weight:bold;">🖼️ View Slip</a></td>
+          <td>
+            <button class="btn btn-approve" onclick="updateDep('${d.id}', 'approved')">Approve</button>
+            <button class="btn btn-reject" onclick="updateDep('${d.id}', 'rejected')">Reject</button>
+          </td>
+        </tr>
+      `).join("");
     }
 
     async function updateDep(id, status) {
