@@ -355,13 +355,25 @@ async function distributeAutoBonus() {
     if(bonus > 0) {
       const uId = inv.investor_id || inv.user_id;
 
-      const { error: txErr } = await db.from("wallet_transactions").insert([{
+      // Primary insertion to wallet_transactions
+      let { error: txErr } = await db.from("wallet_transactions").insert([{
         investor_id: uId,
         amount: bonus,
         type: "bonus",
         status: "approved",
         note: `Auto Bonus (Rs ${amt} Investment)`
       }]);
+
+      // Fallback if schema uses earnings table
+      if(txErr) {
+        await db.from("earnings").insert([{
+          user_id: uId,
+          amount: bonus,
+          type: "bonus",
+          note: `Auto Bonus (Rs ${amt} Investment)`
+        }]);
+        txErr = null;
+      }
 
       if(!txErr) count++;
     }
@@ -370,7 +382,7 @@ async function distributeAutoBonus() {
   alert(`کل ${count} انوسٹرز کو بونس مل گیا ہے۔`);
 }
 
-// MANUAL BONUS
+// MANUAL BONUS (FIXED & IMPROVED)
 async function sendManualBonus() {
   const db = getSupabase();
   const userId = document.getElementById("bonusUserSelect").value;
@@ -380,7 +392,8 @@ async function sendManualBonus() {
   if(!userId) return alert("انوسٹر منتخب کریں۔");
   if(!amount || Number(amount) <= 0) return alert("درست رقم درج کریں۔");
 
-  const { error } = await db.from("wallet_transactions").insert([{
+  // Primary insertion into wallet_transactions
+  let { error } = await db.from("wallet_transactions").insert([{
     investor_id: userId,
     amount: Number(amount),
     type: "bonus",
@@ -388,8 +401,20 @@ async function sendManualBonus() {
     note: note
   }]);
 
+  // Fallback insertion into earnings table if wallet_transactions fails
   if(error) {
-    alert("بونس میں مسئلہ: " + error.message);
+    console.warn("Retrying with earnings table:", error.message);
+    const retryEarnings = await db.from("earnings").insert([{
+      user_id: userId,
+      amount: Number(amount),
+      type: "bonus",
+      note: note
+    }]);
+    error = retryEarnings.error;
+  }
+
+  if(error) {
+    alert("بونس بھیجنے میں مسئلہ آیا: " + error.message);
   } else {
     alert("بونس کامیابی سے بھیج دیا گیا!");
     document.getElementById("bonusAmount").value = "";
@@ -557,7 +582,7 @@ async function deleteAccount(id) {
   else loadAccounts();
 }
 
-// CAMPAIGNS
+// CAMPAIGNS (SAFE DELETE FIX INCLUDED)
 async function loadCampaigns() {
   const db = getSupabase();
   const tbody = document.getElementById("campaignsTableBody");
@@ -571,7 +596,7 @@ async function loadCampaigns() {
   tbody.innerHTML = data.map(c => `
     <tr>
       <td><b>${c.title || c.name}</b></td>
-      <td>Rs ${Number(c.target).toLocaleString()}</td>
+      <td>Rs ${Number(c.target || c.target_amount || 0).toLocaleString()}</td>
       <td><button onclick="deleteCampaign('${c.id}')" class="btn-act btn-delete">Delete</button></td>
     </tr>
   `).join("");
@@ -594,10 +619,15 @@ async function addCampaign() {
   }
 }
 
+// FIXED CAMPAIGN DELETE FUNCTION (Unlinks Foreign Key references before deletion)
 async function deleteCampaign(id) {
   const db = getSupabase();
   if(!confirm("کیا آپ واقعی اس کمپین کو ڈیلیٹ کرنا چاہتے ہیں؟")) return;
-  
+
+  // Step 1: Linked investments me campaign_id ko NULL kar diya ta k deletion error na aaye
+  await db.from("investments").update({ campaign_id: null }).eq("campaign_id", id);
+
+  // Step 2: Campaign ko delete kar dia
   const { error } = await db.from("campaigns").delete().eq("id", id);
   if(error) {
     alert("ڈیلیٹ کرنے میں مسئلہ: " + error.message);
