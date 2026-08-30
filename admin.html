@@ -160,7 +160,7 @@ th{ background:#111827; color:#9ca3af }
   <!-- MANUAL BONUS SENDER -->
   <div class="card">
     <div class="card-title">🎁 Send Manual Bonus</div>
-    <label style="font-size:12px;color:#9ca3af">Select Investor:</label>
+    <label style="font-size:12px;color:#9ca3af">Select Investor (With ID):</label>
     <select id="bonusUserSelect">
       <option value="">-- Select Investor --</option>
     </select>
@@ -285,10 +285,10 @@ function getSupabase() {
 
 let userMap = {};
 
-// INITIAL DEFAULT DATA (STORES IN LOCAL STORAGE SO DATA NEVER DISAPPEARS)
+// LOCAL STORAGE FALLBACKS (Ensure Data Never Disappears)
 let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
-  { id: "inv_101", name: "Muhammad safdar sada pay(03245380453)" },
-  { id: "inv_102", name: "Muhammad Safdar jazz cash (03245380453)" }
+  { id: "inv_101", name: "Ali Khan (03001234567)" },
+  { id: "inv_102", name: "Muhammad Usman (03129876543)" }
 ];
 
 let defaultAccounts = JSON.parse(localStorage.getItem('admin_accounts')) || [
@@ -310,7 +310,7 @@ function initAdmin() {
   loadCampaigns();
 }
 
-// MANUAL ADD INVESTOR
+// ADD MANUAL INVESTOR
 async function addManualInvestor() {
   const name = document.getElementById("newInvestorName").value.trim();
   const contact = document.getElementById("newInvestorEmail").value.trim();
@@ -318,7 +318,7 @@ async function addManualInvestor() {
   if(!name) return alert("برائے مہربانی انوسٹر کا نام درج کریں۔");
 
   const fullName = contact ? `${name} (${contact})` : name;
-  const newId = "inv_" + Date.now();
+  const newId = "inv_" + Date.now().toString().slice(-5);
 
   const db = getSupabase();
   if(db) {
@@ -372,7 +372,7 @@ async function saveWhatsAppLink() {
   alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-// USER MAP, DROPDOWN & TABLE
+// LOAD INVESTORS MAP, TABLE, AND BONUS DROPDOWN WITH SHOWING ID
 async function loadUsersMap() {
   const select = document.getElementById("bonusUserSelect");
   const tbody = document.getElementById("investorsTableBody");
@@ -402,7 +402,8 @@ async function loadUsersMap() {
       seen.add(inv.id);
       uniqueList.push(inv);
       userMap[inv.id] = inv.name;
-      select.innerHTML += `<option value="${inv.id}">${inv.name}</option>`;
+      // Option includes Name and ID clearly for Bonus Selection
+      select.innerHTML += `<option value="${inv.id}">${inv.name} (ID: ${inv.id})</option>`;
     }
   });
 
@@ -434,10 +435,10 @@ async function insertBonusRecord(uId, bonusAmount, noteText) {
   return { success: true };
 }
 
-// AUTO BONUS
+// AUTO BONUS DISTRIBUTION
 async function distributeAutoBonus() {
-  if(!confirm("تمام approved انوسٹرز کو بونس بھیجیں؟")) return;
-  alert("تمام انوسٹرز کو بونس کامیابی سے بھیج دیا گیا ہے!");
+  if(!confirm("تمام approved انوسٹرز کو خودکار بونس منتقل کریں؟")) return;
+  alert("تمام انوسٹرز کو بونس کامیابی سے تقسیم کر دیا گیا ہے!");
 }
 
 // MANUAL BONUS SENDER
@@ -446,12 +447,12 @@ async function sendManualBonus() {
   const amount = document.getElementById("bonusAmount").value;
   const note = document.getElementById("bonusNote").value || "Special Bonus";
 
-  if(!userId) return alert("انوسٹر منتخب کریں۔");
+  if(!userId) return alert("انوسٹر کو منتخب کریں۔");
   if(!amount || Number(amount) <= 0) return alert("درست رقم درج کریں۔");
 
   await insertBonusRecord(userId, Number(amount), note);
 
-  alert("بونس کامیابی سے بھیج دیا گیا!");
+  alert(`انوسٹر (ID: ${userId}) کو Rs ${amount} کا بونس منتقل کر دیا گیا ہے!`);
   document.getElementById("bonusAmount").value = "";
   document.getElementById("bonusNote").value = "";
 }
@@ -543,7 +544,7 @@ async function updateWithdrawStatus(id, status) {
   loadWithdrawals();
 }
 
-// ACCOUNTS
+// MANAGE DEPOSIT PAYMENT ACCOUNTS
 async function loadAccounts() {
   const tbody = document.getElementById("paymentAccountsBody");
   let dbAccs = [];
@@ -599,10 +600,4 @@ async function addPaymentAccount() {
   }
 
   defaultAccounts.push(newAcc);
-  localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
-
-  alert("Account added!");
-  document.getElementById("accLabel").value = "";
-  document.getElementById("accTitle").value = "";
-  document.getElementById("accNum").value = "";
-  loadA
+  localStorage.setItem('admin_accoun
