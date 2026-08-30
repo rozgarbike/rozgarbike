@@ -25,20 +25,20 @@
     
     <!-- ALL CAMPAIGNS & INVESTMENTS -->
     <div class="admin-card">
-      <h3>🚲 All Campaigns & User Investments</h3>
-      <div id="adminCampaignsList" style="font-size:13px;">Loading investments & campaigns...</div>
+      <h3>🚲 User Investments & Campaigns</h3>
+      <div id="adminCampaignsList" style="font-size:13px;">Loading investments...</div>
     </div>
 
-    <!-- PENDING DEPOSITS & RECEIPT PICS -->
+    <!-- PENDING DEPOSITS -->
     <div class="admin-card">
       <h3>💳 Pending Deposit Requests</h3>
-      <div id="adminDepositsList" style="font-size:13px;">Loading deposit requests...</div>
+      <div id="adminDepositsList" style="font-size:13px;">Loading deposits...</div>
     </div>
 
     <!-- PENDING WITHDRAWALS -->
     <div class="admin-card">
       <h3>💸 Pending Withdrawal Requests</h3>
-      <div id="adminWithdrawalsList" style="font-size:13px;">Loading withdrawal requests...</div>
+      <div id="adminWithdrawalsList" style="font-size:13px;">Loading withdrawals...</div>
     </div>
 
   </div>
@@ -53,7 +53,7 @@
 
       const { data: profile } = await supabaseClient.from("profiles").select("role").eq("id", session.user.id).single();
       if (!profile || profile.role !== 'admin') {
-        alert("Access Denied! Sirf Admin is page ko dekh sakta hai.");
+        alert("Access Denied!");
         window.location.href = "dashboard.html";
         return;
       }
@@ -68,15 +68,14 @@
       const el = document.getElementById("adminCampaignsList");
 
       if (!invs || invs.length === 0) {
-        el.innerHTML = "<p>Rule: <b>Full Bike Campaign Joined (Active)</b> — Default Total Withdraw Received: <b>Rs 500</b></p>";
+        el.innerHTML = "Koi investment record nahi hai.";
       } else {
         el.innerHTML = invs.map(i => `
           <div style="padding:10px 0; border-bottom:1px solid #eee;">
             <b>User:</b> ${i.profiles ? i.profiles.email : i.user_id}<br>
-            <b>Campaign:</b> ${i.campaigns ? i.campaigns.name : 'Bike Fund'}<br>
-            <b>Investment Amount:</b> Rs ${Number(i.amount).toLocaleString()}<br>
-            <b>Withdrawal / Profit Paid:</b> Rs ${Number(i.profit_earned || 500).toLocaleString()}<br>
-            <b>Status:</b> <span style="color:green; font-weight:bold;">${i.status || 'ACTIVE'}</span>
+            <b>Campaign:</b> ${i.campaigns ? i.campaigns.name : 'Campaign'}<br>
+            <b>Amount:</b> Rs ${Number(i.amount).toLocaleString()}<br>
+            <b>Status:</b> <b>${i.status || 'PENDING'}</b>
           </div>
         `).join("");
       }
@@ -93,8 +92,7 @@
           <div style="padding:10px 0; border-bottom:1px solid #eee;">
             <b>User:</b> ${d.profiles ? d.profiles.email : d.user_id}<br>
             <b>Method:</b> ${d.method} | <b>Amount:</b> Rs ${Number(d.amount).toLocaleString()}<br>
-            <b>Transaction ID (TID):</b> <code style="background:#f1f1f1; padding:2px 5px;">${d.trx_id}</code><br>
-            ${d.proof_img ? `<b>Receipt Pic:</b> <a href="${d.proof_img}" target="_blank" style="color:blue;">View Picture 🖼️</a><br>` : ''}
+            <b>TID:</b> <code>${d.trx_id}</code><br>
             <div style="margin-top:8px;">
               <button class="btn-approve" onclick="updateDepositStatus('${d.id}', '${d.user_id}', ${d.amount}, 'approved')">Approve</button>
               <button class="btn-reject" onclick="updateDepositStatus('${d.id}', '${d.user_id}', ${d.amount}, 'rejected')">Reject</button>
@@ -109,17 +107,16 @@
       const el = document.getElementById("adminWithdrawalsList");
 
       if (!w || w.length === 0) {
-        el.innerHTML = "Koi pending withdrawal nahi hai.";
+        el.innerHTML = "Koi pending withdrawal request nahi hai.";
       } else {
         el.innerHTML = w.map(x => `
           <div style="padding:10px 0; border-bottom:1px solid #eee;">
             <b>User:</b> ${x.profiles ? x.profiles.email : x.user_id}<br>
-            <b>Bank Platform:</b> ${x.bank_name || 'Bank'}<br>
-            <b>Account Title:</b> ${x.account_name || 'N/A'}<br>
-            <b>Account Number:</b> ${x.account_number || 'N/A'}<br>
+            <b>Bank:</b> ${x.bank_name || 'Bank'}<br>
+            <b>Title:</b> ${x.account_name || 'N/A'} | <b>Account:</b> ${x.account_number || 'N/A'}<br>
             <b>Amount:</b> Rs ${Number(x.amount).toLocaleString()}<br>
             <div style="margin-top:8px;">
-              <button class="btn-approve" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'approved')">Approve & Mark Paid</button>
+              <button class="btn-approve" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'approved')">Approve & Pay</button>
               <button class="btn-reject" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'rejected')">Reject</button>
             </div>
           </div>
@@ -134,7 +131,7 @@
         const oldBal = prof ? (prof.balance || 0) : 0;
         await supabaseClient.from("profiles").update({ balance: oldBal + amount }).eq("id", userId);
       }
-      alert("Deposit Status Updated: " + status);
+      alert("Status updated: " + status);
       await loadAdminDeposits();
     }
 
@@ -146,7 +143,7 @@
         const newBal = Math.max(0, oldBal - amount);
         await supabaseClient.from("profiles").update({ balance: newBal }).eq("id", userId);
       }
-      alert("Withdrawal Status Updated: " + status);
+      alert("Status updated: " + status);
       await loadAdminWithdrawals();
     }
 
