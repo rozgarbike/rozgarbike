@@ -8,9 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/config.js"></script>
 
-<!-- 1. GOOGLE ADSENSE SCRIPT -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
-     crossorigin="anonymous"></script>
+<!-- Google AdSense Script -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 </head>
 <body>
   <div class="header">
@@ -28,13 +27,14 @@
   </div>
 
   <div class="wrap">
+    <!-- BANNER & URDU TEXT (UNTOUCHED) -->
     <div class="card" style="margin-bottom:20px; background:#0f3932; color:#fff;">
       <h2 style="margin:0 0 8px 0; font-size:20px;">Ghar baithay hissedar banein</h2>
       <p style="margin:0 0 12px 0; font-size:13px; opacity:0.9;">Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.</p>
-      <p style="margin:0; font-size:12px; opacity:0.8;">1000 investment kry ya full bike khrdy or daily ka profit kamiy. 1000 investment 50/60 daily ka profit ghr bhte ky abi humri team ka hissa bny.</p>
+      <p style="margin:0; font-size:12px; opacity:0.8;">1000 investment kry ya full bike khrdy or daily ka profit kamiy 1000 investment 50/60 daily ka profit ghr bhte ky abi humri team ka hissa bny</p>
     </div>
 
-    <!-- 2. TOP AD BANNER CODE -->
+    <!-- TOP AD BANNER -->
     <div class="card" style="margin-bottom:20px; text-align:center; padding:10px; background:#fff;">
       <ins class="adsbygoogle"
            style="display:block"
@@ -42,9 +42,7 @@
            data-ad-slot="1234567890"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
     <!-- AUTH BOX (LOGIN / SIGNUP) -->
@@ -65,13 +63,13 @@
       </div>
     </div>
 
-    <!-- CAMPAIGNS LIST -->
+    <!-- CAMPAIGNS LIST (CONNECTED WITH ADMIN) -->
     <div class="disp" style="font-size:16px; margin-bottom:12px;">AVAILABLE BIKES & CAMPAIGNS</div>
     <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
       <div class="card" style="text-align:center; padding:20px; color:var(--muted);">Loading bikes...</div>
     </div>
 
-    <!-- 3. BOTTOM AD BANNER CODE -->
+    <!-- BOTTOM AD BANNER -->
     <div class="card" style="margin-bottom:20px; text-align:center; padding:10px; background:#fff;">
       <ins class="adsbygoogle"
            style="display:block"
@@ -79,9 +77,7 @@
            data-ad-slot="0987654321"
            data-ad-format="auto"
            data-full-width-responsive="true"></ins>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
   </div>
 
@@ -169,7 +165,11 @@
       }
 
       try {
-        const { data: campaigns, error } = await db.from("campaigns").select("*").order("created_at", { ascending: false });
+        // Fetch active campaigns added from Admin Panel
+        const { data: campaigns, error } = await db.from("campaigns")
+          .select("*")
+          .or('status.eq.active,status.is.null')
+          .order("created_at", { ascending: false });
 
         if (error) {
           console.error("Fetch error:", error);
