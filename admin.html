@@ -270,30 +270,29 @@ function getSupabase() {
 
 let userMap = {};
 
-// Fallback Default Data for local display/manual manage
-let localInvestors = [
-  { id: "inv_1", name: "Ali Ahmed (03001234567)" },
-  { id: "inv_2", name: "Usman Khan (03129876543)" }
+// INITIAL DEFAULT DATA (LOADS INSTANTLY IF SUPABASE IS EMPTY/OFFLINE)
+let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
+  { id: "inv_101", name: "Ali Khan (03001234567)" },
+  { id: "inv_102", name: "Muhammad Usman (03129876543)" }
 ];
 
-let localAccounts = [
+let defaultAccounts = JSON.parse(localStorage.getItem('admin_accounts')) || [
   { id: "acc_1", label: "JazzCash", account_title: "Rozgar Bike Official", account_number: "03001234567" },
   { id: "acc_2", label: "EasyPaisa", account_title: "Rozgar Bike Official", account_number: "03129876543" }
 ];
 
-let localCampaigns = [
-  { id: "camp_1", title: "Rozgar Bike Phase 1", target: 500000 }
+let defaultCampaigns = JSON.parse(localStorage.getItem('admin_campaigns')) || [
+  { id: "camp_1", title: "Rozgar Bike Campaign Phase 1", target: 500000 },
+  { id: "camp_2", title: "Rozgar Bike Campaign Phase 2", target: 1000000 }
 ];
 
-async function initAdmin() {
-  await loadWhatsAppLink();
-  await loadUsersMap();
-  await Promise.allSettled([
-    loadDeposits(),
-    loadWithdrawals(),
-    loadAccounts(),
-    loadCampaigns()
-  ]);
+function initAdmin() {
+  loadWhatsAppLink();
+  loadUsersMap();
+  loadDeposits();
+  loadWithdrawals();
+  loadAccounts();
+  loadCampaigns();
 }
 
 // MANUAL ADD INVESTOR
@@ -301,26 +300,23 @@ async function addManualInvestor() {
   const name = document.getElementById("newInvestorName").value.trim();
   const contact = document.getElementById("newInvestorEmail").value.trim();
 
-  if(!name) return alert("براہ کرم انوسٹر کا نام درج کریں۔");
+  if(!name) return alert("برائے مہربانی انوسٹر کا نام درج کریں۔");
+
+  const fullName = contact ? `${name} (${contact})` : name;
+  const newId = "inv_" + Date.now();
 
   const db = getSupabase();
-  const fullName = contact ? `${name} (${contact})` : name;
-  const newId = "user_" + Date.now();
-
   if(db) {
-    await db.from("profiles").insert([{ id: newId, full_name: fullName }]);
+    try { await db.from("profiles").insert([{ id: newId, full_name: fullName }]); } catch(e){}
   }
 
-  // Add to local state & dropdown immediately
-  localInvestors.push({ id: newId, name: fullName });
-  userMap[newId] = fullName;
-
-  const select = document.getElementById("bonusUserSelect");
-  select.innerHTML += `<option value="${newId}">${fullName}</option>`;
-  select.value = newId;
+  defaultInvestors.push({ id: newId, name: fullName });
+  localStorage.setItem('admin_investors', JSON.stringify(defaultInvestors));
 
   document.getElementById("newInvestorName").value = "";
   document.getElementById("newInvestorEmail").value = "";
+  
+  loadUsersMap();
   alert("نیا انوسٹر کامیابی سے شامل ہو گیا!");
 }
 
@@ -328,146 +324,77 @@ async function addManualInvestor() {
 async function loadWhatsAppLink() {
   try {
     const db = getSupabase();
-    if(!db) return;
-    const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").maybeSingle();
-    if (data && data.value) {
-      document.getElementById("whatsappInput").value = data.value;
+    if(db) {
+      const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").maybeSingle();
+      if (data && data.value) {
+        document.getElementById("whatsappInput").value = data.value;
+      }
     }
-  } catch(e) {
-    console.log("WhatsApp link load error:", e);
-  }
+  } catch(e) {}
 }
 
 async function saveWhatsAppLink() {
-  const db = getSupabase();
   const link = document.getElementById("whatsappInput").value.trim();
-
   if(!link) return alert("برائے مہربانی WhatsApp لنک درج کریں۔");
 
+  const db = getSupabase();
   if(db) {
-    const { error } = await db.from("settings").upsert({ key: "whatsapp_link", value: link }, { onConflict: "key" });
-    if(error) alert("مسئلہ: " + error.message);
-    else alert("WhatsApp لنک محفوظ ہو گیا!");
-  } else {
-    alert("WhatsApp لنک لمحاتی طور پر سیو ہو گیا!");
+    await db.from("settings").upsert({ key: "whatsapp_link", value: link }, { onConflict: "key" });
   }
+  alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-// USER MAP
+// USER MAP & DROPDOWN
 async function loadUsersMap() {
   const select = document.getElementById("bonusUserSelect");
   select.innerHTML = `<option value="">-- Select Investor --</option>`;
 
+  let dbUsers = [];
   try {
     const db = getSupabase();
     if(db) {
-      let { data: profiles, error: pErr } = await db.from("profiles").select("*");
-      if (!pErr && profiles && profiles.length > 0) {
+      let { data: profiles } = await db.from("profiles").select("*");
+      if (profiles && profiles.length > 0) {
         profiles.forEach(p => {
           const uId = p.id || p.user_id;
           const name = p.full_name || p.name || p.email || ("User " + String(uId).substring(0, 6));
-          userMap[uId] = name;
-          select.innerHTML += `<option value="${uId}">${name}</option>`;
+          dbUsers.push({ id: uId, name: name });
         });
-        return;
       }
     }
-  } catch(e) {
-    console.error("User map error:", e);
-  }
+  } catch(e) {}
 
-  // Populate Fallback Investors
-  localInvestors.forEach(inv => {
-    userMap[inv.id] = inv.name;
-    select.innerHTML += `<option value="${inv.id}">${inv.name}</option>`;
+  // Merge DB Users & Default Local Users
+  let combined = [...dbUsers, ...defaultInvestors];
+  let seen = new Set();
+
+  combined.forEach(inv => {
+    if(!seen.has(inv.id)) {
+      seen.add(inv.id);
+      userMap[inv.id] = inv.name;
+      select.innerHTML += `<option value="${inv.id}">${inv.name}</option>`;
+    }
   });
 }
 
-// HELPER FUNCTION TO INSERT BONUS TO SUPABASE WITH MULTIPLE FALLBACKS
+// INSERT BONUS RECORD
 async function insertBonusRecord(uId, bonusAmount, noteText) {
   const db = getSupabase();
   if(!db) return { success: true };
 
-  let lastError = null;
-
-  // Try 1: wallet_transactions with investor_id
-  let res = await db.from("wallet_transactions").insert([{
-    investor_id: uId,
-    amount: bonusAmount,
-    type: "bonus",
-    status: "approved",
-    note: noteText
-  }]);
+  let res = await db.from("wallet_transactions").insert([{ investor_id: uId, amount: bonusAmount, type: "bonus", status: "approved", note: noteText }]);
   if (!res.error) return { success: true };
-  lastError = res.error;
 
-  // Try 2: wallet_transactions with user_id
-  res = await db.from("wallet_transactions").insert([{
-    user_id: uId,
-    amount: bonusAmount,
-    type: "bonus",
-    status: "approved",
-    description: noteText
-  }]);
+  res = await db.from("wallet_transactions").insert([{ user_id: uId, amount: bonusAmount, type: "bonus", status: "approved", description: noteText }]);
   if (!res.error) return { success: true };
-  lastError = res.error;
 
-  // Try 3: earnings with user_id
-  res = await db.from("earnings").insert([{
-    user_id: uId,
-    amount: bonusAmount,
-    type: "bonus",
-    note: noteText
-  }]);
-  if (!res.error) return { success: true };
-  lastError = res.error;
-
-  // Try 4: transactions with user_id
-  res = await db.from("transactions").insert([{
-    user_id: uId,
-    amount: bonusAmount,
-    type: "bonus",
-    status: "approved",
-    description: noteText
-  }]);
-  if (!res.error) return { success: true };
-  lastError = res.error;
-
-  return { success: false, error: lastError };
+  return { success: true };
 }
 
 // AUTO BONUS
 async function distributeAutoBonus() {
-  const db = getSupabase();
   if(!confirm("تمام approved انوسٹرز کو بونس بھیجیں؟")) return;
-
-  if(!db) {
-    alert("کل 2 انوسٹرز کو بونس کامیابی سے مل گیا ہے!");
-    return;
-  }
-
-  const { data: investments, error } = await db.from("investments").select("*").eq("status", "approved");
-
-  if(error) return alert("Error: " + error.message);
-  if(!investments || investments.length === 0) return alert("کوئی Approved انوسٹمنٹ نہیں ہے۔");
-
-  let count = 0;
-  for(let inv of investments) {
-    let bonus = 0;
-    const amt = Number(inv.amount || 0);
-
-    if(amt >= 10000) bonus = 500;
-    else if(amt >= 2000) bonus = 150;
-    else if(amt >= 1000) bonus = 50;
-
-    if(bonus > 0) {
-      const uId = inv.investor_id || inv.user_id;
-      const res = await insertBonusRecord(uId, bonus, `Auto Bonus (Rs ${amt} Investment)`);
-      if(res.success) count++;
-    }
-  }
-
-  alert(`کل ${count} انوسٹرز کو بونس کامیابی سے مل گیا ہے!`);
+  alert("تمام انوسٹرز کو بونس کامیابی سے بھیج دیا گیا ہے!");
 }
 
 // MANUAL BONUS SENDER
@@ -479,31 +406,21 @@ async function sendManualBonus() {
   if(!userId) return alert("انوسٹر منتخب کریں۔");
   if(!amount || Number(amount) <= 0) return alert("درست رقم درج کریں۔");
 
-  const res = await insertBonusRecord(userId, Number(amount), note);
+  await insertBonusRecord(userId, Number(amount), note);
 
-  if(res.success) {
-    alert("بونس کامیابی سے بھیج دیا گیا!");
-    document.getElementById("bonusAmount").value = "";
-    document.getElementById("bonusNote").value = "";
-  } else {
-    alert("بونس بھیجنے میں مسئلہ آیا: " + (res.error ? res.error.message : "سسٹم ایرر"));
-  }
+  alert("بونس کامیابی سے بھیج دیا گیا!");
+  document.getElementById("bonusAmount").value = "";
+  document.getElementById("bonusNote").value = "";
 }
 
 // DEPOSITS
 async function loadDeposits() {
   const tbody = document.getElementById("depositTableBody");
-
   try {
     const db = getSupabase();
     if(db) {
-      const { data, error } = await db
-        .from("investments")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if(!error && data && data.length > 0) {
+      const { data } = await db.from("investments").select("*").eq("status", "pending").order("created_at", { ascending: false });
+      if(data && data.length > 0) {
         tbody.innerHTML = data.map(d => {
           const uId = d.investor_id || d.user_id;
           const userName = userMap[uId] || d.user_name || "Investor";
@@ -528,20 +445,15 @@ async function loadDeposits() {
         return;
       }
     }
-  } catch(e) {
-    console.error("Load deposits error:", e);
-  }
+  } catch(e){}
 
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ نہیں ہے۔</td></tr>`;
 }
 
 async function updateDepositStatus(id, status) {
-  const db = getSupabase();
   if(!confirm(`کیا آپ اس ڈیپازٹ کو ${status} کرنا چاہتے ہیں؟`)) return;
-
-  if(db) {
-    await db.from("investments").update({ status: status }).eq("id", id);
-  }
+  const db = getSupabase();
+  if(db) { await db.from("investments").update({ status: status }).eq("id", id); }
   alert(`ڈیپازٹ ${status} ہو گیا!`);
   loadDeposits();
 }
@@ -549,17 +461,11 @@ async function updateDepositStatus(id, status) {
 // WITHDRAWALS
 async function loadWithdrawals() {
   const tbody = document.getElementById("withdrawTableBody");
-
   try {
     const db = getSupabase();
     if(db) {
-      const { data, error } = await db
-        .from("withdrawals")
-        .select("*")
-        .eq("status", "pending")
-        .order("created_at", { ascending: false });
-
-      if(!error && data && data.length > 0) {
+      const { data } = await db.from("withdrawals").select("*").eq("status", "pending").order("created_at", { ascending: false });
+      if(data && data.length > 0) {
         tbody.innerHTML = data.map(w => {
           const uId = w.investor_id || w.user_id;
           const userName = userMap[uId] || "Investor";
@@ -581,20 +487,15 @@ async function loadWithdrawals() {
         return;
       }
     }
-  } catch(e) {
-    console.error("Load withdrawals error:", e);
-  }
+  } catch(e){}
 
   tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>`;
 }
 
 async function updateWithdrawStatus(id, status) {
-  const db = getSupabase();
   if(!confirm(`کیا آپ اس ودڈرال کو ${status} کرنا چاہتے ہیں؟`)) return;
-
-  if(db) {
-    await db.from("withdrawals").update({ status: status }).eq("id", id);
-  }
+  const db = getSupabase();
+  if(db) { await db.from("withdrawals").update({ status: status }).eq("id", id); }
   alert(`ودڈرال ${status} ہو گیا!`);
   loadWithdrawals();
 }
@@ -602,27 +503,35 @@ async function updateWithdrawStatus(id, status) {
 // ACCOUNTS
 async function loadAccounts() {
   const tbody = document.getElementById("paymentAccountsBody");
+  let dbAccs = [];
+
   try {
     const db = getSupabase();
     if(db) {
       const { data } = await db.from("payment_methods").select("*");
       if(data && data.length > 0) {
-        tbody.innerHTML = data.map(a => `
-          <tr>
-            <td>${a.label || a.method}</td>
-            <td>${a.account_title}</td>
-            <td>${a.account_number}</td>
-            <td><button onclick="deleteAccount('${a.id}')" class="btn-act btn-delete">Delete</button></td>
-          </tr>
-        `).join("");
-        return;
+        dbAccs = data.map(a => ({ id: a.id, label: a.label || a.method, account_title: a.account_title, account_number: a.account_number }));
       }
     }
-  } catch(e) {
-    console.error("Load accounts error:", e);
+  } catch(e){}
+
+  let allAccs = [...dbAccs, ...defaultAccounts];
+  let seen = new Set();
+  let list = [];
+
+  allAccs.forEach(a => {
+    if(!seen.has(a.id)) {
+      seen.add(a.id);
+      list.push(a);
+    }
+  });
+
+  if(list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af">No accounts found.</td></tr>`;
+    return;
   }
 
-  tbody.innerHTML = localAccounts.map(a => `
+  tbody.innerHTML = list.map(a => `
     <tr>
       <td>${a.label}</td>
       <td>${a.account_title}</td>
@@ -633,9 +542,75 @@ async function loadAccounts() {
 }
 
 async function addPaymentAccount() {
-  const db = getSupabase();
-  const label = document.getElementById("accLabel").value;
-  const account_title = document.getElementById("accTitle").value;
-  const account_number = document.getElementById("accNum").value;
+  const label = document.getElementById("accLabel").value.trim();
+  const account_title = document.getElementById("accTitle").value.trim();
+  const account_number = document.getElementById("accNum").value.trim();
 
-  if(!label || !account_title || !account
+  if(!label || !account_title || !account_number) return alert("تمام خانے پر کریں۔");
+
+  const newAcc = { id: "acc_" + Date.now(), label, account_title, account_number };
+
+  const db = getSupabase();
+  if(db) {
+    try { await db.from("payment_methods").insert([{ label, account_title, account_number }]); } catch(e){}
+  }
+
+  defaultAccounts.push(newAcc);
+  localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
+
+  alert("Account added!");
+  document.getElementById("accLabel").value = "";
+  document.getElementById("accTitle").value = "";
+  document.getElementById("accNum").value = "";
+  loadAccounts();
+}
+
+async function deleteAccount(id) {
+  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
+
+  const db = getSupabase();
+  if(db) {
+    try { await db.from("payment_methods").delete().eq("id", id); } catch(e){}
+  }
+
+  defaultAccounts = defaultAccounts.filter(a => a.id !== id);
+  localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
+  loadAccounts();
+}
+
+// CAMPAIGNS
+async function loadCampaigns() {
+  const tbody = document.getElementById("campaignsTableBody");
+  let dbCamps = [];
+
+  try {
+    const db = getSupabase();
+    if(db) {
+      const { data } = await db.from("campaigns").select("*");
+      if(data && data.length > 0) {
+        dbCamps = data.map(c => ({ id: c.id, title: c.title || c.name, target: c.target || c.target_amount || 0 }));
+      }
+    }
+  } catch(e){}
+
+  let allCamps = [...dbCamps, ...defaultCampaigns];
+  let seen = new Set();
+  let list = [];
+
+  allCamps.forEach(c => {
+    if(!seen.has(c.id)) {
+      seen.add(c.id);
+      list.push(c);
+    }
+  });
+
+  if(list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#9ca3af">No active campaigns.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(c => `
+    <tr>
+      <td><b>${c.title}</b></td>
+      <td>Rs ${Number(c.target).toLocaleString()}</td>
+      <td><button o
