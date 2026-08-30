@@ -285,7 +285,7 @@ function getSupabase() {
 
 let userMap = {};
 
-// LOCAL STORAGE PERSISTENCE (Ensures Local Working Even Without DB Response)
+// INITIAL DEFAULTS FOR IMMEDIATE DISPLAY
 let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
   { id: "inv_101", name: "Ali Khan (03001234567)" },
   { id: "inv_102", name: "Muhammad Usman (03129876543)" }
@@ -301,16 +301,58 @@ let defaultCampaigns = JSON.parse(localStorage.getItem('admin_campaigns')) || [
   { id: "camp_2", title: "Rozgar Bike Campaign Phase 2", target: 1000000 }
 ];
 
-function initAdmin() {
-  loadWhatsAppLink();
-  loadUsersMap();
-  loadDeposits();
-  loadWithdrawals();
-  loadAccounts();
-  loadCampaigns();
+function renderInvestorsUI(uniqueList) {
+  const select = document.getElementById("bonusUserSelect");
+  const tbody = document.getElementById("investorsTableBody");
+
+  let options = `<option value="">-- Select Investor --</option>`;
+  let rows = "";
+
+  uniqueList.forEach(inv => {
+    userMap[inv.id] = inv.name;
+    options += `<option value="${inv.id}">${inv.name} - (ID: ${inv.id})</option>`;
+    rows += `
+      <tr>
+        <td><code>${inv.id}</code></td>
+        <td><b>${inv.name}</b></td>
+        <td><button onclick="deleteInvestor('${inv.id}')" class="btn-act btn-delete">Delete</button></td>
+      </tr>`;
+  });
+
+  select.innerHTML = options;
+  tbody.innerHTML = rows || `<tr><td colspan="3" style="text-align:center;color:#9ca3af">No investors found.</td></tr>`;
 }
 
-// ADD & DELETE INVESTORS
+async function loadUsersMap() {
+  // Immediately Render Defaults first so dropdown is NEVER empty
+  renderInvestorsUI(defaultInvestors);
+
+  // Fetch DB investors asynchronously and merge
+  try {
+    const db = getSupabase();
+    if(db) {
+      let { data: profiles } = await db.from("profiles").select("*");
+      if (profiles && profiles.length > 0) {
+        let dbUsers = profiles.map(p => ({
+          id: p.id || p.user_id,
+          name: p.full_name || p.name || p.email || ("User " + String(p.id).substring(0, 6))
+        }));
+
+        let combined = [...dbUsers, ...defaultInvestors];
+        let seen = new Set();
+        let mergedList = [];
+        combined.forEach(inv => {
+          if(!seen.has(inv.id)) {
+            seen.add(inv.id);
+            mergedList.push(inv);
+          }
+        });
+        renderInvestorsUI(mergedList);
+      }
+    }
+  } catch(e) {}
+}
+
 async function addManualInvestor() {
   const name = document.getElementById("newInvestorName").value.trim();
   const contact = document.getElementById("newInvestorEmail").value.trim();
@@ -348,7 +390,6 @@ async function deleteInvestor(id) {
   loadUsersMap();
 }
 
-// WHATSAPP LINK
 async function loadWhatsAppLink() {
   try {
     const db = getSupabase();
@@ -372,55 +413,6 @@ async function saveWhatsAppLink() {
   alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-// LOAD INVESTOR MAP, TABLE & BONUS DROPDOWN WITH DISPLAYING ID
-async function loadUsersMap() {
-  const select = document.getElementById("bonusUserSelect");
-  const tbody = document.getElementById("investorsTableBody");
-  select.innerHTML = `<option value="">-- Select Investor --</option>`;
-
-  let dbUsers = [];
-  try {
-    const db = getSupabase();
-    if(db) {
-      let { data: profiles } = await db.from("profiles").select("*");
-      if (profiles && profiles.length > 0) {
-        profiles.forEach(p => {
-          const uId = p.id || p.user_id;
-          const name = p.full_name || p.name || p.email || ("User " + String(uId).substring(0, 6));
-          dbUsers.push({ id: uId, name: name });
-        });
-      }
-    }
-  } catch(e) {}
-
-  let combined = [...dbUsers, ...defaultInvestors];
-  let seen = new Set();
-  let uniqueList = [];
-
-  combined.forEach(inv => {
-    if(!seen.has(inv.id)) {
-      seen.add(inv.id);
-      uniqueList.push(inv);
-      userMap[inv.id] = inv.name;
-      select.innerHTML += `<option value="${inv.id}">${inv.name} - (ID: ${inv.id})</option>`;
-    }
-  });
-
-  if(uniqueList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#9ca3af">No investors found.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = uniqueList.map(inv => `
-    <tr>
-      <td><code>${inv.id}</code></td>
-      <td><b>${inv.name}</b></td>
-      <td><button onclick="deleteInvestor('${inv.id}')" class="btn-act btn-delete">Delete</button></td>
-    </tr>
-  `).join("");
-}
-
-// INSERT BONUS RECORD
 async function insertBonusRecord(uId, bonusAmount, noteText) {
   const db = getSupabase();
   if(!db) return { success: true };
@@ -432,13 +424,11 @@ async function insertBonusRecord(uId, bonusAmount, noteText) {
   return { success: true };
 }
 
-// AUTO BONUS DISTRIBUTION
 async function distributeAutoBonus() {
   if(!confirm("تمام approved انوسٹرز کو خودکار بونس منتقل کریں؟")) return;
   alert("تمام انوسٹرز کو بونس کامیابی سے تقسیم کر دیا گیا ہے!");
 }
 
-// MANUAL BONUS SENDER
 async function sendManualBonus() {
   const userId = document.getElementById("bonusUserSelect").value;
   const amount = document.getElementById("bonusAmount").value;
@@ -454,7 +444,6 @@ async function sendManualBonus() {
   document.getElementById("bonusNote").value = "";
 }
 
-// DEPOSITS
 async function loadDeposits() {
   const tbody = document.getElementById("depositTableBody");
   try {
@@ -499,7 +488,6 @@ async function updateDepositStatus(id, status) {
   loadDeposits();
 }
 
-// WITHDRAWALS
 async function loadWithdrawals() {
   const tbody = document.getElementById("withdrawTableBody");
   try {
@@ -541,37 +529,12 @@ async function updateWithdrawStatus(id, status) {
   loadWithdrawals();
 }
 
-// PAYMENT ACCOUNTS
-async function loadAccounts() {
+function renderAccountsUI(list) {
   const tbody = document.getElementById("paymentAccountsBody");
-  let dbAccs = [];
-
-  try {
-    const db = getSupabase();
-    if(db) {
-      const { data } = await db.from("payment_methods").select("*");
-      if(data && data.length > 0) {
-        dbAccs = data.map(a => ({ id: a.id, label: a.label || a.method, account_title: a.account_title, account_number: a.account_number }));
-      }
-    }
-  } catch(e){}
-
-  let allAccs = [...dbAccs, ...defaultAccounts];
-  let seen = new Set();
-  let list = [];
-
-  allAccs.forEach(a => {
-    if(!seen.has(a.id)) {
-      seen.add(a.id);
-      list.push(a);
-    }
-  });
-
   if(list.length === 0) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af">No accounts found.</td></tr>`;
     return;
   }
-
   tbody.innerHTML = list.map(a => `
     <tr>
       <td>${a.label}</td>
@@ -580,6 +543,30 @@ async function loadAccounts() {
       <td><button onclick="deleteAccount('${a.id}')" class="btn-act btn-delete">Delete</button></td>
     </tr>
   `).join("");
+}
+
+async function loadAccounts() {
+  renderAccountsUI(defaultAccounts);
+
+  try {
+    const db = getSupabase();
+    if(db) {
+      const { data } = await db.from("payment_methods").select("*");
+      if(data && data.length > 0) {
+        let dbAccs = data.map(a => ({ id: a.id, label: a.label || a.method, account_title: a.account_title, account_number: a.account_number }));
+        let combined = [...dbAccs, ...defaultAccounts];
+        let seen = new Set();
+        let list = [];
+        combined.forEach(a => {
+          if(!seen.has(a.id)) {
+            seen.add(a.id);
+            list.push(a);
+          }
+        });
+        renderAccountsUI(list);
+      }
+    }
+  } catch(e){}
 }
 
 async function addPaymentAccount() {
@@ -600,4 +587,5 @@ async function addPaymentAccount() {
   localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
 
   alert("نیا ڈیپازٹ اکاؤنٹ کامیابی سے شامل ہو گیا!");
-  document.getElemen
+  document.getElementById("accLabel").value = "";
+  document.getElementBy
