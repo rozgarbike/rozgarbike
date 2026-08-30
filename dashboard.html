@@ -33,7 +33,7 @@
 
     <!-- BALANCE CARD -->
     <div class="card" style="background: #1e293b; color: #fff;">
-      <div style="font-size:12px; opacity: 0.8; margin-bottom: 4px;">Approved Balance:</div>
+      <div style="font-size:12px; opacity: 0.8; margin-bottom: 4px;">Withdrawable Balance:</div>
       <div id="userBalance" style="font-size:26px; font-weight:bold;">Rs 0</div>
     </div>
 
@@ -121,21 +121,25 @@
       loadMyWithdrawals(db, user.id);
     }
 
-    // LOAD APPROVED BALANCE
+    // STRICT BALANCE CALCULATOR (ONLY PROFITS/BONUSES MINUS WITHDRAWALS)
     async function loadBalance(db, userId) {
       try {
-        const { data: deposits } = await db.from("investments").select("amount").eq("investor_id", userId).eq("status", "approved");
+        // 1. Get user profits or bonuses
         const { data: bonuses } = await db.from("wallet_transactions").select("amount").eq("investor_id", userId).eq("status", "approved");
+        
+        // 2. Get user approved withdrawals
         const { data: withdrawals } = await db.from("withdrawal_requests").select("amount").eq("investor_id", userId).eq("status", "approved");
 
-        const totalDeposits = (deposits || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-        const totalBonuses = (bonuses || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+        const totalProfits = (bonuses || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
         const totalWithdrawals = (withdrawals || []).reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
-        const currentBalance = (totalDeposits + totalBonuses) - totalWithdrawals;
-        document.getElementById("userBalance").innerText = pkr(currentBalance);
+        // Final withdrawable balance
+        const currentBalance = totalProfits - totalWithdrawals;
+
+        document.getElementById("userBalance").innerText = pkr(currentBalance > 0 ? currentBalance : 0);
       } catch (e) {
         console.error("Balance Error:", e);
+        document.getElementById("userBalance").innerText = "Rs 0";
       }
     }
 
@@ -183,7 +187,7 @@
       if (!amount || Number(amount) <= 0) return alert("براہ کرم صحیح رقم درج کریں۔");
       if (!file) return alert("براہ کرم پیمنٹ کی رسید (Deposit Slip) اپلوڈ کریں۔");
 
-      // DISABLE BUTTON
+      // DISABLE BUTTON (PREVENT DUPLICATES)
       btn.disabled = true;
       btn.innerText = "Uploading & Submitting...";
 
