@@ -1,7 +1,21 @@
-<!-- Google Urdu Font link (Head section mein lagane ke liye) -->
+<!doctype html>
+<html lang="ur" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>روزگار بائیک — گھر بیٹھے حصہ دار بنیں</title>
+<link rel="stylesheet" href="assets/style.css" />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/config.js"></script>
+
+<!-- Google AdSense Script -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 
 <style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: right; margin: 0; padding: 0; }
+  .btn, input { font-family: inherit; }
+
   .urdu-poster-card {
     background: #f8fafc;
     border: 2px solid #0f3932;
@@ -10,58 +24,54 @@
     margin-bottom: 24px;
     direction: rtl;
     text-align: center;
-    font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, sans-serif;
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    overflow: hidden;
   }
 
   .poster-header {
     background: linear-gradient(135deg, #0f3932 0%, #1e5e52 100%);
     color: #ffffff;
-    padding: 18px 12px;
+    padding: 16px 12px;
     border-radius: 12px;
     margin-bottom: 16px;
   }
 
   .poster-header h2 {
     margin: 0 0 6px 0;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     color: #00ffaa;
   }
 
   .poster-header p {
     margin: 0;
-    font-size: 15px;
+    font-size: 14px;
     opacity: 0.95;
-    line-height: 1.8;
+    line-height: 1.6;
   }
 
   .poster-grid {
     display: flex;
-    flex-wrap: wrap;
     gap: 12px;
     justify-content: space-between;
     margin-bottom: 16px;
   }
 
   .poster-box {
-    flex: 1 1 45%;
+    flex: 1;
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
   }
 
   .box-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #64748b;
     margin-bottom: 4px;
   }
 
   .box-value {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 800;
     color: #0f3932;
     direction: ltr;
@@ -92,47 +102,266 @@
     color: #ffffff;
     padding: 12px;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     text-decoration: none;
     display: block;
-    box-shadow: 0 4px 10px rgba(37,211,102,0.3);
   }
 </style>
+</head>
+<body>
 
-<!-- MAIN POSTER BANNER -->
-<div class="urdu-poster-card">
-  
-  <!-- Header Title -->
-  <div class="poster-header">
-    <h2>تجارتی بائیک فلیٹ پارٹنرشپ</h2>
-    <p>90 دن کے فعال بزنس سائیکل کا حصہ بنیں</p>
+  <div class="header">
+    <div class="header-row" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#0f3932; color:#fff;">
+      <div class="brand" style="font-weight:bold; font-size:18px;"><span class="brand-badge">🚲</span> روزگار بائیک</div>
+      <div id="userHeaderBtn">
+        <span class="muted" style="font-size:12px;color:#fff;">لاگ ان نہیں ہیں</span>
+      </div>
+    </div>
+    <div class="nav" style="display:flex; gap:12px; padding:8px 16px; background:#164e43; font-size:14px;">
+      <a href="index.html" class="active" style="color:#fff; text-decoration:none;">بائیکس</a>
+      <a href="dashboard.html" style="color:#ccc; text-decoration:none;">میرا ڈیش بورڈ</a>
+      <a href="admin.html" style="color:#ccc; text-decoration:none;">ایڈمن</a>
+    </div>
   </div>
 
-  <!-- Investment & Profit Details -->
-  <div class="poster-grid">
-    <div class="poster-box">
-      <div class="box-label">سرمایہ کاری (Flexi Unit)</div>
-      <div class="box-value">Rs 1,000 - 5,000</div>
-    </div>
+  <div class="wrap" style="padding:16px;">
     
-    <div class="poster-box profit-highlight">
-      <div class="box-label">روزانہ کا منافع (Returns)</div>
-      <div class="box-value">Rs 50 - 350*</div>
-      <div style="font-size:10px; color:#166534; margin-top:2px;">(90 دن کی مسلسل پرفارمنس)</div>
+    <!-- 1. MAIN POSTER BANNER -->
+    <div class="urdu-poster-card">
+      <div class="poster-header">
+        <h2>تجارتی بائیک فلیٹ پارٹنرشپ</h2>
+        <p>90 دن کے فعال بزنس سائیکل کا حصہ بنیں</p>
+      </div>
+
+      <div class="poster-grid">
+        <div class="poster-box">
+          <div class="box-label">سرمایہ کاری (Flexi Unit)</div>
+          <div class="box-value">Rs 1,000 - 5,000</div>
+        </div>
+        
+        <div class="poster-box profit-highlight">
+          <div class="box-label">روزانہ کا منافع (Returns)</div>
+          <div class="box-value">Rs 50 - 350*</div>
+          <div style="font-size:10px; color:#166534; margin-top:2px;">(90 دن کی مسلسل پرفارمنس)</div>
+        </div>
+      </div>
+
+      <div class="poster-features">
+        <div>📊 شفاف ڈیش بورڈ</div>
+        <div>🗓 90 دن کا سائیکل</div>
+        <div>👥 بڑھتی برادری</div>
+      </div>
+
+      <a href="#authBox" class="poster-footer-btn">
+        📞 آج ہی رابطہ کریں اور اپنے کاروبار کا آغاز کریں!
+      </a>
     </div>
+
+    <!-- TOP AD BANNER -->
+    <div class="card" style="margin-bottom:20px; text-align:center; padding:10px; background:#fff; min-height:90px;">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="1234567890"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
+    <!-- 2. AUTH BOX (LOGIN / SIGNUP) -->
+    <div id="authBox" class="card" style="margin-bottom:24px; padding:16px; background:#fff; border-radius:12px; border:1px solid #e2e8f0;">
+      <div style="font-weight:800; font-size:16px; margin-bottom:12px;" id="authTitle">لاگ ان کریں</div>
+      
+      <input id="authEmail" type="email" placeholder="ای میل ایڈریس" style="margin-bottom:8px; width:100%; padding:10px; text-align:right; box-sizing:border-box;" />
+      <input id="authPass" type="password" placeholder="پاس ورڈ" style="margin-bottom:12px; width:100%; padding:10px; text-align:right; box-sizing:border-box;" />
+      
+      <button id="authPrimaryBtn" class="btn btn-dark" style="width:100%; margin-bottom:10px; font-size:15px; padding:10px; background:#0f3932; color:#fff; border:none; border-radius:6px; cursor:pointer;" onclick="handleAuth()">لاگ ان کریں</button>
+      
+      <div style="text-align:center; font-size:12px; color:#64748b; margin-bottom:10px;">— یا —</div>
+      
+      <button id="authToggleBtn" class="btn btn-outline" style="width:100%; font-size:14px; padding:8px; background:transparent; border:1px solid #0f3932; border-radius:6px; cursor:pointer;" onclick="toggleAuthMode()">نیا اکاؤنٹ بنائیں</button>
+      
+      <div style="margin-top:16px;">
+        <a href="#" class="btn btn-dark" style="width:100%; text-align:center; display:block; background:#114b3e; color:#fff; text-decoration:none; font-size:14px; padding:10px; border-radius:6px; box-sizing:border-box;">📲 اینڈرائیڈ ایپ ڈاؤن لوڈ کریں (APK)</a>
+      </div>
+    </div>
+
+    <!-- 3. CAMPAIGNS LIST -->
+    <div class="disp" style="font-size:16px; font-weight:bold; margin-bottom:12px;">دستیاب بائیکس اور مہمات</div>
+    <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
+      <div class="card" style="text-align:center; padding:20px; color:#64748b; background:#fff; border-radius:8px;">بائیکس لوڈ ہو رہی ہیں...</div>
+    </div>
+
+    <!-- BOTTOM AD BANNER -->
+    <div class="card" style="margin-bottom:20px; text-align:center; padding:10px; background:#fff; min-height:90px;">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="0987654321"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    </div>
+
   </div>
 
-  <!-- Features List -->
-  <div class="poster-features">
-    <div>📊 شفاف ڈیش بورڈ</div>
-    <div>🗓 90 دن کا سائیکل</div>
-    <div>👥 بڑھتی برادری</div>
-  </div>
+  <div id="toast" class="toast" style="position:fixed; bottom:20px; right:20px; background:#333; color:#fff; padding:10px 16px; border-radius:6px; display:none;"></div>
 
-  <!-- CTA Button -->
-  <a href="#authBox" class="poster-footer-btn">
-    📞 آج ہی رابطہ کریں اور اپنے کاروبار کا آغاز کریں!
-  </a>
+  <script>
+    let isSignUp = false;
 
-</div>
+    function getDb() {
+      return window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
+    }
+
+    function pkr(val) { return "روپے " + Number(val || 0).toLocaleString(); }
+
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg;
+        t.style.display = "block";
+        setTimeout(() => { t.style.display = "none"; }, 3000);
+      } else { alert(msg); }
+    }
+
+    function toggleAuthMode() {
+      isSignUp = !isSignUp;
+      document.getElementById("authTitle").textContent = isSignUp ? "نیا اکاؤنٹ بنائیں" : "لاگ ان کریں";
+      document.getElementById("authPrimaryBtn").textContent = isSignUp ? "سائن اپ کریں" : "لاگ ان کریں";
+      document.getElementById("authToggleBtn").textContent = isSignUp ? "پہلے سے اکاؤنٹ ہے؟ لاگ ان کریں" : "نیا اکاؤنٹ بنائیں";
+    }
+
+    async function checkUser() {
+      const db = getDb();
+      if (!db) return;
+      try {
+        const { data: { session } } = await db.auth.getSession();
+        if (session && session.user) {
+          document.getElementById("authBox").style.display = "none";
+          document.getElementById("userHeaderBtn").innerHTML = `
+            <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:4px 8px;font-size:11px;" onclick="logout()">لاگ آؤٹ (${session.user.email.split('@')[0]})</button>
+          `;
+        }
+      } catch(e) {}
+    }
+
+    async function handleAuth() {
+      const db = getDb();
+      if (!db) return toast("سرور سے رابطہ ہو رہا ہے، براہ کرم انتظار کریں...");
+
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPass").value.trim();
+
+      if (!email || !password) return toast("ای میل اور پاس ورڈ درج کریں!");
+
+      try {
+        if (isSignUp) {
+          const { data, error } = await db.auth.signUp({ email, password });
+          if (error) throw error;
+          toast("اکاؤنٹ بن گیا ہے! لاگ ان ہو رہا ہے...");
+          window.location.reload();
+        } else {
+          const { data, error } = await db.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          toast("لاگ ان کامیاب رہا!");
+          window.location.reload();
+        }
+      } catch (err) {
+        toast(err.message || "لاگ ان کرنے میں ناکامی ہوئی");
+      }
+    }
+
+    async function logout() {
+      const db = getDb();
+      try { if (db && db.auth) await db.auth.signOut(); } catch (e) {}
+      localStorage.clear();
+      window.location.reload();
+    }
+
+    async function loadCampaigns() {
+      const db = getDb();
+      const listEl = document.getElementById("campaignsList");
+
+      if (!db) {
+        setTimeout(loadCampaigns, 500);
+        return;
+      }
+
+      try {
+        const { data: campaigns, error } = await db.from("campaigns")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Fetch error:", error);
+          listEl.innerHTML = `<div class="card" style="text-align:center; padding:20px; color:red; background:#fff;">ڈیٹا لوڈ نہیں ہو سکا۔ پیج ریفریش کریں۔</div>`;
+          return;
+        }
+
+        if (!campaigns || campaigns.length === 0) {
+          listEl.innerHTML = `<div class="card" style="text-align:center; padding:20px; background:#fff;">اس وقت کوئی بائیک دستیاب نہیں ہے۔</div>`;
+          return;
+        }
+
+        listEl.innerHTML = "";
+
+        for (const c of campaigns) {
+          let raised = 0;
+          try {
+            const { data: invs } = await db.from("investments").select("amount").eq("campaign_id", c.id);
+            raised = (invs || []).reduce((sum, i) => sum + Number(i.amount || 0), 0);
+          } catch(e) {}
+
+          const target = Number(c.target || 0);
+          const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
+
+          const div = document.createElement("div");
+          div.className = "card";
+          div.style.cssText = "background:#fff; padding:16px; border-radius:10px; border:1px solid #e2e8f0;";
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+              <div>
+                <div style="font-weight:800; font-size:16px; color:#000;">${c.name}</div>
+                <div class="muted" style="font-size:12px; color:#64748b;">ڈیلیوری پارٹنر · تصدیق شدہ</div>
+              </div>
+              <div style="width:36px; height:36px; border-radius:50%; border:3px solid #0f3932; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">
+                ${pct}%
+              </div>
+            </div>
+            
+            <div style="font-size:13px; font-weight:700; margin:8px 0 12px 0; color:#333;">
+              ${pkr(raised)} <span class="muted" style="font-weight:400; font-size:12px; color:#64748b;">جمع شدہ (ٹارگٹ: ${pkr(target)})</span>
+            </div>
+
+            <button class="btn btn-dark" style="width:100%; background:#eab308; color:#000; font-weight:700; font-size:15px; padding:10px; border:none; border-radius:6px; cursor:pointer;" onclick="contribute('${c.id}')">حصہ لیں</button>
+          `;
+          listEl.appendChild(div);
+        }
+      } catch (err) {
+        console.error("Load campaigns error:", err);
+        listEl.innerHTML = `<div class="card" style="text-align:center; padding:20px; background:#fff;">دوبارہ کوشش کی جا رہی ہے...</div>`;
+        setTimeout(loadCampaigns, 1500);
+      }
+    }
+
+    async function contribute(campaignId) {
+      const db = getDb();
+      if (!db) return;
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) {
+        toast("حصہ لینے کے لیے پہلے لاگ ان کریں!");
+        window.scrollTo({ top: document.getElementById("authBox").offsetTop, behavior: 'smooth' });
+        return;
+      }
+      window.location.href = `dashboard.html?campaign=${campaignId}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      checkUser();
+      loadCampaigns();
+    });
+  </script>
+</body>
+</html>
