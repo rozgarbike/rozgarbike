@@ -6,6 +6,7 @@
 <title>RozgarBike — Admin Panel</title>
 
 <link rel="stylesheet" href="assets/style.css">
+<!-- Supabase JS Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -110,6 +111,7 @@ th{ background:#111827; color:#9ca3af }
 
 <div class="container">
 
+  <!-- MANAGE WHATSAPP NUMBER & CHANNEL LINK -->
   <div class="card">
     <div class="card-title">💬 Manage WhatsApp Number / Channel Link</div>
     <label style="font-size:12px;color:#9ca3af">WhatsApp Number or Channel Link:</label>
@@ -117,6 +119,7 @@ th{ background:#111827; color:#9ca3af }
     <button onclick="saveWhatsAppLink()" class="btn-act btn-primary" style="width:100%;padding:10px">💾 Save WhatsApp Link</button>
   </div>
 
+  <!-- BONUS FORMULA & AUTOMATIC DISTRIBUTE -->
   <div class="card">
     <div class="card-title">⚡ Bonus Formula & Auto Distribution</div>
     <div class="notice-box">
@@ -129,11 +132,12 @@ th{ background:#111827; color:#9ca3af }
     <button onclick="distributeAutoBonus()" class="btn-act btn-primary" style="width:100%;padding:12px;font-size:14px">⚡ Distribute Bonus To All Investors</button>
   </div>
 
+  <!-- MANUAL BONUS SENDER -->
   <div class="card">
     <div class="card-title">🎁 Send Manual Bonus</div>
     <label style="font-size:12px;color:#9ca3af">Select Investor:</label>
     <select id="bonusUserSelect">
-      <option value="">Loading users...</option>
+      <option value="">-- Select Investor --</option>
     </select>
 
     <label style="font-size:12px;color:#9ca3af">Bonus Amount (PKR):</label>
@@ -145,6 +149,7 @@ th{ background:#111827; color:#9ca3af }
     <button onclick="sendManualBonus()" class="btn-act btn-primary" style="width:100%;padding:10px">🎁 Send Bonus</button>
   </div>
 
+  <!-- PENDING DEPOSIT REQUESTS ONLY -->
   <div class="card">
     <div class="card-title">📥 Deposit Requests & Verification (پینڈنگ)</div>
     <div class="table-responsive">
@@ -160,12 +165,13 @@ th{ background:#111827; color:#9ca3af }
           </tr>
         </thead>
         <tbody id="depositTableBody">
-          <tr><td colspan="6">Loading deposits...</td></tr>
+          <tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ نہیں ہے۔</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- PENDING WITHDRAWAL REQUESTS ONLY -->
   <div class="card">
     <div class="card-title">📤 Pending Withdrawal Requests (پینڈنگ ودڈرال)</div>
     <div class="table-responsive">
@@ -181,12 +187,13 @@ th{ background:#111827; color:#9ca3af }
           </tr>
         </thead>
         <tbody id="withdrawTableBody">
-          <tr><td colspan="6">Loading withdrawals...</td></tr>
+          <tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- MANUAL PAYMENT ACCOUNTS MANAGEMENT -->
   <div class="card">
     <div class="card-title">💳 Manage Deposit Payment Accounts</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -207,12 +214,13 @@ th{ background:#111827; color:#9ca3af }
           </tr>
         </thead>
         <tbody id="paymentAccountsBody">
-          <tr><td colspan="4">Loading accounts...</td></tr>
+          <tr><td colspan="4" style="text-align:center;color:#9ca3af">No accounts found.</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
+  <!-- CAMPAIGNS MANAGEMENT -->
   <div class="card">
     <div class="card-title">🚀 Manage Campaigns</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -231,7 +239,7 @@ th{ background:#111827; color:#9ca3af }
           </tr>
         </thead>
         <tbody id="campaignsTableBody">
-          <tr><td colspan="3">Loading campaigns...</td></tr>
+          <tr><td colspan="3" style="text-align:center;color:#9ca3af">No active campaigns.</td></tr>
         </tbody>
       </table>
     </div>
@@ -256,11 +264,6 @@ async function initAdmin() {
   const db = getSupabase();
   if(!db){
     console.error("Supabase initialize nahi hua.");
-    document.getElementById("bonusUserSelect").innerHTML = `<option value="">-- DB Error --</option>`;
-    document.getElementById("depositTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">Supabase initialize nahi hua. config.js check karein.</td></tr>`;
-    document.getElementById("withdrawTableBody").innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">Supabase initialize nahi hua. config.js check karein.</td></tr>`;
-    document.getElementById("paymentAccountsBody").innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444">Supabase error.</td></tr>`;
-    document.getElementById("campaignsTableBody").innerHTML = `<tr><td colspan="3" style="text-align:center;color:#ef4444">Supabase error.</td></tr>`;
     return;
   }
 
@@ -308,7 +311,6 @@ async function saveWhatsAppLink() {
 // USER MAP
 async function loadUsersMap() {
   const select = document.getElementById("bonusUserSelect");
-  select.innerHTML = `<option value="">-- Loading Investors... --</option>`;
 
   try {
     const db = getSupabase();
@@ -343,7 +345,6 @@ async function loadUsersMap() {
     }
   } catch(e) {
     console.error("User map error:", e);
-    select.innerHTML = `<option value="">-- Error Loading Users --</option>`;
   }
 }
 
@@ -469,10 +470,7 @@ async function loadDeposits() {
 
   try {
     const db = getSupabase();
-    if(!db) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">Database connection error.</td></tr>`;
-      return;
-    }
+    if(!db) return;
 
     const { data, error } = await db
       .from("investments")
@@ -514,7 +512,6 @@ async function loadDeposits() {
     }).join("");
   } catch(e) {
     console.error("Load deposits error:", e);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">لوڈنگ میں مسئلہ آیا</td></tr>`;
   }
 }
 
@@ -537,10 +534,7 @@ async function loadWithdrawals() {
 
   try {
     const db = getSupabase();
-    if(!db) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">Database connection error.</td></tr>`;
-      return;
-    }
+    if(!db) return;
 
     const { data, error } = await db
       .from("withdrawals")
@@ -578,7 +572,6 @@ async function loadWithdrawals() {
     }).join("");
   } catch(e) {
     console.error("Load withdrawals error:", e);
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444">لوڈنگ میں مسئلہ آیا</td></tr>`;
   }
 }
 
@@ -600,10 +593,7 @@ async function loadAccounts() {
   const tbody = document.getElementById("paymentAccountsBody");
   try {
     const db = getSupabase();
-    if(!db) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#ef4444">Database connection error.</td></tr>`;
-      return;
-    }
+    if(!db) return;
     const { data } = await db.from("payment_methods").select("*");
 
     if(!data || data.length === 0) {
@@ -620,10 +610,43 @@ async function loadAccounts() {
       </tr>
     `).join("");
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="4">Error loading accounts.</td></tr>`;
+    console.error("Load accounts error:", e);
   }
 }
 
 async function addPaymentAccount() {
   const db = getSupabase();
-  const label = document.getEle
+  const label = document.getElementById("accLabel").value;
+  const account_title = document.getElementById("accTitle").value;
+  const account_number = document.getElementById("accNum").value;
+
+  if(!label || !account_title || !account_number) return alert("تمام خانے پر کریں۔");
+
+  const { error } = await db.from("payment_methods").insert([{ label, account_title, account_number }]);
+  if(error) alert("Error: " + error.message);
+  else {
+    alert("Account added!");
+    document.getElementById("accLabel").value = "";
+    document.getElementById("accTitle").value = "";
+    document.getElementById("accNum").value = "";
+    loadAccounts();
+  }
+}
+
+async function deleteAccount(id) {
+  const db = getSupabase();
+  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
+  const { error } = await db.from("payment_methods").delete().eq("id", id);
+  if(error) alert("Error: " + error.message);
+  else loadAccounts();
+}
+
+// CAMPAIGNS
+async function loadCampaigns() {
+  const tbody = document.getElementById("campaignsTableBody");
+  try {
+    const db = getSupabase();
+    if(!db) return;
+    const { data } = await db.from("campaigns").select("*");
+
+    if(!d
