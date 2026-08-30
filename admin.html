@@ -119,14 +119,29 @@ th{ background:#111827; color:#9ca3af }
     <button onclick="saveWhatsAppLink()" class="btn-act btn-primary" style="width:100%;padding:10px">💾 Save WhatsApp Link</button>
   </div>
 
-  <!-- ADD MANUAL INVESTOR / USER -->
+  <!-- ADD MANUAL INVESTOR / USER & MANAGE LIST -->
   <div class="card">
-    <div class="card-title">👤 Add Manual Investor / User</div>
+    <div class="card-title">👤 Add & Manage Investors</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <input id="newInvestorName" class="input-box" placeholder="Investor Full Name">
       <input id="newInvestorEmail" class="input-box" placeholder="Phone or Email">
     </div>
-    <button onclick="addManualInvestor()" class="btn-act btn-primary" style="width:100%;padding:10px">+ Add Investor</button>
+    <button onclick="addManualInvestor()" class="btn-act btn-primary" style="width:100%;padding:10px;margin-bottom:15px">+ Add Investor</button>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Investor ID</th>
+            <th>Name & Details</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="investorsTableBody">
+          <tr><td colspan="3" style="text-align:center;color:#9ca3af">No investors found.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- BONUS FORMULA & AUTOMATIC DISTRIBUTE -->
@@ -270,10 +285,10 @@ function getSupabase() {
 
 let userMap = {};
 
-// INITIAL DEFAULT DATA (LOADS INSTANTLY IF SUPABASE IS EMPTY/OFFLINE)
+// INITIAL DEFAULT DATA (STORES IN LOCAL STORAGE SO DATA NEVER DISAPPEARS)
 let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
-  { id: "inv_101", name: "Ali Khan (03001234567)" },
-  { id: "inv_102", name: "Muhammad Usman (03129876543)" }
+  { id: "inv_101", name: "Muhammad safdar sada pay(03245380453)" },
+  { id: "inv_102", name: "Muhammad Safdar jazz cash (03245380453)" }
 ];
 
 let defaultAccounts = JSON.parse(localStorage.getItem('admin_accounts')) || [
@@ -320,6 +335,19 @@ async function addManualInvestor() {
   alert("نیا انوسٹر کامیابی سے شامل ہو گیا!");
 }
 
+async function deleteInvestor(id) {
+  if(!confirm("کیا آپ واقعی اس انوسٹر کو ڈیلیٹ کرنا چاہتے ہیں؟")) return;
+
+  const db = getSupabase();
+  if(db) {
+    try { await db.from("profiles").delete().eq("id", id); } catch(e){}
+  }
+
+  defaultInvestors = defaultInvestors.filter(inv => inv.id !== id);
+  localStorage.setItem('admin_investors', JSON.stringify(defaultInvestors));
+  loadUsersMap();
+}
+
 // WHATSAPP LINK
 async function loadWhatsAppLink() {
   try {
@@ -344,9 +372,10 @@ async function saveWhatsAppLink() {
   alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-// USER MAP & DROPDOWN
+// USER MAP, DROPDOWN & TABLE
 async function loadUsersMap() {
   const select = document.getElementById("bonusUserSelect");
+  const tbody = document.getElementById("investorsTableBody");
   select.innerHTML = `<option value="">-- Select Investor --</option>`;
 
   let dbUsers = [];
@@ -364,17 +393,31 @@ async function loadUsersMap() {
     }
   } catch(e) {}
 
-  // Merge DB Users & Default Local Users
   let combined = [...dbUsers, ...defaultInvestors];
   let seen = new Set();
+  let uniqueList = [];
 
   combined.forEach(inv => {
     if(!seen.has(inv.id)) {
       seen.add(inv.id);
+      uniqueList.push(inv);
       userMap[inv.id] = inv.name;
       select.innerHTML += `<option value="${inv.id}">${inv.name}</option>`;
     }
   });
+
+  if(uniqueList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#9ca3af">No investors found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = uniqueList.map(inv => `
+    <tr>
+      <td><code>${inv.id}</code></td>
+      <td><b>${inv.name}</b></td>
+      <td><button onclick="deleteInvestor('${inv.id}')" class="btn-act btn-delete">Delete</button></td>
+    </tr>
+  `).join("");
 }
 
 // INSERT BONUS RECORD
@@ -562,55 +605,4 @@ async function addPaymentAccount() {
   document.getElementById("accLabel").value = "";
   document.getElementById("accTitle").value = "";
   document.getElementById("accNum").value = "";
-  loadAccounts();
-}
-
-async function deleteAccount(id) {
-  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
-
-  const db = getSupabase();
-  if(db) {
-    try { await db.from("payment_methods").delete().eq("id", id); } catch(e){}
-  }
-
-  defaultAccounts = defaultAccounts.filter(a => a.id !== id);
-  localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
-  loadAccounts();
-}
-
-// CAMPAIGNS
-async function loadCampaigns() {
-  const tbody = document.getElementById("campaignsTableBody");
-  let dbCamps = [];
-
-  try {
-    const db = getSupabase();
-    if(db) {
-      const { data } = await db.from("campaigns").select("*");
-      if(data && data.length > 0) {
-        dbCamps = data.map(c => ({ id: c.id, title: c.title || c.name, target: c.target || c.target_amount || 0 }));
-      }
-    }
-  } catch(e){}
-
-  let allCamps = [...dbCamps, ...defaultCampaigns];
-  let seen = new Set();
-  let list = [];
-
-  allCamps.forEach(c => {
-    if(!seen.has(c.id)) {
-      seen.add(c.id);
-      list.push(c);
-    }
-  });
-
-  if(list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#9ca3af">No active campaigns.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(c => `
-    <tr>
-      <td><b>${c.title}</b></td>
-      <td>Rs ${Number(c.target).toLocaleString()}</td>
-      <td><button o
+  loadA
