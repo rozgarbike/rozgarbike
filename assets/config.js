@@ -8,3 +8,5 @@ if (typeof supabase !== 'undefined') {
 } else {
     console.error("Supabase SDK not loaded. Make sure the CDN script is included before config.js");
 }
+const SUPABASE_URL = "https://your-supabase-url.supabase.co";
+const SUPABASE_ANON_KEY = "your-actual-anon-key-here";
