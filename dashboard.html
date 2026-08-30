@@ -55,7 +55,7 @@ body{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
-  margin-top:10px;
+  margin-top:12px;
 }
 .stat-box{
   background:#111827;
@@ -193,23 +193,24 @@ th{ background:#111827; color:#9ca3af }
 
 <div class="container">
 
-  <!-- BALANCE CARDS WITH SEPARATE INVESTMENT & WITHDRAWAL DISPLAY -->
+  <!-- BALANCE CARDS WITH SEPARATE INVESTMENT, EARNINGS & WITHDRAWAL DISPLAY -->
   <div class="card">
     <div class="card-title">💰 Balance Overview</div>
     
-    <div style="margin-bottom:10px;">
-      <div style="font-size:12px; color:#9ca3af;">Available Net Balance (موجودہ بیلنس)</div>
-      <div style="font-size:26px; font-weight:bold; color:#10b981;" id="userBalance">Rs 0</div>
+    <div style="margin-bottom:10px; background:#111827; padding:12px; border-radius:8px; border:1px solid #10b981;">
+      <div style="font-size:12px; color:#10b981; font-weight:bold;">💵 Withdrawable Balance (قابلِ برداشت بیلنس)</div>
+      <div style="font-size:26px; font-weight:bold; color:#10b981;" id="withdrawableBalance">Rs 0</div>
+      <small style="font-size:11px; color:#9ca3af;">یہ بونس اور روزانہ ڈسٹریبیوشن سے حاصل شدہ رقم ہے جو آپ فوراً ودڈرال کر سکتے ہیں۔</small>
     </div>
 
     <!-- SEPARATE DISPLAY FOR INVESTMENTS AND WITHDRAWALS -->
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="stat-label">📥 Total Approved Investment</div>
-        <div class="stat-val" style="color:#10b981;" id="totalInvestment">Rs 0</div>
+        <div class="stat-label">💼 Active Investment (انویسٹمنٹ)</div>
+        <div class="stat-val" style="color:#3b82f6;" id="totalInvestment">Rs 0</div>
       </div>
       <div class="stat-box">
-        <div class="stat-label">📤 Total Approved Withdrawal</div>
+        <div class="stat-label">📤 Total Withdrawn (کل ودڈرال)</div>
         <div class="stat-val" style="color:#e29d38;" id="totalWithdrawal">Rs 0</div>
       </div>
     </div>
@@ -340,7 +341,7 @@ function getSupabase() {
 }
 
 let currentUserId = null;
-let userCurrentBalance = 0;
+let userWithdrawableBalance = 0;
 
 async function initDashboard() {
   const db = getSupabase();
@@ -467,7 +468,7 @@ async function submitWithdraw() {
   if(!amount || amount <= 0) return alert("برائے مہربانی درست رقم درج کریں۔");
   if(amount < 100) return alert("کم از کم ودڈرال کی رقم Rs 100 ہے۔");
   if(amount > 5000) return alert("ایک وقت میں زیادہ سے زیادہ Rs 5,000 ودڈرال کر سکتے ہیں۔");
-  if(amount > userCurrentBalance) return alert("آپ کے پاس اتنا بیلنس موجود نہیں ہے۔");
+  if(amount > userWithdrawableBalance) return alert("آپ کے ودڈرال ایبل بیلنس میں اتنی رقم موجود نہیں ہے۔");
   if(!account_title || !account_number) return alert("اکاؤنٹ کی تفصیلات (نام اور نمبر) مکمل درج کریں۔");
 
   // 2. Daily Withdrawal Limit Check (Rs 5000 Per Day)
@@ -493,7 +494,7 @@ async function submitWithdraw() {
     }
   }
 
-  // 3. Complete Payload mapping for all possible database column names
+  // 3. Payload
   const payload = {
     investor_id: currentUserId,
     amount: amount,
@@ -536,11 +537,14 @@ async function loadUserData() {
 
   const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
   const { data: wits } = await db.from("withdrawals").select("*").eq("investor_id", currentUserId);
+  const { data: earnings } = await db.from("earnings").select("*").eq("user_id", currentUserId);
 
   let allTx = [];
   let totalApprovedDeposit = 0;
   let totalApprovedWithdraw = 0;
+  let totalEarningsAndBonus = 0;
 
+  // 1. Investments Calculation
   if(invs) {
     invs.forEach(i => {
       allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
@@ -548,6 +552,7 @@ async function loadUserData() {
     });
   }
 
+  // 2. Withdrawals Calculation
   if(wits) {
     wits.forEach(w => {
       allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
@@ -555,11 +560,20 @@ async function loadUserData() {
     });
   }
 
-  // Update Global Balance
-  userCurrentBalance = totalApprovedDeposit - totalApprovedWithdraw;
+  // 3. Earnings / Daily Profit / Bonus Calculation (From earnings table or user_earnings)
+  if(earnings) {
+    earnings.forEach(e => {
+      allTx.push({ type: e.type || 'Bonus/Profit', amount: e.amount, status: 'approved', date: e.created_at });
+      totalEarningsAndBonus += Number(e.amount);
+    });
+  }
 
-  // Render values separately
-  document.getElementById("userBalance").innerText = `Rs ${userCurrentBalance.toLocaleString()}`;
+  // Withdrawable balance = Daily Profits + Bonuses - Approved Withdrawals
+  userWithdrawableBalance = totalEarningsAndBonus - totalApprovedWithdraw;
+  if(userWithdrawableBalance < 0) userWithdrawableBalance = 0; // Safeguard
+
+  // Display On Interface
+  document.getElementById("withdrawableBalance").innerText = `Rs ${userWithdrawableBalance.toLocaleString()}`;
   document.getElementById("totalInvestment").innerText = `Rs ${totalApprovedDeposit.toLocaleString()}`;
   document.getElementById("totalWithdrawal").innerText = `Rs ${totalApprovedWithdraw.toLocaleString()}`;
 
@@ -584,5 +598,4 @@ async function loadUserData() {
 window.addEventListener("DOMContentLoaded", initDashboard);
 </script>
 </body>
-  </html>
-  
+</html>
