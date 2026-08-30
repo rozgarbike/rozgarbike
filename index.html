@@ -8,15 +8,8 @@
 <!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 
-<!-- Supabase SDK -->
+<!-- Supabase SDK JS -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- Inline Configuration to Fix Login Initialization -->
-<script>
-  window.SUPABASE_URL = "https://your-supabase-url.supabase.co"; // Replace with your URL if different
-  window.SUPABASE_ANON_KEY = "your-anon-key"; // Replace with your Anon Key if different
-</script>
-<script src="assets/config.js"></script>
 
 <style>
   body {
@@ -215,10 +208,17 @@
     color: #0f3932;
   }
 
-  .btn-apk {
-    background: #114b3e;
+  .btn-support {
+    background: #0f3932;
     color: #ffffff;
     margin-top: 10px;
+  }
+
+  .btn-apk {
+    background: #16a34a;
+    color: #ffffff;
+    margin-top: 8px;
+    font-weight: 700;
   }
 
   .toast {
@@ -255,7 +255,7 @@
 
   <div class="wrap">
     
-    <!-- 1. URDU POSTER BANNER -->
+    <!-- URDU POSTER BANNER -->
     <div class="urdu-poster-card">
       <div class="poster-header">
         <h2>تجارتی بائیک فلیٹ پارٹنرشپ</h2>
@@ -281,12 +281,12 @@
         <div>👥 بڑھتی برادری</div>
       </div>
 
-      <a href="#authBox" class="poster-footer-btn">
+      <a href="https://wa.me/?text=RozgarBike%20App%20Download%20and%20Investment%20Details" class="poster-footer-btn" target="_blank">
         📞 آج ہی رابطہ کریں اور اپنے کاروبار کا آغاز کریں!
       </a>
     </div>
 
-    <!-- 2. AUTH BOX (LOGIN / SIGNUP) -->
+    <!-- AUTH BOX -->
     <div id="authBox" class="card">
       <div class="form-title" id="authTitle">Login to Account</div>
       
@@ -299,11 +299,14 @@
       
       <button id="authToggleBtn" type="button" class="btn btn-outline" onclick="toggleAuthMode()">Create New Account</button>
       
-      <!-- APP DOWNLOAD BUTTON (Updated to avoid 404 error) -->
-      <a href="https://wa.me/" id="appDownloadBtn" target="_blank" class="btn btn-apk">📲 Contact Support / Get App</a>
+      <!-- CONTACT SUPPORT / GET APP BUTTON -->
+      <a href="https://wa.me/?text=RozgarBike%20App%20Download%20Help" class="btn btn-support" target="_blank">📲 Contact Support / Get App</a>
+      
+      <!-- DIRECT DOWNLOAD APK BUTTON -->
+      <a href="./app-release.apk" class="btn btn-apk" download="RozgarBike.apk">📥 Download Android App (APK)</a>
     </div>
 
-    <!-- 3. CAMPAIGNS / BIKES LIST -->
+    <!-- CAMPAIGNS LIST -->
     <div style="font-size:18px; font-weight:700; margin-bottom:12px; color:#0f3932;">Available Bike Fleets</div>
     <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px;">
       <div class="card" style="text-align:center; color:#64748b;">Loading Available Fleets...</div>
@@ -313,22 +316,10 @@
 
   <div id="toast" class="toast"></div>
 
-  <!-- SCRIPT -->
+  <!-- CONFIG & SCRIPTS -->
+  <script src="assets/config.js"></script>
   <script>
     let isSignUp = false;
-
-    function getDb() {
-      if (window.supabaseClient) return window.supabaseClient;
-      
-      const url = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : null);
-      const key = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : null);
-
-      if (typeof supabase !== 'undefined' && supabase.createClient && url && key) {
-        window.supabaseClient = supabase.createClient(url, key);
-        return window.supabaseClient;
-      }
-      return null;
-    }
 
     function pkr(val) { return "PKR " + Number(val || 0).toLocaleString(); }
 
@@ -348,6 +339,15 @@
       document.getElementById("authToggleBtn").textContent = isSignUp ? "Already have an account? Login" : "Create New Account";
     }
 
+    function getDb() {
+      if (window.supabaseClient) return window.supabaseClient;
+      if (typeof supabase !== 'undefined' && supabase.createClient && typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+        window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        return window.supabaseClient;
+      }
+      return null;
+    }
+
     async function checkUser() {
       const db = getDb();
       if (!db || !db.auth) return;
@@ -359,13 +359,13 @@
             <button class="btn btn-outline" style="color:#fff; border-color:rgba(255,255,255,0.4); padding:4px 10px; font-size:12px;" onclick="logout()">Logout (${session.user.email.split('@')[0]})</button>
           `;
         }
-      } catch(e) { console.error("Session check error", e); }
+      } catch(e) {}
     }
 
     async function handleAuth() {
       const db = getDb();
       if (!db || !db.auth) {
-        return toast("Connection Error: Check assets/config.js setup!");
+        return toast("Database Configuration Error. Please check assets/config.js!");
       }
 
       const email = document.getElementById("authEmail").value.trim();
@@ -402,7 +402,7 @@
       const listEl = document.getElementById("campaignsList");
 
       if (!db) {
-        setTimeout(loadCampaigns, 500);
+        listEl.innerHTML = `<div class="card" style="text-align:center; color:#64748b;">Fleets load nahi ho sake. Page refresh karein.</div>`;
         return;
       }
 
@@ -412,7 +412,7 @@
           .order("created_at", { ascending: false });
 
         if (error) {
-          listEl.innerHTML = `<div class="card" style="text-align:center; color:red;">Fleets load nahi ho sake. Page refresh karein.</div>`;
+          listEl.innerHTML = `<div class="card" style="text-align:center; color:#dc2626;">Fleets load nahi ho sake. Page refresh karein.</div>`;
           return;
         }
 
@@ -455,8 +455,7 @@
           listEl.appendChild(div);
         }
       } catch (err) {
-        listEl.innerHTML = `<div class="card" style="text-align:center;">Retrying to load data...</div>`;
-        setTimeout(loadCampaigns, 1500);
+        listEl.innerHTML = `<div class="card" style="text-align:center; color:#dc2626;">Fleets load nahi ho sake. Page refresh karein.</div>`;
       }
     }
 
