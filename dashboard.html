@@ -215,7 +215,7 @@ th{ background:#111827; color:#9ca3af }
 
 </div>
 
-<!-- DEPOSIT MODAL WITH PAYMENT ACCOUNTS -->
+<!-- DEPOSIT MODAL -->
 <div id="depositModal" class="modal">
   <div class="modal-content">
     <span class="modal-close" onclick="closeDepositModal()">&times;</span>
@@ -344,7 +344,7 @@ function closeWithdrawModal() {
   document.getElementById("withdrawModal").classList.remove("active");
 }
 
-// SUBMIT DEPOSIT (USING 'slips' BUCKET)
+// SUBMIT DEPOSIT
 async function submitDeposit() {
   const db = getSupabase();
   const amount = document.getElementById("depAmount").value;
@@ -375,6 +375,13 @@ async function submitDeposit() {
     uploadedSlipUrl = urlData.publicUrl;
   }
 
+  // Pehle active campaign ID nikalne ki koshish karein
+  let campaignId = null;
+  const { data: campData } = await db.from("campaigns").select("id").limit(1);
+  if (campData && campData.length > 0) {
+    campaignId = campData[0].id;
+  }
+
   const payload = {
     investor_id: currentUserId,
     amount: Number(amount),
@@ -382,6 +389,10 @@ async function submitDeposit() {
     slip_url: uploadedSlipUrl,
     status: "pending"
   };
+
+  if(campaignId) {
+    payload.campaign_id = campaignId;
+  }
 
   const { error } = await db.from("investments").insert([payload]);
 
@@ -408,6 +419,7 @@ async function submitWithdraw() {
   if(!amount || Number(amount) <= 0) return alert("برائے مہربانی درست رقم درج کریں۔");
   if(!account_title || !account_number) return alert("اکاؤنٹ کی تفصیلات مکمل پر کریں۔");
 
+  // Fallback Payload agar payment_method column na ho
   const payload = {
     investor_id: currentUserId,
     amount: Number(amount),
@@ -417,7 +429,14 @@ async function submitWithdraw() {
     status: "pending"
   };
 
-  const { error } = await db.from("withdrawals").insert([payload]);
+  let { error } = await db.from("withdrawals").insert([payload]);
+
+  // Agar payment_method column na hone ka error aaye to bina uske insert karein
+  if(error && error.message.includes("payment_method")) {
+    delete payload.payment_method;
+    const retry = await db.from("withdrawals").insert([payload]);
+    error = retry.error;
+  }
 
   if(error) {
     alert("ودڈرال درخواست میں مسئلہ آیا: " + error.message);
