@@ -32,11 +32,13 @@
   th { background: #f8fafc; color: #475569; }
 
   /* Request Card Box */
-  .req-card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+  .req-card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; position: relative; }
   .slip-img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; margin: 8px 0; background: #fff; cursor: pointer; }
   
-  .btn-approve { background: #22c55e; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-  .btn-reject { background: #ef4444; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+  .btn-group { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .btn-approve { background: #22c55e; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; }
+  .btn-reject { background: #ef4444; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; }
+  .btn-read { background: #64748b; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; flex: 1; }
   .btn-delete { background: #dc2626; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
 </style>
 </head>
@@ -62,7 +64,7 @@
       <button onclick="distributeAutoProfit()" class="btn-action" style="background: #16a34a;">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CUSTOM GIVEAWAY / BONUS (Fix User Names) -->
+    <!-- 2. CUSTOM GIVEAWAY / BONUS -->
     <div class="section-title">🎁 Custom Bonus / Special Giveaway</div>
     <div class="card">
       <label style="font-size: 12px; font-weight: bold;">Select Investor User:</label>
@@ -76,7 +78,7 @@
       <button onclick="sendCustomBonus()" class="btn-gold">Send Bonus To User</button>
     </div>
 
-    <!-- 3. PENDING WITHDRAWALS -->
+    <!-- 3. PENDING WITHDRAWALS (FIXED) -->
     <div class="section-title">📤 Pending Withdrawals</div>
     <div class="card">
       <div id="withdrawalsList">
@@ -99,9 +101,7 @@
       <input id="campTarget" type="number" class="input-box" placeholder="ٹارگٹ رقم (PKR)" />
       <button onclick="addCampaign()" class="btn-action">+ Add New Campaign</button>
 
-      <div id="campaignsList" style="margin-top: 15px;">
-        <!-- Campaigns list -->
-      </div>
+      <div id="campaignsList" style="margin-top: 15px;"></div>
     </div>
 
     <!-- 6. ADD / DELETE PAYMENT ACCOUNTS -->
@@ -128,9 +128,7 @@
             <th>Action</th>
           </tr>
         </thead>
-        <tbody id="accountsTable">
-          <!-- Accounts loaded dynamically -->
-        </tbody>
+        <tbody id="accountsTable"></tbody>
       </table>
     </div>
 
@@ -168,70 +166,93 @@
       loadWhatsAppSetting(db);
     }
 
-    // 1. Fetch Real Investor Names Directly From Profiles Table
+    // 1. Fetch Users
     async function loadUsersDropdown(db) {
       const select = document.getElementById("investorSelect");
-      select.innerHTML = `<option value="">-- یوزر لوڈ ہو رہے ہیں... --</option>`;
-
       try {
-        let { data: profiles, error } = await db.from("profiles").select("*");
-
-        if (error) console.error("Profiles Fetch Error:", error);
+        let { data: profiles } = await db.from("profiles").select("*");
 
         if (profiles && profiles.length > 0) {
           select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
             profiles.map(u => {
               const realName = u.full_name || u.name || u.username || u.email || "Unnamed User";
-              const extraInfo = u.email ? ` (${u.email})` : ` (${u.id.substring(0, 6)})`;
-              return `<option value="${u.id}">${realName}${extraInfo}</option>`;
+              return `<option value="${u.id}">${realName} (${u.email || u.id.substring(0,6)})</option>`;
             }).join("");
-          return;
+        } else {
+          select.innerHTML = `<option value="">کوئی رجسٹرڈ یوزر نہیں ملا</option>`;
         }
-
-        select.innerHTML = `<option value="">کوئی بھی رجسٹرڈ یوزر نہیں ملا</option>`;
-
       } catch (err) {
-        console.error("Error loading users:", err);
-        select.innerHTML = `<option value="">ڈیٹا لوڈ کرنے میں مسئلہ آیا</option>`;
+        select.innerHTML = `<option value="">ڈیٹا لوڈ کرنے میں غلطی آئی</option>`;
       }
     }
 
-    // 2. Load Pending Withdrawals
+    // 2. Load Pending Withdrawals (Safe Fetching & Mark as Read Enabled)
     async function loadPendingWithdrawals(db) {
       const box = document.getElementById("withdrawalsList");
+      
+      // Select all pending withdrawals
       const { data: withdraws, error } = await db.from("withdrawals")
-        .select("*, profiles(full_name, email)")
-        .eq("status", "pending")
+        .select("*")
+        .or("status.eq.pending,status.is.null")
         .order("created_at", { ascending: false });
 
-      if (error || !withdraws || withdraws.length === 0) {
+      if (error) {
+        console.error("Withdrawals Error:", error);
+        box.innerHTML = `<div style="font-size:13px; color:#dc2626;">ڈیٹا لوڈ کرنے میں ایرر آیا: ${error.message}</div>`;
+        return;
+      }
+
+      if (!withdraws || withdraws.length === 0) {
         box.innerHTML = `<div style="font-size:13px; color:#16a34a; font-weight:bold;">کوئی بھی پینڈنگ ودڈرال باقی نہیں ہے۔</div>`;
         return;
       }
 
-      box.innerHTML = withdraws.map(w => `
-        <div class="req-card">
-          <div style="font-weight:bold; color:#0b3c36;">${w.profiles?.full_name || 'Investor'} (${w.profiles?.email || w.investor_id.substring(0,8)})</div>
-          <div style="font-size:15px; margin:4px 0; color:#dc2626;">ودڈرال رقم: <strong>Rs ${Number(w.amount).toLocaleString()}</strong></div>
-          <div style="font-size:12px; color:#334155;">طریقہ: <strong>${w.method || 'Account'}</strong></div>
-          <div style="font-size:12px; color:#334155;">عنوان: <strong>${w.account_title || 'N/A'}</strong></div>
-          <div style="font-size:12px; color:#334155;">نمبر: <strong>${w.account_number || 'N/A'}</strong></div>
-          
-          <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn-approve" onclick="updateWithdrawStatus('${w.id}', 'approved')">Approve (پیسے بھیج دیے)</button>
-            <button class="btn-reject" onclick="updateWithdrawStatus('${w.id}', 'rejected')">Reject (مسترد کریں)</button>
+      // Fetch Profiles for names mapping
+      const { data: profiles } = await db.from("profiles").select("id, full_name, email");
+      const userMap = {};
+      if (profiles) {
+        profiles.forEach(p => { userMap[p.id] = p.full_name || p.email; });
+      }
+
+      box.innerHTML = withdraws.map(w => {
+        const uId = w.investor_id || w.user_id;
+        const userName = userMap[uId] || "Investor (" + (uId ? uId.substring(0,6) : "N/A") + ")";
+        const method = w.method || w.payment_method || "Account Transfer";
+        const title = w.account_title || w.title || "N/A";
+        const number = w.account_number || w.account_no || w.number || "N/A";
+        const amount = w.amount ? Number(w.amount).toLocaleString() : "0";
+
+        return `
+          <div class="req-card" id="withdraw-card-${w.id}">
+            <div style="font-weight:bold; color:#0b3c36;">👤 ${userName}</div>
+            <div style="font-size:15px; margin:4px 0; color:#dc2626; font-weight:bold;">ودڈرال رقم: Rs ${amount}</div>
+            <div style="font-size:12px; color:#334155;">طریقہ کار: <strong>${method}</strong></div>
+            <div style="font-size:12px; color:#334155;">اکاؤنٹ عنوان: <strong>${title}</strong></div>
+            <div style="font-size:12px; color:#334155;">اکاؤنٹ نمبر: <strong>${number}</strong></div>
+            
+            <div class="btn-group">
+              <button class="btn-approve" onclick="updateWithdrawStatus('${w.id}', 'approved')">Approve (منظور کریں)</button>
+              <button class="btn-reject" onclick="updateWithdrawStatus('${w.id}', 'rejected')">Reject (رد کریں)</button>
+              <button class="btn-read" onclick="updateWithdrawStatus('${w.id}', 'read')">👁️ Mark as Read</button>
+            </div>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
 
     async function updateWithdrawStatus(id, status) {
       const db = getSupabase();
       const { error } = await db.from("withdrawals").update({ status: status }).eq("id", id);
 
-      if (error) alert("Error: " + error.message);
-      else {
-        alert(`ودڈرال درخواست ${status === 'approved' ? 'منظور' : 'مسترد'} کر دی گئی ہے۔`);
+      if (error) {
+        alert("غلطی: " + error.message);
+      } else {
+        let msg = "آپریشن مکمل ہو گیا!";
+        if (status === 'approved') msg = "ودڈرال کامیابی سے منظور کر دیا گیا ہے۔";
+        if (status === 'rejected') msg = "ودڈرال منسوخ (Reject) کر دیا گیا ہے۔";
+        if (status === 'read') msg = "ودڈرال درخواست کو پڑھا ہوا نشان زد کر دیا گیا ہے۔";
+        
+        alert(msg);
         loadPendingWithdrawals(db);
       }
     }
@@ -259,7 +280,7 @@
       }
     }
 
-    // 4. Auto Profit Distribution (5%)
+    // 4. Auto Profit Distribution
     async function distributeAutoProfit() {
       if (!confirm("کیا آپ تمام منظور شدہ انویسٹرز کو 5% پرافٹ منتقل کرنا چاہتے ہیں؟")) return;
 
@@ -308,9 +329,9 @@
           
           ${dep.slip_url ? `<img src="${dep.slip_url}" class="slip-img" alt="Payment Slip" onclick="window.open('${dep.slip_url}')" title="بڑا دیکھنے کے لیے کلک کریں" />` : '<div style="color:#dc2626; font-size:11px; margin: 5px 0;">سلپ اپلوڈ نہیں کی گئی</div>'}
           
-          <div style="display:flex; gap:10px; margin-top:8px;">
+          <div class="btn-group">
             <button class="btn-approve" onclick="updateDepositStatus('${dep.id}', 'approved')">Approve (منظور کریں)</button>
-            <button class="btn-reject" onclick="updateDepositStatus('${dep.id}', 'rejected')">Reject (مسترد کریں)</button>
+            <button class="btn-reject" onclick="updateDepositStatus('${dep.id}', 'rejected')">Reject (رد کریں)</button>
           </div>
         </div>
       `).join("");
@@ -434,4 +455,5 @@
     window.addEventListener("DOMContentLoaded", checkAdminAuth);
   </script>
 </body>
-</html>
+  </html>
+  
