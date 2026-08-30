@@ -7,25 +7,25 @@
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: system-ui, -apple-system, sans-serif; background: #0b1329; color: #f8fafc; margin: 0; padding: 20px; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
   .admin-wrap { max-width: 1000px; margin: 0 auto; }
-  .card { background: #131f37; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; }
+  .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
   .section-title { font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-  th, td { padding: 10px; border-bottom: 1px solid #1e293b; white-space: nowrap; }
-  th { background: #0b1329; color: #94a3b8; }
+  th, td { padding: 10px; border-bottom: 1px solid #334155; white-space: nowrap; }
+  th { background: #0f172a; color: #94a3b8; }
   .btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
   .btn-approve { background: #16a34a; color: #fff; }
   .btn-reject { background: #dc2626; color: #fff; margin-left: 4px; }
   .btn-primary { background: #0284c7; color: #fff; width: 100%; padding: 10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
-  .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #2e3e5c; border-radius: 6px; background: #0b1329; color: #fff; box-sizing: border-box; }
+  .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: #fff; box-sizing: border-box; }
 </style>
 </head>
 <body>
 
   <div class="admin-wrap">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-      <h2 style="margin:0;">🛠️ Admin Master Dashboard</h2>
+      <h2 style="margin:0; color:#fff;">🛠️ Admin Master Dashboard</h2>
       <a href="dashboard.html" style="color:#38bdf8; text-decoration:none; font-weight:bold;">← Back to Dashboard</a>
     </div>
 
@@ -36,10 +36,11 @@
       <button class="btn btn-primary" style="background:#eab308; color:#000; font-size:15px;" onclick="distributeAutoProfit()">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CUSTOM BONUS BOX -->
+    <!-- 2. CUSTOM BONUS BOX (SHOWING NAMES NOW) -->
     <div class="card">
       <div class="section-title">🎁 Custom Giveaway / Special Bonus Box</div>
-      <select id="userSelect" class="input-field">
+      <!-- Bright visible dropdown for Mobile -->
+      <select id="userSelect" class="input-field" style="background:#f8fafc; color:#000; font-weight:bold;">
         <option value="">-- Select Investor User --</option>
       </select>
       <input id="bonusAmount" type="number" class="input-field" placeholder="Bonus Amount (PKR)" />
@@ -53,16 +54,16 @@
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>User ID</th><th>Active Referrals</th><th>Status</th></tr>
+            <tr><th>Investor Name</th><th>Active Referrals</th><th>Status</th></tr>
           </thead>
-          <tbody id="refWinnersTable"><tr><td colspan="3">Checking referral targets...</td></tr></tbody>
+          <tbody id="refWinnersTable"><tr><td colspan="3">Checking targets...</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 4. MANUAL PAYMENT METHODS MANAGEMENT -->
+    <!-- 4. PAYMENT ACCOUNTS -->
     <div class="card">
-      <div class="section-title">💳 Add / Delete Payment Accounts (Show to Investors)</div>
+      <div class="section-title">💳 Add / Delete Payment Accounts</div>
       <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
         <input id="accLabel" class="input-field" placeholder="Method Name (JazzCash/Bank)" />
         <input id="accTitle" class="input-field" placeholder="Account Title" />
@@ -80,45 +81,26 @@
       </div>
     </div>
 
-    <!-- 5. CAMPAIGN MANAGEMENT -->
-    <div class="card">
-      <div class="section-title">🚲 Campaign Management (Create & Delete)</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-        <input id="campName" class="input-field" placeholder="Campaign Name" />
-        <input id="campTarget" type="number" class="input-field" placeholder="Target Amount" />
-      </div>
-      <button class="btn btn-primary" style="background:#16a34a;" onclick="handleAddCampaign()">+ Create Campaign</button>
-
-      <div style="margin-top:15px; overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>Campaign</th><th>Target</th><th>Action</th></tr>
-          </thead>
-          <tbody id="campaignsTable"><tr><td colspan="3">Loading...</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 6. PENDING DEPOSITS & SLIPS -->
+    <!-- 5. PENDING DEPOSITS & SLIPS -->
     <div class="card">
       <div class="section-title">📥 Pending Deposits & Slip Pictures</div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>User ID</th><th>Amount</th><th>Slip Link</th><th>Action</th></tr>
+            <tr><th>Investor Name</th><th>Amount</th><th>Slip Link</th><th>Action</th></tr>
           </thead>
           <tbody id="depositsTable"><tr><td colspan="4">Loading...</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 7. PENDING WITHDRAWALS -->
+    <!-- 6. PENDING WITHDRAWALS -->
     <div class="card">
       <div class="section-title">📤 Pending Withdrawals</div>
       <div style="overflow-x:auto;">
         <table>
           <thead>
-            <tr><th>User ID</th><th>Method</th><th>Account Details</th><th>Amount</th><th>Action</th></tr>
+            <tr><th>Investor Name</th><th>Method</th><th>Account Details</th><th>Amount</th><th>Action</th></tr>
           </thead>
           <tbody id="withdrawalsTable"><tr><td colspan="5">Loading...</td></tr></tbody>
         </table>
@@ -136,23 +118,23 @@
       loadUsersDropdown(db);
       loadReferralWinners(db);
       loadAccounts(db);
-      loadCampaigns(db);
       loadDeposits(db);
       loadWithdrawals(db);
     }
 
+    // Fetches NAMES instead of raw IDs in Admin view
     async function loadUsersDropdown(db) {
       const { data: users } = await db.from("profiles").select("id, email, full_name");
       const select = document.getElementById("userSelect");
       if (users) {
         select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
-          users.map(u => `<option value="${u.id}">${u.full_name || u.email || u.id}</option>`).join("");
+          users.map(u => `<option value="${u.id}">${u.full_name ? u.full_name + ' ('+u.email+')' : u.email}</option>`).join("");
       }
     }
 
     async function distributeAutoProfit() {
       const db = getSupabase();
-      if (!confirm("کیا آپ واقعی تمام منظور شدہ انویسٹرز کو 5% پرافٹ بھیجنا چاہتے ہیں؟")) return;
+      if (!confirm("کیا آپ واقعی 5% پرافٹ منتقل کرنا چاہتے ہیں؟")) return;
 
       const { data: invs } = await db.from("investments").select("*").eq("status", "approved");
       if (!invs || invs.length === 0) return alert("کوئی ایکٹو انویسٹمنٹ نہیں ملی۔");
@@ -174,7 +156,7 @@
       const amount = Number(document.getElementById("bonusAmount").value);
       const note = document.getElementById("bonusNote").value.trim() || "Giveaway Bonus";
 
-      if (!userId || amount <= 0) return alert("یوزر اور صحیح رقم درج کریں۔");
+      if (!userId || amount <= 0) return alert("یوزر منتخب کریں اور صحیح رقم درج کریں۔");
 
       await db.from("wallet_transactions").insert([{ investor_id: userId, amount, description: note, status: "approved" }]);
       alert("بونس منتقل کر دیا گیا!");
@@ -182,7 +164,7 @@
 
     async function loadReferralWinners(db) {
       const tbody = document.getElementById("refWinnersTable");
-      const { data: users } = await db.from("profiles").select("id");
+      const { data: users } = await db.from("profiles").select("id, full_name, email");
       let winners = [];
 
       if (users) {
@@ -195,14 +177,14 @@
               if (dep && dep.length > 0) activeCount++;
             }
           }
-          if (activeCount >= 10) winners.push({ id: u.id, count: activeCount });
+          if (activeCount >= 10) winners.push({ name: u.full_name || u.email, count: activeCount });
         }
       }
 
       if (winners.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">کسی کا ریفرل ٹارگٹ ابھی پورا نہیں ہوا۔</td></tr>`;
       } else {
-        tbody.innerHTML = winners.map(w => `<tr><td>${w.id}</td><td><strong style="color:#4ade80;">${w.count} / 10 Approved</strong></td><td><span style="color:#fde047;">Goal Completed!</span></td></tr>`).join("");
+        tbody.innerHTML = winners.map(w => `<tr><td>${w.name}</td><td><strong style="color:#4ade80;">${w.count} / 10 Approved</strong></td><td><span style="color:#fde047;">Goal Completed!</span></td></tr>`).join("");
       }
     }
 
@@ -228,32 +210,11 @@
       loadAccounts(db);
     }
 
-    async function loadCampaigns(db) {
-      const tbody = document.getElementById("campaignsTable");
-      const { data } = await db.from("campaigns").select("*");
-      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="3">کوئی کمپین نہیں ملے۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(c => `<tr><td>${c.name}</td><td>Rs ${c.target_amount}</td><td><button class="btn btn-reject" onclick="deleteCampaign('${c.id}')">Delete</button></td></tr>`).join("");
-    }
-
-    async function handleAddCampaign() {
-      const db = getSupabase();
-      const name = document.getElementById("campName").value;
-      const target = Number(document.getElementById("campTarget").value);
-      await db.from("campaigns").insert([{ name, target_amount: target }]);
-      loadCampaigns(db);
-    }
-
-    async function deleteCampaign(id) {
-      const db = getSupabase();
-      await db.from("campaigns").delete().eq("id", id);
-      loadCampaigns(db);
-    }
-
     async function loadDeposits(db) {
       const tbody = document.getElementById("depositsTable");
-      const { data } = await db.from("investments").select("*").eq("status", "pending");
+      const { data } = await db.from("investments").select("*, profiles(full_name, email)").eq("status", "pending");
       if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="4">کوئی پینڈنگ ڈپازٹ نہیں ہے۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(d => `<tr><td>${d.investor_id}</td><td>Rs ${d.amount}</td><td><a href="${d.slip_url}" target="_blank" style="color:#38bdf8;">View Slip</a></td><td><button class="btn btn-approve" onclick="updateDep('${d.id}', 'approved')">Approve</button><button class="btn btn-reject" onclick="updateDep('${d.id}', 'rejected')">Reject</button></td></tr>`).join("");
+      tbody.innerHTML = data.map(d => `<tr><td>${d.profiles?.full_name || d.profiles?.email || d.investor_id}</td><td>Rs ${d.amount}</td><td><a href="${d.slip_url}" target="_blank" style="color:#38bdf8; font-weight:bold;">🖼️ View Slip Picture</a></td><td><button class="btn btn-approve" onclick="updateDep('${d.id}', 'approved')">Approve</button><button class="btn btn-reject" onclick="updateDep('${d.id}', 'rejected')">Reject</button></td></tr>`).join("");
     }
 
     async function updateDep(id, status) {
@@ -264,9 +225,9 @@
 
     async function loadWithdrawals(db) {
       const tbody = document.getElementById("withdrawalsTable");
-      const { data } = await db.from("withdrawal_requests").select("*").eq("status", "pending");
+      const { data } = await db.from("withdrawal_requests").select("*, profiles(full_name, email)").eq("status", "pending");
       if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(w => `<tr><td>${w.investor_id}</td><td>${w.payment_method}</td><td>${w.account_title} (${w.account_number})</td><td>Rs ${w.amount}</td><td><button class="btn btn-approve" onclick="updateW('${w.id}', 'approved')">Approve</button><button class="btn btn-reject" onclick="updateW('${w.id}', 'rejected')">Reject</button></td></tr>`).join("");
+      tbody.innerHTML = data.map(w => `<tr><td>${w.profiles?.full_name || w.profiles?.email || w.investor_id}</td><td>${w.payment_method}</td><td>${w.account_title} (${w.account_number})</td><td>Rs ${w.amount}</td><td><button class="btn btn-approve" onclick="updateW('${w.id}', 'approved')">Approve</button><button class="btn btn-reject" onclick="updateW('${w.id}', 'rejected')">Reject</button></td></tr>`).join("");
     }
 
     async function updateW(id, status) {
