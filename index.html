@@ -3,490 +3,204 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RozgarBike — Join Fleet Partnership</title>
-
-<!-- Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
-
-<!-- Supabase SDK JS -->
+<title>RozgarBike — Fund a bike, change a livelihood</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#123D3D" />
+<link rel="apple-touch-icon" href="assets/icon-192.png" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- Project External Config -->
-<script src="assets/config.js"></script>
-
-<style>
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f1f5f9;
-    margin: 0;
-    padding: 0;
-    color: #1e293b;
-  }
-
-  .header {
-    background: #0f3932;
-    color: #ffffff;
-  }
-
-  .header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-  }
-
-  .brand {
-    font-weight: 700;
-    font-size: 18px;
-  }
-
-  .nav {
-    display: flex;
-    gap: 16px;
-    padding: 10px 16px;
-    background: #164e43;
-    font-size: 14px;
-  }
-
-  .nav a {
-    color: #cbd5e1;
-    text-decoration: none;
-    font-weight: 500;
-  }
-
-  .nav a.active {
-    color: #ffffff;
-    font-weight: 700;
-  }
-
-  .wrap {
-    padding: 16px;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
-  /* URDU POSTER BANNER */
-  .urdu-poster-card {
-    background: #ffffff;
-    border: 2px solid #0f3932;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 20px;
-    direction: rtl;
-    text-align: center;
-    font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, sans-serif;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-  }
-
-  .poster-header {
-    background: linear-gradient(135deg, #0f3932 0%, #1e5e52 100%);
-    color: #ffffff;
-    padding: 16px 12px;
-    border-radius: 12px;
-    margin-bottom: 16px;
-  }
-
-  .poster-header h2 {
-    margin: 0 0 6px 0;
-    font-size: 22px;
-    font-weight: 700;
-    color: #00ffaa;
-  }
-
-  .poster-header p {
-    margin: 0;
-    font-size: 14px;
-    opacity: 0.95;
-    line-height: 1.6;
-  }
-
-  .poster-grid {
-    display: flex;
-    gap: 12px;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  .poster-box {
-    flex: 1;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 10px;
-  }
-
-  .box-label {
-    font-size: 12px;
-    color: #64748b;
-    margin-bottom: 4px;
-  }
-
-  .box-value {
-    font-size: 17px;
-    font-weight: 800;
-    color: #0f3932;
-    direction: ltr;
-  }
-
-  .profit-highlight {
-    background: #dcfce7;
-    border: 1px dashed #16a34a;
-  }
-
-  .profit-highlight .box-value {
-    color: #15803d;
-  }
-
-  .poster-features {
-    display: flex;
-    justify-content: space-around;
-    background: #0f3932;
-    color: #fff;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 12px;
-    margin-bottom: 12px;
-  }
-
-  .poster-footer-btn {
-    background: #25d366;
-    color: #ffffff;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: bold;
-    text-decoration: none;
-    display: block;
-  }
-
-  /* CARDS & FORMS */
-  .card {
-    background: #ffffff;
-    padding: 18px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    margin-bottom: 20px;
-  }
-
-  .form-title {
-    font-weight: 700;
-    font-size: 18px;
-    margin-bottom: 14px;
-    color: #0f3932;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    box-sizing: border-box;
-  }
-
-  .btn {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    box-sizing: border-box;
-    text-align: center;
-    text-decoration: none;
-    display: block;
-  }
-
-  .btn-primary {
-    background: #0f3932;
-    color: #ffffff;
-  }
-
-  .btn-outline {
-    background: transparent;
-    border: 1px solid #0f3932;
-    color: #0f3932;
-  }
-
-  .btn-support {
-    background: #0f3932;
-    color: #ffffff;
-    margin-top: 10px;
-  }
-
-  .btn-apk {
-    background: #16a34a;
-    color: #ffffff;
-    margin-top: 8px;
-    font-weight: 700;
-  }
-
-  .toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: #0f172a;
-    color: #ffffff;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    display: none;
-    z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-</style>
 </head>
 <body>
-
-  <!-- HEADER -->
   <div class="header">
     <div class="header-row">
-      <div class="brand">🚲 RozgarBike</div>
-      <div id="userHeaderBtn">
-        <span style="font-size:12px; color:#94a3b8;">Not Logged In</span>
-      </div>
-    </div>
-    <div class="nav">
-      <a href="index.html" class="active">Bikes Fleet</a>
-      <a href="dashboard.html">My Dashboard</a>
-      <a href="admin.html">Admin</a>
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
+      <div id="authArea" style="font-size:13px;"></div>
     </div>
   </div>
 
   <div class="wrap">
-    
-    <!-- URDU POSTER BANNER -->
-    <div class="urdu-poster-card">
-      <div class="poster-header">
-        <h2>تجارتی بائیک فلیٹ پارٹنرشپ</h2>
-        <p>90 دن کے فعال بزنس سائیکل کا حصہ بنیں</p>
-      </div>
+    <div class="disp" style="font-size:26px;line-height:1.2;color:var(--petrol);margin-bottom:6px;">
+      Ghar baithay hissedar banein
+    </div>
+    <p class="muted" style="line-height:1.5;margin-bottom:6px;">
+      Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.
+    </p>
 
-      <div class="poster-grid">
-        <div class="poster-box">
-          <div class="box-label">سرمایہ کاری (Flexi Unit)</div>
-          <div class="box-value">Rs 1,000 - 5,000</div>
-        </div>
-        
-        <div class="poster-box profit-highlight">
-          <div class="box-label">روزانہ کا منافع (Returns)</div>
-          <div class="box-value">Rs 50 - 350*</div>
-          <div style="font-size:10px; color:#166534; margin-top:2px;">(90 دن کی مسلسل پرفارمنس)</div>
-        </div>
-      </div>
-
-      <div class="poster-features">
-        <div>📊 شفاف ڈیش بورڈ</div>
-        <div>🗓 90 دن کا سائیکل</div>
-        <div>👥 بڑھتی برادری</div>
-      </div>
-
-      <a href="https://wa.me/?text=RozgarBike%20App%20Download%20and%20Investment%20Details" class="poster-footer-btn" target="_blank">
-        📞 آج ہی رابطہ کریں اور اپنے کاروبار کا آغاز کریں!
+    <div style="display:flex;gap:8px;margin:10px 0 18px;flex-wrap:wrap;">
+      <a id="whatsappChatBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:#25D366;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
+        <span style="font-size:15px;">💬</span> WhatsApp Chat
+      </a>
+      <a id="whatsappChannelBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:var(--petrol);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
+        <span style="font-size:15px;">📢</span> Channel Follow Karein
       </a>
     </div>
 
-    <!-- AUTH BOX -->
-    <div id="authBox" class="card">
-      <div class="form-title" id="authTitle">Login to Account</div>
-      
-      <input id="authEmail" type="email" class="form-control" placeholder="Email Address" />
-      <input id="authPass" type="password" class="form-control" placeholder="Password" />
-      
-      <button id="authPrimaryBtn" type="button" class="btn btn-primary" onclick="handleAuth()">Login</button>
-      
-      <div style="text-align:center; font-size:12px; color:#64748b; margin:12px 0;">— OR —</div>
-      
-      <button id="authToggleBtn" type="button" class="btn btn-outline" onclick="toggleAuthMode()">Create New Account</button>
-      
-      <!-- CONTACT SUPPORT / GET APP BUTTON -->
-      <a href="https://wa.me/?text=RozgarBike%20App%20Download%20Help" class="btn btn-support" target="_blank">📲 Contact Support / Get App</a>
-      
-      <!-- DIRECT DOWNLOAD APK BUTTON WITH FALLBACK -->
-      <a href="app-release.apk" id="downloadApkBtn" class="btn btn-apk" download="RozgarBike.apk" target="_blank">📥 Download Android App (APK)</a>
+    <p class="muted" style="line-height:1.5;margin-bottom:18px;">
+      Fund a real delivery bike for a verified rider, starting at Rs 1,000. As the rider earns and repays,
+      your share comes back to your wallet automatically — proportional to what you put in, nothing guaranteed or fixed.
+    </p>
+
+    <div id="authBox" class="card" style="margin-bottom:20px; display:none;">
+      <div id="authTitle" class="disp" style="font-size:18px;margin-bottom:10px;">SIGN UP</div>
+      <input id="fullName" placeholder="Full name" style="margin-bottom:8px;" />
+      <input id="email" placeholder="Email" type="email" style="margin-bottom:8px;" />
+      <input id="password" placeholder="Password" type="password" style="margin-bottom:8px;" />
+      <button class="btn btn-primary" style="width:100%;" onclick="doSignUp()">Create account</button>
+      <div style="text-align:center;margin:10px 0;font-size:12px;" class="muted">— or —</div>
+      <button class="btn btn-outline" style="width:100%;" onclick="doSignIn()">Log in instead</button>
+      <div id="authMsg" class="muted" style="margin-top:8px;"></div>
     </div>
 
-    <!-- CAMPAIGNS LIST -->
-    <div style="font-size:18px; font-weight:700; margin-bottom:12px; color:#0f3932;">Available Bike Fleets</div>
-    <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px;">
-      <div class="card" style="text-align:center; color:#64748b;">Loading Available Fleets...</div>
-    </div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
+  </div>
 
+  <div id="introOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.55);align-items:center;justify-content:center;z-index:30;padding:20px;">
+    <div class="card" style="max-width:380px;width:100%;text-align:center;">
+      <div class="disp" style="font-size:20px;margin-bottom:4px;">YE KAISE KAAM KARTA HAI</div>
+      <div class="muted" style="margin-bottom:18px;">3 simple steps</div>
+
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
+        <div style="font-size:28px;">🪙</div>
+        <div style="font-size:13px;">Aap ek bike fund karte hain, Rs 1,000 se shuru</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
+        <div style="font-size:28px;">🏍️</div>
+        <div style="font-size:13px;">Rider us bike se delivery kaam kar ke kamata hai</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:20px;">
+        <div style="font-size:28px;">💰</div>
+        <div style="font-size:13px;">Rider jitna wapis kare, aapko uska share milta hai — transparent, koi fix promise nahi</div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;" onclick="closeIntro()">Bikes Dekhein</button>
+    </div>
   </div>
 
   <div id="toast" class="toast"></div>
 
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
   <script>
-    let isSignUp = false;
+    let currentSession = null;
 
-    function pkr(val) { return "PKR " + Number(val || 0).toLocaleString(); }
+    async function loadWhatsAppLinks() {
+      const { data } = await supabaseClient.from("site_settings").select("*");
+      const map = {};
+      (data || []).forEach(row => map[row.key] = row.value);
 
-    function toast(msg) {
-      const t = document.getElementById("toast");
-      if (t) {
-        t.textContent = msg;
-        t.style.display = "block";
-        setTimeout(() => { t.style.display = "none"; }, 3500);
-      } else { alert(msg); }
-    }
-
-    function toggleAuthMode() {
-      isSignUp = !isSignUp;
-      document.getElementById("authTitle").textContent = isSignUp ? "Create New Account" : "Login to Account";
-      document.getElementById("authPrimaryBtn").textContent = isSignUp ? "Sign Up" : "Login";
-      document.getElementById("authToggleBtn").textContent = isSignUp ? "Already have an account? Login" : "Create New Account";
-    }
-
-    function getDb() {
-      if (window.supabaseClient) return window.supabaseClient;
-      
-      const url = (typeof SUPABASE_URL !== 'undefined') ? SUPABASE_URL : window.SUPABASE_URL;
-      const key = (typeof SUPABASE_ANON_KEY !== 'undefined') ? SUPABASE_ANON_KEY : window.SUPABASE_ANON_KEY;
-
-      if (typeof supabase !== 'undefined' && supabase.createClient && url && key && !url.includes("YOUR_SUPABASE_URL")) {
-        window.supabaseClient = supabase.createClient(url, key);
-        return window.supabaseClient;
+      if (map["whatsapp_number"]) {
+        const btn = document.getElementById("whatsappChatBtn");
+        btn.href = `https://wa.me/${map["whatsapp_number"]}`;
+        btn.style.display = "inline-flex";
       }
-      return null;
+      if (map["whatsapp_channel"]) {
+        const btn = document.getElementById("whatsappChannelBtn");
+        btn.href = map["whatsapp_channel"];
+        btn.style.display = "inline-flex";
+      }
     }
 
-    async function checkUser() {
-      const db = getDb();
-      if (!db || !db.auth) return;
-      try {
-        const { data: { session } } = await db.auth.getSession();
-        if (session && session.user) {
-          document.getElementById("authBox").style.display = "none";
-          document.getElementById("userHeaderBtn").innerHTML = `
-            <button class="btn btn-outline" style="color:#fff; border-color:rgba(255,255,255,0.4); padding:4px 10px; font-size:12px;" onclick="logout()">Logout (${session.user.email.split('@')[0]})</button>
-          `;
+    if (!sessionStorage.getItem("introSeen")) {
+      window.addEventListener("load", () => {
+        setTimeout(() => { document.getElementById("introOverlay").style.display = "flex"; }, 600);
+      });
+    }
+    function closeIntro() {
+      document.getElementById("introOverlay").style.display = "none";
+      sessionStorage.setItem("introSeen", "1");
+      document.getElementById("campaignsList")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      currentSession = session;
+      renderAuthArea();
+      if (!session) {
+        document.getElementById("authBox").style.display = "block";
+        const refCode = getReferralCodeFromURL();
+        if (refCode) toast("Referral code applied: " + refCode);
+      }
+      await loadWhatsAppLinks();
+      await loadCampaigns();
+    }
+
+    function renderAuthArea() {
+      const el = document.getElementById("authArea");
+      if (currentSession) {
+        el.innerHTML = `<a href="dashboard.html" style="color:#fff;">My Dashboard</a>`;
+      } else {
+        el.innerHTML = `<span>Not logged in</span>`;
+      }
+    }
+
+    async function doSignUp() {
+      const full_name = document.getElementById("fullName").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      if (!email || !password) return toast("Email and password required");
+      const refCode = getReferralCodeFromURL();
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password, options: { data: { full_name } },
+      });
+      if (error) return toast(error.message);
+
+      if (refCode && data.user) {
+        const { data: refProfile } = await supabaseClient.from("profiles").select("id").eq("referral_code", refCode).single();
+        if (refProfile) {
+          await supabaseClient.from("profiles").update({ referred_by: refProfile.id }).eq("id", data.user.id);
+          await supabaseClient.from("referrals").insert({ referrer_id: refProfile.id, referred_id: data.user.id });
         }
-      } catch(e) {}
+      }
+      document.getElementById("authMsg").textContent = "Check your email to confirm, then log in.";
     }
 
-    async function handleAuth() {
-      const db = getDb();
-      if (!db || !db.auth) {
-        return toast("Database configuration error. Please update assets/config.js!");
-      }
-
-      const email = document.getElementById("authEmail").value.trim();
-      const password = document.getElementById("authPass").value.trim();
-
-      if (!email || !password) return toast("Enter both Email and Password!");
-
-      const btn = document.getElementById("authPrimaryBtn");
-      btn.disabled = true;
-      btn.textContent = "Processing...";
-
-      try {
-        if (isSignUp) {
-          const { data, error } = await db.auth.signUp({ email, password });
-          if (error) throw error;
-          toast("Account created successfully!");
-          setTimeout(() => window.location.reload(), 1000);
-        } else {
-          const { data, error } = await db.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          toast("Login Successful!");
-          setTimeout(() => window.location.reload(), 1000);
-        }
-      } catch (err) {
-        toast(err.message || "Login Failed! Check credentials.");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = isSignUp ? "Sign Up" : "Login";
-      }
-    }
-
-    async function logout() {
-      const db = getDb();
-      try { if (db && db.auth) await db.auth.signOut(); } catch (e) {}
-      localStorage.clear();
-      window.location.reload();
+    async function doSignIn() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) return toast(error.message);
+      window.location.href = "dashboard.html";
     }
 
     async function loadCampaigns() {
-      const db = getDb();
+      const { data: campaigns, error } = await supabaseClient
+        .from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false });
       const listEl = document.getElementById("campaignsList");
+      if (error) { listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; return; }
+      if (!campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
 
-      if (!db) {
-        listEl.innerHTML = `<div class="card" style="text-align:center; color:#dc2626;">Database Connection Error. Check assets/config.js</div>`;
-        return;
-      }
-
-      try {
-        const { data: campaigns, error } = await db.from("campaigns")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          listEl.innerHTML = `<div class="card" style="text-align:center; color:#dc2626;">Fleets load nahi ho sake. Page refresh karein.</div>`;
-          return;
-        }
-
-        if (!campaigns || campaigns.length === 0) {
-          listEl.innerHTML = `<div class="card" style="text-align:center;">No active bike fleet available right now.</div>`;
-          return;
-        }
-
-        listEl.innerHTML = "";
-
-        for (const c of campaigns) {
-          let raised = 0;
-          try {
-            const { data: invs } = await db.from("investments").select("amount").eq("campaign_id", c.id);
-            raised = (invs || []).reduce((sum, i) => sum + Number(i.amount || 0), 0);
-          } catch(e) {}
-
-          const target = Number(c.target || 0);
-          const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
-
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-              <div>
-                <div style="font-weight:700; font-size:16px; color:#0f3932;">${c.name}</div>
-                <div style="font-size:12px; color:#64748b;">Verified Fleet Partner</div>
-              </div>
-              <div style="width:38px; height:38px; border-radius:50%; border:3px solid #0f3932; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
-                ${pct}%
-              </div>
+      listEl.innerHTML = "";
+      for (const c of campaigns) {
+        const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id).eq("status", "approved");
+        const funded = (invSum || []).reduce((s, i) => s + Number(i.amount), 0);
+        const pct = (funded / c.target) * 100;
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="disp" style="font-size:20px;">${c.name}</div>
+              <div class="muted" style="margin-top:2px;">${c.rider_tag}</div>
+              <div style="margin-top:10px;font-size:12.5px;"><span class="mono" style="font-weight:600;">${pkr(funded)}</span><span class="muted"> raised of ${pkr(c.target)} target</span></div>
             </div>
-            
-            <div style="font-size:14px; font-weight:700; margin:10px 0 14px 0;">
-              ${pkr(raised)} <span style="font-weight:400; font-size:12px; color:#64748b;">raised of ${pkr(target)} goal</span>
-            </div>
-
-            <button class="btn" style="background:#eab308; color:#000; font-weight:700;" onclick="contribute('${c.id}')">Invest in Fleet</button>
-          `;
-          listEl.appendChild(div);
-        }
-      } catch (err) {
-        listEl.innerHTML = `<div class="card" style="text-align:center; color:#dc2626;">Network Error. Page refresh karein.</div>`;
+            <div class="gauge-wrap">${gaugeSVG(pct)}</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="startContribute('${c.id}','${c.name}',${c.target},${funded})">
+            ${funded >= c.target ? "Fully funded" : "Contribute"}
+          </button>
+        `;
+        listEl.appendChild(div);
       }
     }
 
-    async function contribute(campaignId) {
-      const db = getDb();
-      if (!db) return;
-      const { data: { session } } = await db.auth.getSession();
-      if (!session) {
-        toast("Please login first to invest!");
-        window.scrollTo({ top: document.getElementById("authBox").offsetTop, behavior: 'smooth' });
-        return;
-      }
-      window.location.href = `dashboard.html?campaign=${campaignId}`;
+    function startContribute(id, name, target, funded) {
+      if (!currentSession) { document.getElementById("authBox").scrollIntoView({behavior:"smooth"}); toast("Log in or sign up first"); return; }
+      if (funded >= target) return;
+      window.location.href = `dashboard.html?contribute=${id}`;
     }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      checkUser();
-      loadCampaigns();
-    });
+    init();
   </script>
 </body>
 </html>
