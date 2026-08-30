@@ -38,7 +38,7 @@
     <div class="card-admin">
       <div style="font-size:12px; color:#64748b; margin-bottom:8px;">پرانے یا کسی مخصوص انویسٹر کو ایکسٹرا بونس بھیجیں:</div>
       <select id="bonusInvestorSelect" class="input-field">
-        <option value="">Select Investor...</option>
+        <option value="">Loading investors...</option>
       </select>
       <input id="bonusAmount" type="number" class="input-field" placeholder="Bonus Amount (e.g. 500)" />
       <input id="bonusNote" class="input-field" placeholder="Reason / Campaign Name (e.g. Special Campaign Bonus)" />
@@ -142,11 +142,15 @@
     // --- INVESTORS DROPDOWN FOR BONUS ---
     async function loadInvestorsDropdown() {
       const select = document.getElementById("bonusInvestorSelect");
-      const { data } = await supabaseClient.from("profiles").select("id, full_name");
-      if (data && data.length > 0) {
-        select.innerHTML = `<option value="">Select Investor...</option>` + 
-          data.map(i => `<option value="${i.id}">${i.full_name || 'User'} (${i.id.substring(0,6)}...)</option>`).join("");
+      const { data, error } = await supabaseClient.from("profiles").select("*");
+      
+      if (error || !data || data.length === 0) {
+        select.innerHTML = `<option value="">No investors found</option>`;
+        return;
       }
+
+      select.innerHTML = `<option value="">Select Investor...</option>` + 
+        data.map(i => `<option value="${i.id}">${i.full_name || i.email || 'Investor (' + i.id.substring(0,6) + ')'}</option>`).join("");
     }
 
     async function giveExtraBonus() {
@@ -328,17 +332,17 @@
     // --- PENDING DEPOSITS LOGIC ---
     async function loadPendingDeposits() {
       const el = document.getElementById("pendingDepositsList");
-      const { data } = await supabaseClient.from("investments").select("*, profiles(full_name)").eq("status", "pending");
+      const { data } = await supabaseClient.from("investments").select("*").eq("status", "pending");
       
       if (!data || data.length === 0) {
-        el.innerHTML = `<div>No pending deposit payments.</div>`;
+        el.innerHTML = `<div style="color:#64748b;">No pending deposit payments.</div>`;
         return;
       }
 
       el.innerHTML = data.map(item => `
         <div class="item-box">
           <div>
-            <strong>Investor: ${item.profiles?.full_name || 'User'}</strong><br/>
+            <strong>Deposit Request</strong><br/>
             Amount: ${pkr(item.amount)} | TRX ID: ${item.transaction_id || 'N/A'}<br/>
             ${item.slip_url ? `<a href="${item.slip_url}" target="_blank" style="color:#2563eb;">View Slip Image</a>` : 'No Slip'}
           </div>
@@ -365,17 +369,17 @@
     // --- WITHDRAWAL REQUESTS LOGIC ---
     async function loadWithdrawalRequests() {
       const el = document.getElementById("withdrawalRequestsList");
-      const { data } = await supabaseClient.from("withdrawal_requests").select("*, profiles(full_name)").eq("status", "pending").order("created_at", { ascending: false });
+      const { data } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
 
       if (!data || data.length === 0) {
-        el.innerHTML = `<div>No pending withdrawal requests.</div>`;
+        el.innerHTML = `<div style="color:#64748b;">No pending withdrawal requests.</div>`;
         return;
       }
 
       el.innerHTML = data.map(w => `
         <div class="item-box">
           <div>
-            <strong>${w.profiles?.full_name || 'Investor'}</strong> - ${pkr(w.amount)}<br/>
+            <strong>Amount: ${pkr(w.amount)}</strong><br/>
             Method: ${w.payment_method} | Title: ${w.account_title}<br/>
             Account #: ${w.account_number}
           </div>
@@ -406,7 +410,7 @@
       const { data: approvedPayouts } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "approved").order("created_at", { ascending: false });
 
       if (!profiles || profiles.length === 0) {
-        el.innerHTML = `<div>No investor payout history found.</div>`;
+        el.innerHTML = `<div style="color:#64748b;">No investor profiles found.</div>`;
         return;
       }
 
@@ -430,9 +434,8 @@
           <div style="border: 1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; background:#ffffff;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <strong style="font-size:13px; color:#0f172a;">${p.full_name || 'Investor'}</strong><br/>
-                <span style="font-size:10px; color:#64748b;">ID: ${p.id}</span>
+                <strong style="font-size:13px; color:#0f172a;">${p.full_name || p.email || 'Investor'}</strong><br/>
+                <span style="font-size:10px; color:#64748b;">ID: ${p.id.substring(0,8)}...</span>
               </div>
               <div style="text-align:right;">
-                <span style="font-size:11px; color:#64748b;">Total Paid:</span><br/>
-                <strong style="font-size:14px; color:#16a34a;">${
+                <span style="font-size:11px;
