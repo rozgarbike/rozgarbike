@@ -46,7 +46,7 @@
       <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase;">WITHDRAWAL WALLET</div>
       <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
         <div>
-          <span class="muted" style="font-size:12px;">Available for Withdrawal</span>
+          <span class="muted" style="font-size:12px;">Available Balance</span>
           <div id="availBalance" class="disp" style="font-size:28px; color:var(--petrol); margin:4px 0;">Rs 0</div>
         </div>
         <button class="btn btn-primary" onclick="openDepositModal()" style="padding:8px 16px;">+ Deposit</button>
@@ -55,12 +55,11 @@
       <button class="btn" style="width:100%; background:#0d47a1; color:#fff;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
 
-    <!-- REFERRAL & BONUS CARD -->
+    <!-- REFERRAL CARD -->
     <div class="card" style="margin-bottom:15px; border:2px solid #2196F3; background:#f4f9ff;">
-      <div class="disp" style="font-size:15px; color:#1976D2;">🎁 REFERRAL & 10% EXTRA BONUS</div>
+      <div class="disp" style="font-size:15px; color:#1976D2;">🎁 REFERRAL BONUS</div>
       <div style="background:#e3f2fd; padding:10px; border-radius:8px; margin:10px 0; font-size:13px; text-align:center; color:#0d47a1;">
-        🚀 <b>10% Extra Bonus Unlocked Karein!</b><br>
-        10 doston ko invite karke 10% extra profit bonus haasil karein!
+        🚀 10 doston ko invite karke extra bonus haasil karein!
       </div>
       
       <div style="font-size:12px; font-weight:700; margin-bottom:4px;">
@@ -70,21 +69,16 @@
         <div id="refProgressBar" style="width:0%; background:#2196F3; height:100%; transition: width 0.3s;"></div>
       </div>
 
-      <div style="font-size:12px; font-weight:700; margin-bottom:4px;">📋 Unique Referral Link:</div>
+      <div style="font-size:12px; font-weight:700; margin-bottom:4px;">📋 Referral Link:</div>
       <div style="display:flex; gap:6px;">
         <input id="refLinkInput" readonly style="flex:1; padding:8px; border:1px solid #ccc; border-radius:6px; font-size:12px;" value="Loading..." />
         <button class="btn btn-primary" style="background:#4CAF50; border:none;" onclick="copyRefLink()">Copy Link</button>
-      </div>
-
-      <div style="margin-top:15px;">
-        <div style="font-size:13px; font-weight:700; margin-bottom:6px;">👥 Referred Users:</div>
-        <div id="refUsersList" style="font-size:12px; color:#555;">Data load ho raha hai...</div>
       </div>
     </div>
 
     <!-- INVESTMENTS & BIKES STATUS -->
     <div class="card" style="margin-bottom:15px;">
-      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:10px;">MY BIKES & CAMPAIGN INVESTMENTS</div>
+      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:10px;">MY INVESTMENTS</div>
       <div id="myInvestmentsList" style="font-size:13px;" class="muted">Loading investments...</div>
     </div>
 
@@ -106,18 +100,18 @@
   <div id="withdrawModal" class="modal">
     <div class="modal-content">
       <h3 style="margin-top:0;">Request Withdrawal</h3>
-      <p style="font-size:12px; color:#666; margin-bottom:10px;">Min: Rs 100 | Max: Rs 10,000 (1 Request Daily)</p>
+      <p style="font-size:12px; color:#666; margin-bottom:10px;">Min: Rs 100 | Max: Rs 10,000</p>
       
       <label style="font-size:12px; font-weight:bold;">Withdrawal Amount (PKR):</label>
       <input type="number" id="withdrawAmount" class="input-field" placeholder="e.g. 1000" />
 
-      <label style="font-size:12px; font-weight:bold;">Account Holder Title / Name:</label>
+      <label style="font-size:12px; font-weight:bold;">Account Holder Name:</label>
       <input type="text" id="withdrawAccountName" class="input-field" placeholder="e.g. Muhammad Safdar" />
 
-      <label style="font-size:12px; font-weight:bold;">Account / Mobile Number:</label>
+      <label style="font-size:12px; font-weight:bold;">Account Number:</label>
       <input type="text" id="withdrawAccountNumber" class="input-field" placeholder="e.g. 03245380453" />
 
-      <label style="font-size:12px; font-weight:bold;">Select Payment / Bank Platform:</label>
+      <label style="font-size:12px; font-weight:bold;">Select Payment Platform:</label>
       <select id="withdrawBankName" class="input-field">
         <option value="JazzCash">JazzCash</option>
         <option value="SadaPay">SadaPay</option>
@@ -138,26 +132,20 @@
       <p style="font-size:12px; color:#666; margin-bottom:8px;"><b>Min: Rs 1,000 | Max: Rs 150,000</b></p>
       
       <div class="bank-details">
-        <b>1. JazzCash</b><br>
-        • Number: <code>03245380453</code><br>
-        • Title: <b>Muhammad Safdar</b><br><br>
-        <b>2. SadaPay</b><br>
-        • Number: <code>03245380453</code><br>
-        • Title: <b>Muhammad Safdar</b><br><br>
-        <b>3. Meezan Bank</b><br>
-        • Account: <code>00300113025971</code><br>
-        • Title: <b>Naveed Ahmed</b>
+        <b>1. JazzCash:</b> <code>03245380453</code> (Muhammad Safdar)<br>
+        <b>2. SadaPay:</b> <code>03245380453</code> (Muhammad Safdar)<br>
+        <b>3. Meezan Bank:</b> <code>00300113025971</code> (Naveed Ahmed)
       </div>
 
-      <input type="number" id="depositAmount" class="input-field" placeholder="Enter Amount (Rs 1,000 - 150,000)" />
+      <input type="number" id="depositAmount" class="input-field" placeholder="Enter Amount" />
       <input type="text" id="trxIdInput" class="input-field" placeholder="Transaction ID (TID)" />
       
-      <label style="font-size:12px; font-weight:bold; color:#333;">Upload Payment Screenshot / Receipt Pic:</label>
+      <label style="font-size:12px; font-weight:bold; color:#333;">Upload Receipt Image:</label>
       <input type="file" id="receiptPic" accept="image/*" class="input-field" />
 
-      <button class="btn-pay btn-jazzcash" onclick="submitDeposit('JazzCash')">Submit JazzCash Payment</button>
-      <button class="btn-pay btn-sadapay" onclick="submitDeposit('SadaPay')">Submit SadaPay Payment</button>
-      <button class="btn-pay btn-bank" onclick="submitDeposit('Meezan Bank')">Submit Meezan Bank Payment</button>
+      <button class="btn-pay btn-jazzcash" onclick="submitDeposit('JazzCash')">Submit JazzCash</button>
+      <button class="btn-pay btn-sadapay" onclick="submitDeposit('SadaPay')">Submit SadaPay</button>
+      <button class="btn-pay btn-bank" onclick="submitDeposit('Meezan Bank')">Submit Bank Transfer</button>
       <button onclick="closeDepositModal()" style="width:100%; padding:8px; margin-top:8px; background:none; border:none; color:#666; cursor:pointer;">Cancel</button>
     </div>
   </div>
@@ -167,7 +155,7 @@
   <script src="assets/config.js"></script>
   <script>
     let currentUser = null;
-    let currentBalance = 500;
+    let currentBalance = 0;
 
     async function initDashboard() {
       if (typeof supabaseClient === 'undefined') return;
@@ -187,9 +175,7 @@
         if (profile.role === 'admin') {
           document.getElementById("adminTabLink").style.display = "inline-block";
         }
-        if (profile.balance !== null && profile.balance !== undefined) {
-          currentBalance = profile.balance;
-        }
+        currentBalance = profile.balance !== null && profile.balance !== undefined ? profile.balance : 0;
         const refCode = profile.referral_code || currentUser.id.substring(0, 8);
         const refUrl = window.location.origin + window.location.pathname.replace("dashboard.html", "index.html") + "?ref=" + refCode;
         document.getElementById("refLinkInput").value = refUrl;
@@ -204,18 +190,11 @@
 
     async function loadReferrals() {
       const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", currentUser.id);
-      const listEl = document.getElementById("refUsersList");
       const count = refs ? refs.length : 0;
       
       document.getElementById("refCountText").textContent = `${count} / 10 Joined`;
       const pct = Math.min((count / 10) * 100, 100);
       document.getElementById("refProgressBar").style.width = pct + "%";
-
-      if (!refs || refs.length === 0) {
-        listEl.innerHTML = "Abhi tak kisi ne aap ke link se join nahi kiya.";
-      } else {
-        listEl.innerHTML = `<p style="color:green; font-weight:bold;">Total Referred: ${count} Members</p>`;
-      }
     }
 
     async function loadInvestments() {
@@ -223,22 +202,17 @@
       const el = document.getElementById("myInvestmentsList");
       
       if (!invs || invs.length === 0) {
-        el.innerHTML = `
-          <div style="padding:10px; background:#fff3cd; border-radius:6px; color:#856404;">
-            <b>Active Bike Campaign:</b> Full Bike Investment Joined<br>
-            • Status: <span class="status-badge status-active">ACTIVE</span><br>
-            • Total Profit Received: <b>Rs 500</b>
-          </div>`;
+        el.innerHTML = "Aap ki koi active investment nahi hai.";
       } else {
         el.innerHTML = invs.map(i => `
           <div style="padding:10px 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
             <div>
-              <b>${i.campaigns ? i.campaigns.name : 'RozgarBike Full Campaign'}</b><br>
-              <small style="color:#666;">Withdrawal Received: Rs ${Number(i.profit_earned || 500).toLocaleString()}</small>
+              <b>${i.campaigns ? i.campaigns.name : 'Campaign Investment'}</b><br>
+              <small style="color:#666;">Earned Profit: Rs ${Number(i.profit_earned || 0).toLocaleString()}</small>
             </div>
             <div>
               <b>Rs ${Number(i.amount).toLocaleString()}</b>
-              <br><span class="status-badge status-${(i.status || 'active').toLowerCase()}">${i.status || 'ACTIVE'}</span>
+              <br><span class="status-badge status-${(i.status || 'pending').toLowerCase()}">${i.status || 'PENDING'}</span>
             </div>
           </div>
         `).join("");
@@ -296,7 +270,7 @@
       const bankName = document.getElementById("withdrawBankName").value;
 
       if (!amount || !accName || !accNumber) {
-        alert("Tamam fields (Amount, Title Name, Account Number) fill karein!");
+        alert("Tamam fields fill karein!");
         return;
       }
       if (amount < 100 || amount > 10000) {
@@ -304,15 +278,7 @@
         return;
       }
       if (amount > currentBalance) {
-        alert("Aap ke wallet mein itna balance nahi hai!");
-        return;
-      }
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      const lastWithdrawDate = localStorage.getItem("last_withdraw_date_" + currentUser.id);
-
-      if (lastWithdrawDate === todayStr) {
-        alert("Aap aaj ki 1 withdrawal request submit kar chuke hain. Agli request kal kar sakty hain!");
+        alert("Balance kam hai!");
         return;
       }
 
@@ -326,10 +292,9 @@
       }]);
 
       if (error) {
-        alert("Withdrawal Error: " + error.message);
+        alert("Error: " + error.message);
       } else {
-        localStorage.setItem("last_withdraw_date_" + currentUser.id, todayStr);
-        toast("Withdrawal Request Submitted! Admin Approval Pending.");
+        toast("Withdrawal Request Submitted!");
         closeWithdrawModal();
         await loadWithdrawals();
       }
@@ -338,25 +303,10 @@
     async function submitDeposit(method) {
       const amount = parseFloat(document.getElementById("depositAmount").value);
       const trxId = document.getElementById("trxIdInput").value;
-      const fileInput = document.getElementById("receiptPic");
 
       if(!amount || !trxId) { 
-        alert("Please enter amount and Transaction ID!"); 
+        alert("Amount aur Transaction ID daalein!"); 
         return; 
-      }
-      if (amount < 1000 || amount > 150000) {
-        alert("Deposit limit Rs 1,000 se Rs 150,000 tak hai!");
-        return;
-      }
-
-      let screenshotUrl = "";
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const fileName = `${Date.now()}_${file.name}`;
-        const { data: uploadData, error: uploadErr } = await supabaseClient.storage.from('receipts').upload(fileName, file);
-        if (!uploadErr && uploadData) {
-          screenshotUrl = fileName;
-        }
       }
 
       const { error } = await supabaseClient.from("deposits").insert([{
@@ -364,14 +314,13 @@
         amount: amount,
         method: method,
         trx_id: trxId,
-        proof_img: screenshotUrl,
         status: "pending"
       }]);
 
       if(error) {
-        alert("Deposit failed: " + error.message);
+        alert("Error: " + error.message);
       } else {
-        toast("Deposit Request Submitted! Status Pending.");
+        toast("Deposit Submitted!");
         closeDepositModal();
         await loadDeposits();
       }
@@ -381,7 +330,7 @@
       const input = document.getElementById("refLinkInput");
       input.select();
       document.execCommand("copy");
-      toast("Referral Link Copied!");
+      toast("Link Copied!");
     }
 
     async function handleLogout() {
@@ -400,5 +349,4 @@
     initDashboard();
   </script>
 </body>
-  </html>
-  
+</html>
