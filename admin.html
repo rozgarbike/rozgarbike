@@ -3,30 +3,30 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RozgarBike — Complete Admin Panel</title>
+<title>RozgarBike — Advanced Admin Panel</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 0; }
-  .admin-wrap { max-width: 900px; margin: 0 auto; padding: 20px; font-size: 14px; }
+  .admin-wrap { max-width: 1000px; margin: 0 auto; padding: 20px; font-size: 14px; }
   .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 20px; }
-  .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
+  .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
   .section-title { font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
   .table-responsive { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
   th, td { padding: 10px 12px; border-bottom: 1px solid #334155; white-space: nowrap; }
   th { background: #0f172a; color: #94a3b8; font-weight: 600; }
   
-  .btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.2s; }
+  .btn { padding: 8px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; }
   .btn-approve { background: #16a34a; color: #fff; }
   .btn-reject { background: #dc2626; color: #fff; margin-left: 4px; }
   .btn-primary { background: #0284c7; color: #fff; width: 100%; padding: 10px; margin-top: 10px; font-size:14px; font-weight:bold; border-radius:6px; border:none; cursor:pointer;}
+  .btn-auto { background: #eab308; color: #000; width: 100%; padding: 12px; font-size: 15px; font-weight: bold; }
 
   .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: #fff; box-sizing: border-box; }
   .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
   .badge-approved { background: #052e16; color: #4ade80; }
   .badge-pending { background: #451a03; color: #fde047; }
-  .badge-rejected { background: #450a0a; color: #f87171; }
   a.slip-link { color: #38bdf8; text-decoration: underline; font-weight: bold; }
 </style>
 </head>
@@ -35,64 +35,36 @@
   <div class="admin-wrap">
     
     <div class="header">
-      <h2 style="margin:0; font-size:20px; color:#f8fafc;">🛠️ RozgarBike Admin Control Panel</h2>
+      <h2 style="margin:0; font-size:20px; color:#f8fafc;">⚡ RozgarBike Master Admin Panel</h2>
       <div>
-        <a href="dashboard.html" style="color:#38bdf8; margin-right:12px; text-decoration:none; font-weight:bold;">← Go to Dashboard</a>
+        <a href="dashboard.html" style="color:#38bdf8; margin-right:12px; text-decoration:none; font-weight:bold;">← User Dashboard</a>
         <button onclick="handleLogout()" class="btn btn-reject">Logout</button>
       </div>
     </div>
 
-    <!-- 1. ADD / MANAGE OFFICIAL PAYMENT ACCOUNTS -->
-    <div class="card">
-      <div class="section-title">💳 Add Official Payment Account (Deposit Accounts)</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-        <input id="accLabel" class="input-field" placeholder="Account Name (e.g. JazzCash / EasyPaisa)" />
-        <input id="accTitle" class="input-field" placeholder="Account Title (e.g. Muhammad Ali)" />
-        <input id="accNumber" class="input-field" placeholder="Account Number (e.g. 03001234567)" />
-      </div>
-      <button class="btn btn-primary" onclick="handleAddAccount()">+ Add Account</button>
-      
-      <div style="margin-top:15px;" class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Method</th>
-              <th>Account Title</th>
-              <th>Account Number</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="adminAccountsList">
-            <tr><td colspan="4">Loading payment accounts...</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- 1. AUTO PROFIT DISTRIBUTE (1000 PE 50, 2000 PE 100) -->
+    <div class="card" style="border: 1px solid #eab308;">
+      <div class="section-title" style="color:#facc15;">🚀 Auto Profit Distributor (Formula: 5% Daily Return)</div>
+      <p style="color:#cbd5e1; margin-top:0;">
+        یہ بٹن تمام ایکٹو انویسٹرز کے انویسٹڈ بیلنس کا حساب کر کے (1000 پر 50 روپے، 2000 پر 100 روپے) ایک کلک پر تمام صارفین کو پرافٹ بھیج دے گا۔
+      </p>
+      <button class="btn btn-auto" onclick="distributeAutoProfit()">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CREATE NEW CAMPAIGN -->
+    <!-- 2. GIVEAWAY / SPECIFIC USER PAYMENT -->
     <div class="card">
-      <div class="section-title">🚲 Add New Investment Campaign</div>
+      <div class="section-title">🎁 Custom Giveaway / Special Payment to Specific User</div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <input id="campName" class="input-field" placeholder="Campaign Name (e.g. Honda 125 Fleet)" />
-        <input id="campTarget" type="number" class="input-field" placeholder="Target Amount (e.g. 500000)" />
+        <input id="giveawayUserId" class="input-field" placeholder="Enter User ID / Wallet ID" />
+        <input id="giveawayAmount" type="number" class="input-field" placeholder="Amount (PKR)" />
       </div>
-      <button class="btn btn-primary" style="background:#16a34a;" onclick="handleAddCampaign()">+ Create Campaign</button>
+      <input id="giveawayNote" class="input-field" placeholder="Reason (e.g. Winner Giveaway Reward)" />
+      <button class="btn btn-primary" style="background:#9333ea;" onclick="sendGiveaway()">Send Payment / Bonus</button>
     </div>
 
-    <!-- 3. GIVE PROFIT / DAILY RETURN TO USER -->
+    <!-- 3. DEPOSIT MANAGEMENT WITH SLIP IMAGE -->
     <div class="card">
-      <div class="section-title">🎁 Give Daily Profit / Bonus to User</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <input id="profitUserId" class="input-field" placeholder="Investor User ID (UUID)" />
-        <input id="profitAmount" type="number" class="input-field" placeholder="Profit Amount (PKR)" />
-      </div>
-      <input id="profitNote" class="input-field" placeholder="Description (e.g. Daily Profit Honda Campaign)" />
-      <button class="btn btn-primary" style="background:#9333ea;" onclick="handleAddProfit()">Add Profit to User Wallet</button>
-    </div>
-
-    <!-- 4. PENDING DEPOSITS -->
-    <div class="card">
-      <div class="section-title">📥 Pending Deposits / Investment Requests</div>
+      <div class="section-title">📥 Pending Deposits & Slip Verification</div>
       <div class="table-responsive">
         <table>
           <thead>
@@ -111,9 +83,34 @@
       </div>
     </div>
 
-    <!-- 5. PENDING WITHDRAWALS -->
+    <!-- 4. CAMPAIGN CREATION & MANAGEMENT -->
     <div class="card">
-      <div class="section-title">📤 Pending Withdrawal Requests</div>
+      <div class="section-title">🚲 Campaign Management (Show & Create)</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <input id="campName" class="input-field" placeholder="Campaign Title (e.g. Honda 125 Fleet)" />
+        <input id="campTarget" type="number" class="input-field" placeholder="Target Amount (PKR)" />
+      </div>
+      <button class="btn btn-primary" style="background:#16a34a;" onclick="handleAddCampaign()">+ Create New Campaign</button>
+      
+      <div style="margin-top:15px;" class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Campaign Name</th>
+              <th>Target</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="campaignsList">
+            <tr><td colspan="3">Loading campaigns...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 5. WITHDRAWAL REQUESTS -->
+    <div class="card">
+      <div class="section-title">📤 Pending Withdrawals</div>
       <div class="table-responsive">
         <table>
           <thead>
@@ -150,86 +147,58 @@
 
     async function initAdmin() {
       const db = getSupabase();
-      if (!db) return alert("Database connection error.");
+      if (!db) return alert("Database Connection Error!");
 
-      loadAdminAccounts(db);
       loadPendingDeposits(db);
+      loadCampaigns(db);
       loadPendingWithdrawals(db);
     }
 
-    // 1. PAYMENT ACCOUNTS MANAGEMENT
-    async function loadAdminAccounts(db) {
-      const tbody = document.getElementById("adminAccountsList");
+    // 1. FORMULA PROFIT DISTRIBUTOR (5% Daily Profit: 1000 => 50, 2000 => 100)
+    async function distributeAutoProfit() {
+      const db = getSupabase();
+      if (!confirm("کیا آپ واقعی تمام منظور شدہ انویسٹرز کو ان کا روزانہ کا پرافٹ (5%) منتقل کرنا چاہتے ہیں؟")) return;
+
       try {
-        const { data } = await db.from("payment_methods").select("*");
-        if (!data || data.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">کوئی اکاؤنٹ نہیں ملا۔</td></tr>`;
+        const { data: investments, error } = await db.from("investments").select("*").eq("status", "approved");
+        if (error || !investments || investments.length === 0) {
+          alert("کوئی منظور شدہ (Approved) انویسٹمنٹ نہیں ملی۔");
           return;
         }
-        tbody.innerHTML = data.map(a => `
-          <tr>
-            <td><strong>${a.label}</strong></td>
-            <td>${a.account_title}</td>
-            <td>${a.account_number}</td>
-            <td><button class="btn btn-reject" onclick="deleteAccount('${a.id}')">Delete</button></td>
-          </tr>
-        `).join("");
-      } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="4">Error loading accounts.</td></tr>`;
+
+        let totalDistributed = 0;
+        let count = 0;
+
+        for (let inv of investments) {
+          // Calculation Formula: 5% (1000 = 50 PKR, 2000 = 100 PKR)
+          let profit = Math.floor(inv.amount * 0.05);
+
+          if (profit > 0) {
+            await db.from("wallet_transactions").insert([{
+              investor_id: inv.investor_id,
+              amount: profit,
+              description: `Daily Profit Formula (5%) for ${inv.amount} PKR Deposit`,
+              status: "approved"
+            }]);
+            totalDistributed += profit;
+            count++;
+          }
+        }
+
+        alert(`کامیابی! کل ${count} صارفین میں ${pkr(totalDistributed)} کا پرافٹ تقسیم کر دیا گیا ہے۔`);
+      } catch (err) {
+        alert("پرافٹ تقسیم میں مسئلہ آیا: " + err.message);
       }
     }
 
-    async function handleAddAccount() {
+    // 2. CUSTOM GIVEAWAY TO SPECIFIC USER
+    async function sendGiveaway() {
       const db = getSupabase();
-      const label = document.getElementById("accLabel").value.trim();
-      const title = document.getElementById("accTitle").value.trim();
-      const number = document.getElementById("accNumber").value.trim();
+      const userId = document.getElementById("giveawayUserId").value.trim();
+      const amount = document.getElementById("giveawayAmount").value;
+      const note = document.getElementById("giveawayNote").value.trim() || "Giveaway Bonus";
 
-      if (!label || !title || !number) return alert("تمام فیلڈز پر کریں۔");
-
-      const { error } = await db.from("payment_methods").insert([{ label, account_title: title, account_number: number, is_active: true }]);
-      if (error) alert("ایرر: " + error.message);
-      else {
-        alert("پیمنٹ اکاؤنٹ کامیابی سے شامل ہو گیا!");
-        document.getElementById("accLabel").value = "";
-        document.getElementById("accTitle").value = "";
-        document.getElementById("accNumber").value = "";
-        loadAdminAccounts(db);
-      }
-    }
-
-    async function deleteAccount(id) {
-      const db = getSupabase();
-      if (!confirm("کیا آپ اس اکاؤنٹ کو حذف کرنا چاہتے ہیں؟")) return;
-      await db.from("payment_methods").delete().eq("id", id);
-      loadAdminAccounts(db);
-    }
-
-    // 2. CAMPAIGN MANAGEMENT
-    async function handleAddCampaign() {
-      const db = getSupabase();
-      const name = document.getElementById("campName").value.trim();
-      const target = document.getElementById("campTarget").value;
-
-      if (!name || !target) return alert("نام اور رقم درج کریں۔");
-
-      const { error } = await db.from("campaigns").insert([{ name, target_amount: Number(target), status: "active" }]);
-      if (error) alert("ایرر: " + error.message);
-      else {
-        alert("کمپین ایڈ ہو گئی!");
-        document.getElementById("campName").value = "";
-        document.getElementById("campTarget").value = "";
-      }
-    }
-
-    // 3. ADD PROFIT TO USER WALLET
-    async function handleAddProfit() {
-      const db = getSupabase();
-      const userId = document.getElementById("profitUserId").value.trim();
-      const amount = document.getElementById("profitAmount").value;
-      const note = document.getElementById("profitNote").value.trim() || "Daily Profit";
-
-      if (!userId || !amount || Number(amount) <= 0) return alert("صحیح معلومات درج کریں۔");
+      if (!userId || !amount || Number(amount) <= 0) return alert("تمام خانے درست پر کریں۔");
 
       const { error } = await db.from("wallet_transactions").insert([{
         investor_id: userId,
@@ -240,13 +209,14 @@
 
       if (error) alert("ایرر: " + error.message);
       else {
-        alert("پرافٹ کامیابی سے ایڈ کر دیا گیا!");
-        document.getElementById("profitUserId").value = "";
-        document.getElementById("profitAmount").value = "";
+        alert("پیمنٹ/بونس کامیابی سے یوزر کو منتقل ہو گیا!");
+        document.getElementById("giveawayUserId").value = "";
+        document.getElementById("giveawayAmount").value = "";
+        document.getElementById("giveawayNote").value = "";
       }
     }
 
-    // 4. LOAD & UPDATE DEPOSITS
+    // 3. PENDING DEPOSITS & SLIPS
     async function loadPendingDeposits(db) {
       const tbody = document.getElementById("depositsTable");
       try {
@@ -260,7 +230,7 @@
           <tr>
             <td style="font-size:11px; font-family:monospace;">${d.investor_id}</td>
             <td><strong>${pkr(d.amount)}</strong></td>
-            <td>${d.slip_url ? `<a href="${d.slip_url}" target="_blank" class="slip-link">View Slip 🖼️</a>` : 'No Slip'}</td>
+            <td>${d.slip_url ? `<a href="${d.slip_url}" target="_blank" class="slip-link">🔍 View Slip Picture</a>` : 'No Image'}</td>
             <td style="font-size:11px; color:#94a3b8;">${new Date(d.created_at).toLocaleDateString()}</td>
             <td>
               <button class="btn btn-approve" onclick="updateDepositStatus('${d.id}', 'approved')">Approve</button>
@@ -275,23 +245,62 @@
 
     async function updateDepositStatus(id, newStatus) {
       const db = getSupabase();
-      if (!confirm(`کیا آپ اس کو ${newStatus} کرنا چاہتے ہیں؟`)) return;
+      if (!confirm(`کیا آپ اس کیپشن کو ${newStatus} کرنا چاہتے ہیں؟`)) return;
 
       const { error } = await db.from("investments").update({ status: newStatus }).eq("id", id);
       if (error) alert("ایرر: " + error.message);
       else {
-        alert("سٹیٹس اپڈیٹ ہو گیا!");
+        alert("سٹیٹس تبدیل کر دیا گیا ہے!");
         loadPendingDeposits(db);
       }
     }
 
-    // 5. LOAD & UPDATE WITHDRAWALS
+    // 4. CAMPAIGN MANAGEMENT
+    async function loadCampaigns(db) {
+      const tbody = document.getElementById("campaignsList");
+      try {
+        const { data } = await db.from("campaigns").select("*").order("created_at", { ascending: false });
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">کوئی کمپین نہیں ملے۔</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.map(c => `
+          <tr>
+            <td><strong>${c.name}</strong></td>
+            <td>${pkr(c.target_amount)}</td>
+            <td><span class="badge badge-approved">${c.status || 'Active'}</span></td>
+          </tr>
+        `).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="3">Error loading campaigns.</td></tr>`;
+      }
+    }
+
+    async function handleAddCampaign() {
+      const db = getSupabase();
+      const name = document.getElementById("campName").value.trim();
+      const target = document.getElementById("campTarget").value;
+
+      if (!name || !target) return alert("کمپین کا نام اور ٹارگٹ درج کریں۔");
+
+      const { error } = await db.from("campaigns").insert([{ name, target_amount: Number(target), status: "active" }]);
+      if (error) alert("ایرر: " + error.message);
+      else {
+        alert("نئی کمپین کامیابی سے بن گئی!");
+        document.getElementById("campName").value = "";
+        document.getElementById("campTarget").value = "";
+        loadCampaigns(db);
+      }
+    }
+
+    // 5. PENDING WITHDRAWALS
     async function loadPendingWithdrawals(db) {
       const tbody = document.getElementById("withdrawalsTable");
       try {
         const { data } = await db.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
         if (!data || data.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">کوئی ودڈرال درخواست نہیں ہے۔</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">کوئی ودڈرال کی درخواست نہیں ہے۔</td></tr>`;
           return;
         }
 
@@ -314,12 +323,12 @@
 
     async function updateWithdrawStatus(id, newStatus) {
       const db = getSupabase();
-      if (!confirm(`کیا آپ اس کو ${newStatus} کرنا چاہتے ہیں؟`)) return;
+      if (!confirm(`کیا آپ اس ودڈرال کو ${newStatus} کرنا چاہتے ہیں؟`)) return;
 
       const { error } = await db.from("withdrawal_requests").update({ status: newStatus }).eq("id", id);
       if (error) alert("ایرر: " + error.message);
       else {
-        alert("سٹیٹس اپڈیٹ ہو گیا!");
+        alert("سٹیٹس تبدیل کر دیا گیا ہے!");
         loadPendingWithdrawals(db);
       }
     }
