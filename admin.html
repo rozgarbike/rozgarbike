@@ -119,7 +119,7 @@ th{ background:#111827; color:#9ca3af }
       • Rs 1,000 Investment → <b>Rs 50 Bonus</b><br>
       • Rs 2,000 Investment → <b>Rs 150 Bonus</b><br>
       • Rs 10,000 Investment → <b>Rs 500 Bonus</b><br>
-      <small style="opacity:.8">* Sirf approved investments par hi bonus calculate hoga aur dobara distribute nahi hoga.</small>
+      <small style="opacity:.8">* Sirf approved investments par hi bonus calculate hoga.</small>
     </div>
     <button onclick="distributeAutoBonus()" class="btn-act btn-primary" style="width:100%;padding:12px;font-size:14px">⚡ Distribute Bonus To All Investors</button>
   </div>
@@ -143,7 +143,7 @@ th{ background:#111827; color:#9ca3af }
 
   <!-- PENDING DEPOSIT REQUESTS ONLY -->
   <div class="card">
-    <div class="card-title">📥 Pending Deposit Requests (پینڈنگ ڈیپازٹس)</div>
+    <div class="card-title">📥 Deposit Requests & Verification (پینڈنگ)</div>
     <div class="table-responsive">
       <table>
         <thead>
@@ -268,22 +268,125 @@ async function initAdmin() {
   }
 }
 
-// Fetch Users for Dropdown & Names Mapping
+// 1. ALL USERS FETCH FOR DROPDOWN (Enhanced Fallback)
 async function loadUsersMap(db) {
-  const { data: profiles } = await db.from("profiles").select("id, full_name, email");
   const select = document.getElementById("bonusUserSelect");
-  select.innerHTML = `<option value="">-- Select Investor --</option>`;
+  select.innerHTML = `<option value="">-- Loading Investors... --</option>`;
 
-  if(profiles) {
+  // Method 1: Fetch from Profiles
+  let { data: profiles } = await db.from("profiles").select("*");
+  
+  if (profiles && profiles.length > 0) {
+    select.innerHTML = `<option value="">-- Select Investor --</option>`;
     profiles.forEach(p => {
-      const displayName = p.full_name || p.email || p.id.substring(0, 8);
-      userMap[p.id] = displayName;
-      select.innerHTML += `<option value="${p.id}">${displayName}</option>`;
+      const uId = p.id || p.user_id;
+      const name = p.full_name || p.name || p.email || ("User " + uId.substring(0, 6));
+      userMap[uId] = name;
+      select.innerHTML += `<option value="${uId}">${name}</option>`;
     });
+    return;
+  }
+
+  // Method 2: Fallback to Investments table
+  let { data: invs } = await db.from("investments").select("*");
+  if (invs && invs.length > 0) {
+    select.innerHTML = `<option value="">-- Select Investor --</option>`;
+    invs.forEach(i => {
+      const uId = i.investor_id || i.user_id;
+      if (uId && !userMap[uId]) {
+        const name = i.user_name || i.email || ("Investor (" + uId.substring(0, 6) + ")");
+        userMap[uId] = name;
+        select.innerHTML += `<option value="${uId}">${name}</option>`;
+      }
+    });
+  } else {
+    select.innerHTML = `<option value="">-- No Investors Found --</option>`;
   }
 }
 
-// 1. DEPOSIT REQUESTS (Sirf Pending Show Honge)
+// 2. AUTO BONUS DISTRIBUTION FORMULA
+async function distributeAutoBonus() {
+  const db = getSupabase();
+  if(!confirm("تمام approved انوسٹرز کو فارمولا کے مطابق بونس بھیجیں؟")) return;
+
+  const { data: investments, error } = await db
+    .from("investments")
+    .select("*")
+    .eq("status", "approved");
+
+  if(error) {
+    alert("Error fetching investments: " + error.message);
+    return;
+  }
+
+  if(!investments || investments.length === 0) {
+    alert("کوئی Approved انوسٹمنٹ موجود نہیں ہے۔");
+    return;
+  }
+
+  let count = 0;
+  for(let inv of investments) {
+    let bonus = 0;
+    const amt = Number(inv.amount || 0);
+
+    if(amt >= 10000) bonus = 500;
+    else if(amt >= 2000) bonus = 150;
+    else if(amt >= 1000) bonus = 50;
+
+    if(bonus > 0) {
+      const uId = inv.investor_id || inv.user_id;
+
+      const { error: txErr } = await db.from("wallet_transactions").insert([{
+        investor_id: uId,
+        user_id: uId,
+        amount: bonus,
+        type: "bonus",
+        status: "approved",
+        note: `Auto Bonus (Rs ${amt} Investment)`
+      }]);
+
+      if(!txErr) count++;
+    }
+  }
+
+  alert(`کامیابی! کل ${count} انوسٹرز کو بونس منتقل کر دیا گیا ہے۔`);
+}
+
+// 3. MANUAL BONUS SENDER
+async function sendManualBonus() {
+  const db = getSupabase();
+  const userId = document.getElementById("bonusUserSelect").value;
+  const amount = document.getElementById("bonusAmount").value;
+  const note = document.getElementById("bonusNote").value || "Special Bonus";
+
+  if(!userId) {
+    alert("برائے مہربانی انوسٹر (Investor) منتخب کریں۔");
+    return;
+  }
+  if(!amount || Number(amount) <= 0) {
+    alert("برائے مہربانی درست بونس رقم درج کریں۔");
+    return;
+  }
+
+  const { error } = await db.from("wallet_transactions").insert([{
+    investor_id: userId,
+    user_id: userId,
+    amount: Number(amount),
+    type: "bonus",
+    status: "approved",
+    note: note
+  }]);
+
+  if(error) {
+    alert("بونس بھیجنے میں مسئلہ آیا: " + error.message);
+  } else {
+    alert("بونس کامیابی کے ساتھ بھیج دیا گیا ہے!");
+    document.getElementById("bonusAmount").value = "";
+    document.getElementById("bonusNote").value = "";
+  }
+}
+
+// 4. PENDING DEPOSIT REQUESTS
 async function loadDeposits(db) {
   const tbody = document.getElementById("depositTableBody");
   
@@ -304,9 +407,9 @@ async function loadDeposits(db) {
   }
 
   tbody.innerHTML = data.map(d => {
-    const userName = userMap[d.investor_id || d.user_id] || "Investor";
+    const uId = d.investor_id || d.user_id;
+    const userName = userMap[uId] || d.user_name || "Investor";
     
-    // Slip Check
     const slipHtml = d.slip_url 
       ? `<a href="${d.slip_url}" target="_blank" class="slip-link">👁️ View Slip</a>` 
       : `<span style="color:#6b7280">No Slip</span>`;
@@ -329,17 +432,18 @@ async function loadDeposits(db) {
 
 async function updateDepositStatus(id, status) {
   const db = getSupabase();
-  if(!confirm(`Are you sure you want to ${status} this deposit?`)) return;
+  if(!confirm(`کیا آپ اس ڈیپازٹ کو ${status} کرنا چاہتے ہیں؟`)) return;
 
   const { error } = await db.from("investments").update({ status }).eq("id", id);
-  if(error) alert("Error: " + error.message);
-  else {
-    alert(`Deposit ${status} successfully!`);
-    loadDeposits(db); // List refresh ho jayegi aur yeh item gayab ho jayega
+  if(error) {
+    alert("Error: " + error.message);
+  } else {
+    alert(`ڈیپازٹ ${status} ہو گیا ہے!`);
+    loadDeposits(db);
   }
 }
 
-// 2. WITHDRAWAL REQUESTS (Sirf Pending Show Honge)
+// 5. PENDING WITHDRAWAL REQUESTS
 async function loadWithdrawals(db) {
   const tbody = document.getElementById("withdrawTableBody");
   
@@ -360,7 +464,8 @@ async function loadWithdrawals(db) {
   }
 
   tbody.innerHTML = data.map(w => {
-    const userName = userMap[w.investor_id || w.user_id] || "Investor";
+    const uId = w.investor_id || w.user_id;
+    const userName = userMap[uId] || "Investor";
 
     return `
       <tr>
@@ -380,74 +485,17 @@ async function loadWithdrawals(db) {
 
 async function updateWithdrawStatus(id, status) {
   const db = getSupabase();
-  if(!confirm(`Are you sure you want to ${status} this withdrawal?`)) return;
+  if(!confirm(`کیا آپ اس ودڈرال کو ${status} کرنا چاہتے ہیں؟`)) return;
 
   const { error } = await db.from("withdrawals").update({ status }).eq("id", id);
   if(error) alert("Error: " + error.message);
   else {
-    alert(`Withdrawal ${status} successfully!`);
-    loadWithdrawals(db); // Item gayab ho jayega
+    alert(`ودڈرال ${status} ہو گیا ہے!`);
+    loadWithdrawals(db);
   }
 }
 
-// 3. MANUAL BONUS & AUTOMATIC FORMULA
-async function distributeAutoBonus() {
-  const db = getSupabase();
-  if(!confirm("Distribute auto bonus to all approved investors?")) return;
-
-  const { data: investments } = await db.from("investments").select("*").eq("status", "approved");
-  if(!investments || investments.length === 0) return alert("No approved investments found.");
-
-  let distributed = 0;
-  for(let inv of investments) {
-    let bonus = 0;
-    const amt = Number(inv.amount);
-    if(amt >= 10000) bonus = 500;
-    else if(amt >= 2000) bonus = 150;
-    else if(amt >= 1000) bonus = 50;
-
-    if(bonus > 0) {
-      const uId = inv.investor_id || inv.user_id;
-      await db.from("wallet_transactions").insert({
-        investor_id: uId,
-        user_id: uId,
-        amount: bonus,
-        type: "bonus",
-        status: "approved",
-        note: `Auto Bonus for Rs ${amt} Investment`
-      });
-      distributed++;
-    }
-  }
-  alert(`Auto Bonus distributed to ${distributed} entries!`);
-}
-
-async function sendManualBonus() {
-  const db = getSupabase();
-  const userId = document.getElementById("bonusUserSelect").value;
-  const amount = document.getElementById("bonusAmount").value;
-  const note = document.getElementById("bonusNote").value || "Manual Bonus";
-
-  if(!userId || !amount) return alert("User aur Amount select karein.");
-
-  const { error } = await db.from("wallet_transactions").insert({
-    investor_id: userId,
-    user_id: userId,
-    amount: Number(amount),
-    type: "bonus",
-    status: "approved",
-    note: note
-  });
-
-  if(error) alert("Error: " + error.message);
-  else {
-    alert("Bonus sent successfully!");
-    document.getElementById("bonusAmount").value = "";
-    document.getElementById("bonusNote").value = "";
-  }
-}
-
-// 4. PAYMENT ACCOUNTS MANAGEMENT
+// 6. PAYMENT ACCOUNTS & CAMPAIGNS MANAGEMENT
 async function loadAccounts(db) {
   const tbody = document.getElementById("paymentAccountsBody");
   const { data } = await db.from("payment_methods").select("*");
@@ -473,9 +521,9 @@ async function addPaymentAccount() {
   const account_title = document.getElementById("accTitle").value;
   const account_number = document.getElementById("accNum").value;
 
-  if(!label || !account_title || !account_number) return alert("Pura form bharein.");
+  if(!label || !account_title || !account_number) return alert("تمام خانے پر کریں۔");
 
-  const { error } = await db.from("payment_methods").insert({ label, account_title, account_number });
+  const { error } = await db.from("payment_methods").insert([{ label, account_title, account_number }]);
   if(error) alert("Error: " + error.message);
   else {
     alert("Account added!");
@@ -488,12 +536,11 @@ async function addPaymentAccount() {
 
 async function deleteAccount(id) {
   const db = getSupabase();
-  if(!confirm("Delete this account?")) return;
+  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
   await db.from("payment_methods").delete().eq("id", id);
   loadAccounts(db);
 }
 
-// 5. CAMPAIGNS MANAGEMENT
 async function loadCampaigns(db) {
   const tbody = document.getElementById("campaignsTableBody");
   const { data } = await db.from("campaigns").select("*");
@@ -517,9 +564,9 @@ async function addCampaign() {
   const title = document.getElementById("campTitle").value;
   const target = document.getElementById("campTarget").value;
 
-  if(!title || !target) return alert("Title aur Target daalein.");
+  if(!title || !target) return alert("عنوان اور ٹارگٹ درج کریں۔");
 
-  const { error } = await db.from("campaigns").insert({ title, target: Number(target), is_active: true });
+  const { error } = await db.from("campaigns").insert([{ title, target: Number(target), is_active: true }]);
   if(error) alert("Error: " + error.message);
   else {
     alert("Campaign added!");
@@ -531,7 +578,7 @@ async function addCampaign() {
 
 async function deleteCampaign(id) {
   const db = getSupabase();
-  if(!confirm("Delete this campaign?")) return;
+  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
   await db.from("campaigns").delete().eq("id", id);
   loadCampaigns(db);
 }
