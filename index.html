@@ -272,16 +272,37 @@
     }
 
     async function loadCampaigns() {
-      const { data: campaigns, error } = await supabaseClient
-        .from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false });
       const listEl = document.getElementById("campaignsList");
-      if (error) { listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; return; }
-      if (!campaigns || !campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
+      
+      // Fetch all campaigns without filtering status strictly
+      const { data: campaigns, error } = await supabaseClient
+        .from("campaigns")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) { 
+        console.error("Error loading campaigns:", error);
+        listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; 
+        return; 
+      }
+
+      if (!campaigns || !campaigns.length) { 
+        listEl.innerHTML = `<p class="muted">No campaigns right now — check back soon.</p>`; 
+        return; 
+      }
+
       listEl.innerHTML = "";
       for (const c of campaigns) {
-        const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id).eq("status", "approved");
+        const { data: invSum } = await supabaseClient
+          .from("investments")
+          .select("amount")
+          .eq("campaign_id", c.id)
+          .eq("status", "approved");
+
         const funded = (invSum || []).reduce((s, i) => s + Number(i.amount), 0);
-        const pct = (funded / c.target) * 100;
+        const targetVal = Number(c.target || 100000);
+        const pct = targetVal > 0 ? (funded / targetVal) * 100 : 0;
+
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
@@ -289,12 +310,15 @@
             <div>
               <div class="disp" style="font-size:20px;">${c.name}</div>
               <div class="muted" style="margin-top:2px;">${c.rider_tag || ""}</div>
-              <div style="margin-top:10px;font-size:12.5px;"><span class="mono" style="font-weight:600;">${pkr(funded)}</span><span class="muted"> raised of ${pkr(c.target)} target</span></div>
+              <div style="margin-top:10px;font-size:12.5px;">
+                <span class="mono" style="font-weight:600;">${typeof pkr === 'function' ? pkr(funded) : 'PKR ' + funded}</span>
+                <span class="muted"> raised of ${typeof pkr === 'function' ? pkr(targetVal) : 'PKR ' + targetVal} target</span>
+              </div>
             </div>
-            <div class="gauge-wrap">${gaugeSVG(pct)}</div>
+            <div class="gauge-wrap">${typeof gaugeSVG === 'function' ? gaugeSVG(pct) : pct.toFixed(0) + '%'}</div>
           </div>
-          <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="startContribute('${c.id}','${c.name}',${c.target},${funded})">
-            ${funded >= c.target ? "Fully funded" : "Contribute"}
+          <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="startContribute('${c.id}','${c.name}',${targetVal},${funded})">
+            ${funded >= targetVal ? "Fully funded" : "Contribute"}
           </button>
         `;
         listEl.appendChild(div);
