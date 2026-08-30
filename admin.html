@@ -62,7 +62,7 @@
       <button onclick="distributeAutoProfit()" class="btn-action" style="background: #16a34a;">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CUSTOM GIVEAWAY / BONUS (Real Investor Names) -->
+    <!-- 2. CUSTOM GIVEAWAY / BONUS (Fix User Names) -->
     <div class="section-title">🎁 Custom Bonus / Special Giveaway</div>
     <div class="card">
       <label style="font-size: 12px; font-weight: bold;">Select Investor User:</label>
@@ -76,7 +76,7 @@
       <button onclick="sendCustomBonus()" class="btn-gold">Send Bonus To User</button>
     </div>
 
-    <!-- 3. PENDING WITHDRAWALS (جدید سیکشن) -->
+    <!-- 3. PENDING WITHDRAWALS -->
     <div class="section-title">📤 Pending Withdrawals</div>
     <div class="card">
       <div id="withdrawalsList">
@@ -168,37 +168,27 @@
       loadWhatsAppSetting(db);
     }
 
-    // 1. Fetch Real Investor Names in Bonus Dropdown
+    // 1. Fetch Real Investor Names Directly From Profiles Table
     async function loadUsersDropdown(db) {
       const select = document.getElementById("investorSelect");
       select.innerHTML = `<option value="">-- یوزر لوڈ ہو رہے ہیں... --</option>`;
 
       try {
-        let { data: profiles, error } = await db.from("profiles").select("id, full_name, email, name, username");
+        let { data: profiles, error } = await db.from("profiles").select("*");
 
-        if (error || !profiles || profiles.length === 0) {
-          const { data: investments } = await db.from("investments").select("investor_id");
-          if (investments && investments.length > 0) {
-            const uniqueUserIds = [...new Set(investments.map(item => item.investor_id))];
-            profiles = uniqueUserIds.map((id) => ({
-              id: id,
-              full_name: "Investor (" + id.substring(0, 6) + ")",
-              email: ""
-            }));
-          }
-        }
+        if (error) console.error("Profiles Fetch Error:", error);
 
-        if (!profiles || profiles.length === 0) {
-          select.innerHTML = `<option value="">کوئی بھی رجسٹرڈ یوزر نہیں ملا</option>`;
+        if (profiles && profiles.length > 0) {
+          select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
+            profiles.map(u => {
+              const realName = u.full_name || u.name || u.username || u.email || "Unnamed User";
+              const extraInfo = u.email ? ` (${u.email})` : ` (${u.id.substring(0, 6)})`;
+              return `<option value="${u.id}">${realName}${extraInfo}</option>`;
+            }).join("");
           return;
         }
 
-        select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
-          profiles.map(u => {
-            const realName = u.full_name || u.name || u.username || u.email || ("User #" + u.id.substring(0, 5));
-            const subDetail = u.email ? ` (${u.email})` : ` (${u.id.substring(0, 6)}...)`;
-            return `<option value="${u.id}">${realName}${subDetail}</option>`;
-          }).join("");
+        select.innerHTML = `<option value="">کوئی بھی رجسٹرڈ یوزر نہیں ملا</option>`;
 
       } catch (err) {
         console.error("Error loading users:", err);
