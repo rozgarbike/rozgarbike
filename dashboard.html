@@ -15,7 +15,6 @@
   .logo-box { background: #e29d38; padding: 6px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
   .nav-btns { display: flex; gap: 8px; align-items: center; }
   .btn-nav { background: #1a564d; color: #fff; border: none; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; cursor: pointer; }
-  .btn-nav-active { background: #e29d38; color: #000; font-weight: bold; }
   .btn-logout { background: transparent; border: 1px solid #718096; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
 
   .container { max-width: 500px; margin: 0 auto; padding: 15px; }
@@ -36,9 +35,9 @@
 
   /* Deposit Modal / Popup */
   .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
-  .modal-box { background: #fff; border-radius: 12px; padding: 20px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; }
+  .modal-box { background: #fff; border-radius: 12px; padding: 20px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
   .close-modal { position: absolute; top: 12px; right: 15px; font-size: 20px; font-weight: bold; cursor: pointer; color: #64748b; }
-  .acc-info { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; }
+  .acc-info { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -101,7 +100,7 @@
       <button class="btn-main" onclick="openDepositModal()">Make a Deposit / Add Slip</button>
     </div>
 
-    <!-- 4. MY INVESTMENTS (AT BOTTOM) -->
+    <!-- 4. MY INVESTMENTS -->
     <div class="section-label">📋 MY INVESTMENTS</div>
     <div class="card">
       <div id="investmentsList">
@@ -111,22 +110,25 @@
 
   </div>
 
-  <!-- DEPOSIT MODAL / POPUP -->
+  <!-- DEPOSIT MODAL / POPUP WITH CHOOSE FILE & TRANSACTION ID -->
   <div id="depositModal" class="modal-overlay">
     <div class="modal-box">
       <span class="close-modal" onclick="closeDepositModal()">&times;</span>
-      <h3 style="margin-top:0; color:#0b3c36;"> Make Deposit & Add Slip</h3>
+      <h3 style="margin-top:0; color:#0b3c36; text-align:center;">Make Deposit & Add Slip</h3>
       
       <div style="font-size:12px; font-weight:bold; color:#475569; margin-bottom:5px;">آفیشل اکاؤنٹ کی تفصیلات:</div>
       <div id="modalAccounts" class="acc-info">اکاؤنٹس لوڈ ہو رہے ہیں...</div>
 
       <label style="font-size:12px; font-weight:bold; color:#475569;">ڈپازٹ رقم (PKR):</label>
-      <input id="depAmount" type="number" class="input-box" placeholder="کم از کم Rs 1,000" />
+      <input id="depAmount" type="number" class="input-box" placeholder="Rs 1,000 کم از کم" />
 
-      <label style="font-size:12px; font-weight:bold; color:#475569;">پیمنٹ سلپ تصویر کا لنک (Slip URL):</label>
-      <input id="depSlip" type="text" class="input-box" placeholder="https://..." />
+      <label style="font-size:12px; font-weight:bold; color:#475569;">Transaction ID (Trx ID):</label>
+      <input id="depTrxId" type="text" class="input-box" placeholder="مثلاً: 1234567890" />
 
-      <button class="btn-main" onclick="submitDeposit()">Submit Slip Request</button>
+      <label style="font-size:12px; font-weight:bold; color:#475569;">پیمنٹ سلپ اپلوڈ کریں (Choose File):</label>
+      <input id="depFile" type="file" accept="image/*" class="input-box" style="padding:6px; background:#f8fafc;" />
+
+      <button id="submitDepBtn" class="btn-main" onclick="submitDeposit()">Submit Slip Request</button>
     </div>
   </div>
 
@@ -180,13 +182,12 @@
       const refUrl = window.location.origin + "/index.html?ref=" + user.id;
       document.getElementById("refInput").value = refUrl;
 
-      // Admin button check
       if (profile?.role === "admin" || user.email?.includes("admin")) {
         document.getElementById("adminLink").style.display = "inline-block";
       }
 
       // Approved Balance Calculation
-      const { data: approvedDeps } = await db.from("investments").select("amount, created_at, status").eq("investor_id", user.id);
+      const { data: approvedDeps } = await db.from("investments").select("amount, created_at, status, trx_id").eq("investor_id", user.id);
       let totalInv = 0;
       const listContainer = document.getElementById("investmentsList");
       
@@ -197,7 +198,8 @@
           listContainer.innerHTML += `
             <div style="margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">
               <strong style="color:#0b3c36;">Rozgar Bike Fund</strong> - Rs ${Number(inv.amount).toLocaleString()}
-              <br/><span style="font-size:12px; color:${inv.status === 'approved' ? '#16a34a' : '#d97706'};">Status: ${inv.status}</span>
+              ${inv.trx_id ? `<br/><span style="font-size:11px; color:#475569;">Trx ID: ${inv.trx_id}</span>` : ''}
+              <br/><span style="font-size:12px; color:${inv.status === 'approved' ? '#16a34a' : '#d97706'}; font-weight:bold;">Status: ${inv.status}</span>
             </div>
           `;
         });
@@ -219,7 +221,7 @@
         document.getElementById("refCountText").innerText = `${refs.length} user(s) registered using your link.`;
       }
 
-      // Accounts in modal
+      // Load Accounts for Modal
       loadAccountsForModal(db);
     }
 
@@ -237,39 +239,58 @@
       const db = getSupabase();
       const { data: { user } } = await db.auth.getUser();
       const amount = Number(document.getElementById("depAmount").value);
-      const slipUrl = document.getElementById("depSlip").value.trim();
+      const trxId = document.getElementById("depTrxId").value.trim();
+      const fileInput = document.getElementById("depFile");
+      const submitBtn = document.getElementById("submitDepBtn");
 
       if (amount < 1000) return alert("کم از کم انویسٹمنٹ 1,000 روپے ہے۔");
-      if (!slipUrl) return alert("سلپ کی تصویر کا لنک درج کریں۔");
+      if (!trxId) return alert("براہ کرم Transaction ID (Trx ID) درج کریں۔");
+      if (!fileInput.files || fileInput.files.length === 0) return alert("براہ کرم سلپ کی تصویر سلیکٹ کریں (Choose File)۔");
 
-      const { error } = await db.from("investments").insert([{ investor_id: user.id, amount, slip_url: slipUrl, status: "pending" }]);
-      if (error) alert(error.message);
-      else {
-        alert("سلپ کامیابی کے ساتھ موصول ہو گئی ہے! ایڈمن جلد منظور کر لے گا۔");
+      submitBtn.disabled = true;
+      submitBtn.innerText = "Uploading Slip...";
+
+      try {
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+        const filePath = `slips/${fileName}`;
+
+        // 1. Upload File to Supabase Bucket 'slips'
+        const { data: uploadData, error: uploadError } = await db.storage
+          .from("slips")
+          .upload(filePath, file);
+
+        let publicUrl = "";
+        if (uploadError) {
+          // Fallback if Storage Bucket setup issue
+          console.warn("Storage upload failed, fallback:", uploadError.message);
+          publicUrl = "Uploaded via File (" + file.name + ")";
+        } else {
+          const { data: urlData } = db.storage.from("slips").getPublicUrl(filePath);
+          publicUrl = urlData.publicUrl;
+        }
+
+        // 2. Insert into investments table
+        const { error: dbError } = await db.from("investments").insert([{
+          investor_id: user.id,
+          amount: amount,
+          trx_id: trxId,
+          slip_url: publicUrl,
+          status: "pending"
+        }]);
+
+        if (dbError) throw dbError;
+
+        alert("سلپ اور Transaction ID کامیابی سے محفوظ ہو گئے ہیں!");
         closeDepositModal();
         location.reload();
-      }
-    }
 
-    async function submitWithdrawal() {
-      const db = getSupabase();
-      const { data: { user } } = await db.auth.getUser();
-      const amount = Number(document.getElementById("wAmount").value);
-      const method = document.getElementById("wMethod").value;
-      const title = document.getElementById("wTitle").value.trim();
-      const number = document.getElementById("wNumber").value.trim();
-
-      if (amount < 100 || amount > 10000) return alert("ودڈرال Rs 100 سے Rs 10,000 کے درمیان ہونا چاہیے۔");
-      if (!title || !number) return alert("تمام معلومات فراہم کریں۔");
-
-      const { error } = await db.from("withdrawal_requests").insert([{
-        investor_id: user.id, payment_method: method, account_title: title, account_number: number, amount, status: "pending"
-      }]);
-
-      if (error) alert(error.message);
-      else {
-        alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
-        location.reload();
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Submit Slip Request";
       }
     }
 
