@@ -33,7 +33,7 @@
     margin-bottom: 10px;
   }
   .accordion-content {
-    display: none; /* Initially Hidden */
+    display: none;
     background: #fff;
     padding: 16px;
     border-radius: 10px;
@@ -51,9 +51,13 @@
 </head>
 <body>
 
+  <!-- HEADER WITH ADMIN BUTTON -->
   <div style="background:#0f172a; color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center;">
     <div style="font-weight:bold; font-size:16px;">🚲 RozgarBike</div>
-    <button onclick="handleLogout()" style="background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.4); padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Logout</button>
+    <div>
+      <a id="adminPageBtn" href="admin.html" style="display:none; background:#0284c7; color:#fff; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:bold; margin-right:8px;">🛠️ Admin Panel</a>
+      <button onclick="handleLogout()" style="background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.4); padding:5px 12px; border-radius:6px; cursor:pointer; font-size:12px;">Logout</button>
+    </div>
   </div>
 
   <div class="user-wrap">
@@ -64,7 +68,7 @@
       <div id="userBalance" style="font-size:26px; font-weight:bold;">Rs 0</div>
     </div>
 
-    <!-- 1. WITHDRAWAL SECTION (NOW ON TOP WITH ACCORDION) -->
+    <!-- 1. WITHDRAWAL SECTION (ON TOP) -->
     <button class="accordion-btn" onclick="toggleSection('withdrawSection', 'withdrawArrow')">
       <span>💰 Request Withdrawal</span>
       <span id="withdrawArrow">▼</span>
@@ -88,14 +92,13 @@
       <button id="withdrawSubmitBtn" class="btn-submit" style="background:#16a34a;" onclick="handleWithdrawSubmit()">Request Withdrawal</button>
     </div>
 
-    <!-- 2. DEPOSIT SECTION (NOW AT BOTTOM WITH ACCORDION & ACCOUNT NUMBERS) -->
+    <!-- 2. DEPOSIT SECTION (AT BOTTOM) -->
     <button class="accordion-btn" onclick="toggleSection('depositSection', 'depositArrow')">
       <span>💸 Make a Deposit / Add Investment</span>
       <span id="depositArrow">▼</span>
     </button>
     <div id="depositSection" class="accordion-content">
       
-      <!-- OFFICIAL ACCOUNTS DISPLAYED INSIDE DEPOSIT FORM -->
       <div class="accounts-box" id="officialAccountsList">
         <strong>Official Accounts for Payment:</strong><br/>
         Loading payment accounts...
@@ -133,7 +136,6 @@
       return window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase : null);
     }
 
-    // ACCORDION TOGGLE FUNCTION
     function toggleSection(sectionId, arrowId) {
       const content = document.getElementById(sectionId);
       const arrow = document.getElementById(arrowId);
@@ -162,6 +164,9 @@
         return;
       }
 
+      // SHOW ADMIN BUTTON FOR ALL USERS OR SPECIFIC EMAIL
+      document.getElementById("adminPageBtn").style.display = "inline-block";
+
       loadBalance(db, user.id);
       loadPaymentMethods(db);
       loadCampaignsDropdown(db);
@@ -169,7 +174,6 @@
       loadMyWithdrawals(db, user.id);
     }
 
-    // STRICT BALANCE CALCULATOR
     async function loadBalance(db, userId) {
       try {
         const { data: bonuses } = await db.from("wallet_transactions").select("amount").eq("investor_id", userId).eq("status", "approved");
@@ -185,7 +189,6 @@
       }
     }
 
-    // LOAD PAYMENT ACCOUNTS
     async function loadPaymentMethods(db) {
       const box = document.getElementById("officialAccountsList");
       try {
@@ -201,7 +204,6 @@
       }
     }
 
-    // LOAD CAMPAIGNS DROPDOWN
     async function loadCampaignsDropdown(db) {
       const select = document.getElementById("depositCampaignSelect");
       try {
@@ -217,7 +219,6 @@
       }
     }
 
-    // SUBMIT DEPOSIT
     async function handleDepositSubmit() {
       const db = getSupabase();
       const btn = document.getElementById("depositSubmitBtn");
@@ -277,7 +278,6 @@
       }
     }
 
-    // SUBMIT WITHDRAWAL
     async function handleWithdrawSubmit() {
       const db = getSupabase();
       const btn = document.getElementById("withdrawSubmitBtn");
@@ -322,7 +322,6 @@
       }
     }
 
-    // LOAD INVESTMENTS
     async function loadMyInvestments(db, userId) {
       const el = document.getElementById("myInvestmentsList");
       try {
@@ -345,7 +344,6 @@
       }
     }
 
-    // LOAD WITHDRAWALS
     async function loadMyWithdrawals(db, userId) {
       const el = document.getElementById("myWithdrawalsList");
       try {
