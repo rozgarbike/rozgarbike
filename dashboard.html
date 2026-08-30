@@ -7,33 +7,66 @@
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0b1329; color: #f8fafc; margin: 0; padding: 15px; }
   .wrap { max-width: 600px; margin: 0 auto; }
-  .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #334155; }
-  .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; color: #fff; }
-  .input-field { width: 100%; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; }
-  .ref-box { background: #0284c722; border: 1px dashed #38bdf8; padding: 10px; border-radius: 8px; text-align: center; word-break: break-all; font-weight: bold; color: #38bdf8; }
+  .navbar { display: flex; justify-content: space-between; align-items: center; background: #131f37; padding: 12px 16px; border-radius: 10px; border: 1px solid #1e293b; margin-bottom: 15px; }
+  .card { background: #131f37; padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #1e293b; }
+  .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 8px; color: #fff; font-size: 14px; }
+  .input-field { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #2e3e5c; background: #0b1329; color: #fff; box-sizing: border-box; font-size: 14px; }
+  .ref-box { background: #0284c71a; border: 1px dashed #38bdf8; padding: 12px; border-radius: 8px; text-align: center; word-break: break-all; font-weight: bold; color: #38bdf8; font-size: 13px; }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; display: inline-block; }
+  .badge-active { background: #16a34a22; color: #4ade80; border: 1px solid #16a34a; }
+  .badge-inactive { background: #dc262622; color: #f87171; border: 1px solid #dc2626; }
+  .acc-display-box { background: #0b1329; border: 1px solid #2e3e5c; padding: 10px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; color: #38bdf8; }
 </style>
 </head>
 <body>
 
   <div class="wrap">
-    <h2>🚲 RozgarBike Dashboard</h2>
+    
+    <!-- TOP NAVBAR WITH ADMIN BUTTON -->
+    <div class="navbar">
+      <h3 style="margin:0; color:#38bdf8;">🚲 RozgarBike</h3>
+      <div>
+        <a id="adminBtn" href="admin.html" style="display:none; background:#eab308; color:#000; padding:6px 12px; border-radius:6px; font-weight:bold; text-decoration:none; font-size:12px; margin-right:5px;">🛠️ Admin Panel</a>
+        <button onclick="handleLogout()" style="background:#dc2626; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:12px;">Logout</button>
+      </div>
+    </div>
+
+    <!-- WELCOME & USER STATUS CARD -->
+    <div class="card" style="border-left: 4px solid #38bdf8;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="color:#94a3b8; font-size:12px;">خوش آمدید،</span>
+          <h2 style="margin:2px 0 0 0; font-size:18px; color:#fff;" id="userName">Loading...</h2>
+        </div>
+        <div>
+          <span id="userStatusBadge" class="status-badge badge-inactive">Checking Status...</span>
+        </div>
+      </div>
+    </div>
     
     <!-- REFERRAL BOX -->
     <div class="card">
       <h3 style="color:#38bdf8; margin-top:0;">🔗 آپ کا ریفرل لنک (Referral Link)</h3>
       <div class="ref-box" id="refLink">Loading...</div>
-      <p style="font-size:12px; color:#cbd5e1; margin-bottom:0; margin-top:10px;">
-        🎁 **بونس آفر:** جب آپ کے لنک سے **10 دوست** ڈپازٹ مکمل کر لیں گے تو آپ کو الگ سے بونس ملے گا!
-        <br/>کامیا ب ریفرلز: <strong id="refCount" style="color:#4ade80;">0 / 10</strong>
+      <p style="font-size:12px; color:#cbd5e1; margin-bottom:0; margin-top:10px; line-height:1.5;">
+        🎁 <strong>بونس آفر:</strong> جب آپ کے لنک سے <strong>10 دوست</strong> ڈپازٹ مکمل کر لیں گے تو آپ کو الگ سے بونس ملے گا!
+        <br/>کامیاب ریفرلز: <strong id="refCount" style="color:#4ade80;">0 / 10</strong>
       </p>
     </div>
 
-    <!-- DEPOSIT SECTION -->
+    <!-- DEPOSIT SECTION WITH ADMIN PAYMENT ACCOUNTS -->
     <div class="card">
       <h3 style="color:#4ade80; margin-top:0;">📥 رقم جمع کروائیں (Deposit)</h3>
-      <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 1,000 سے Rs 200,000 (ایک وقت میں 1 ہی ریکوئسٹ ڈال سکتے ہیں)</p>
+      <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 1,000 سے Rs 200,000 (ایک وقت میں 1 ہی ریکوئسٹ)</p>
+      
+      <!-- Display Admin Payment Accounts -->
+      <div style="font-size:12px; color:#94a3b8; margin-bottom:5px;">رقم بھیجنے کے لیے نیچے دیے گئے اکاؤنٹس استعمال کریں:</div>
+      <div id="paymentAccountsContainer" class="acc-display-box">
+        اکاؤنٹ کی تفصیلات لوڈ ہو رہی ہیں...
+      </div>
+
       <input id="depAmount" type="number" class="input-field" placeholder="رقم (Rs 1,000 - 200,000)" />
       <input id="depSlip" type="text" class="input-field" placeholder="ڈپازٹ سلیپ تصویر کا لنک (Slip URL)" />
       <button class="btn" style="background:#16a34a;" onclick="submitDeposit()">Submit Deposit</button>
@@ -43,6 +76,7 @@
     <div class="card">
       <h3 style="color:#f87171; margin-top:0;">📤 رقم نکلوا لیں (Withdraw)</h3>
       <p style="font-size:12px; color:#cbd5e1;">حدود: Rs 100 سے Rs 10,000 (دن میں صرف 1 بار)</p>
+      
       <select id="wMethod" class="input-field">
         <option value="JazzCash">JazzCash</option>
         <option value="EasyPaisa">EasyPaisa</option>
@@ -53,21 +87,51 @@
       <input id="wAmount" type="number" class="input-field" placeholder="رقم (Rs 100 - 10,000)" />
       <button class="btn" style="background:#dc2626;" onclick="submitWithdrawal()">Request Withdrawal</button>
     </div>
+
   </div>
 
   <script src="assets/config.js"></script>
   <script>
     function getSupabase() { return window.supabaseClient || window.supabase; }
 
+    async function handleLogout() {
+      const db = getSupabase();
+      if(db) await db.auth.signOut();
+      window.location.href = "index.html";
+    }
+
     async function initDashboard() {
       const db = getSupabase();
+      if (!db) return;
+
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = "index.html"; return; }
 
-      // Generate Referral Link
+      // 1. Set User Profile Name & Status
+      const { data: profile } = await db.from("profiles").select("*").eq("id", user.id).single();
+      const userName = profile?.full_name || profile?.email || user.email || "Investor";
+      document.getElementById("userName").innerText = userName;
+
+      // Check Active Status (Has approved investment)
+      const { data: approvedDeps } = await db.from("investments").select("id").eq("investor_id", user.id).eq("status", "approved");
+      const statusBadge = document.getElementById("userStatusBadge");
+      
+      if (approvedDeps && approvedDeps.length > 0) {
+        statusBadge.innerText = "● Active Account";
+        statusBadge.className = "status-badge badge-active";
+      } else {
+        statusBadge.innerText = "○ Inactive (Deposit Required)";
+        statusBadge.className = "status-badge badge-inactive";
+      }
+
+      // 2. Check Admin Role to Show Admin Button
+      if (profile?.role === "admin" || user.email?.includes("admin")) {
+        document.getElementById("adminBtn").style.display = "inline-block";
+      }
+
+      // 3. Generate Referral Link & Count 10 Referrals
       document.getElementById("refLink").innerText = window.location.origin + "/register.html?ref=" + user.id;
 
-      // Count 10 Approved Deposited Referrals
       const { data: refs } = await db.from("profiles").select("id").eq("referred_by", user.id);
       let activeCount = 0;
       if (refs) {
@@ -77,6 +141,25 @@
         }
       }
       document.getElementById("refCount").innerText = `${activeCount} / 10`;
+
+      // 4. Load Payment Accounts inside Deposit Box
+      loadPaymentAccounts(db);
+    }
+
+    async function loadPaymentAccounts(db) {
+      const container = document.getElementById("paymentAccountsContainer");
+      const { data: methods } = await db.from("payment_methods").select("*");
+      
+      if (!methods || methods.length === 0) {
+        container.innerHTML = `<span style="color:#94a3b8;">ایڈمن کی طرف سے فی الحال کوئی اکاؤنٹ ایڈ نہیں ہے۔</span>`;
+        return;
+      }
+
+      container.innerHTML = methods.map(m => `
+        <div style="margin-bottom:6px; border-bottom:1px solid #1e293b; padding-bottom:4px;">
+          <strong>${m.label}:</strong> ${m.account_title} (${m.account_number})
+        </div>
+      `).join("");
     }
 
     async function submitDeposit() {
@@ -88,13 +171,17 @@
       if (amount < 1000 || amount > 200000) return alert("ڈپازٹ کی رقم کم سے کم Rs 1,000 اور زیادہ سے زیادہ Rs 200,000 ہونی چاہیے۔");
       if (!slipUrl) return alert("براہ کرم سلیپ کا لنک درج کریں۔");
 
-      // Check for pending deposit
+      // Check for pending deposit restriction
       const { data: pending } = await db.from("investments").select("id").eq("investor_id", user.id).eq("status", "pending");
       if (pending && pending.length > 0) return alert("آپ کی پہلی ڈپازٹ درخواست پروسیسنگ میں ہے۔ اس کے ختم ہونے کا انتظار کریں۔");
 
       const { error } = await db.from("investments").insert([{ investor_id: user.id, amount, slip_url: slipUrl, status: "pending" }]);
       if (error) alert(error.message);
-      else alert("ڈپازٹ کی درخواست بھیج دی گئی ہے!");
+      else {
+        alert("ڈپازٹ کی درخواست بھیج دی گئی ہے!");
+        document.getElementById("depAmount").value = "";
+        document.getElementById("depSlip").value = "";
+      }
     }
 
     async function submitWithdrawal() {
@@ -118,7 +205,12 @@
       }]);
 
       if (error) alert(error.message);
-      else alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
+      else {
+        alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
+        document.getElementById("wAmount").value = "";
+        document.getElementById("wTitle").value = "";
+        document.getElementById("wNumber").value = "";
+      }
     }
 
     window.addEventListener("DOMContentLoaded", initDashboard);
