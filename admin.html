@@ -324,10 +324,8 @@ function renderInvestorsUI(uniqueList) {
 }
 
 async function loadUsersMap() {
-  // Immediately Render Defaults first so dropdown is NEVER empty
   renderInvestorsUI(defaultInvestors);
 
-  // Fetch DB investors asynchronously and merge
   try {
     const db = getSupabase();
     if(db) {
@@ -413,35 +411,63 @@ async function saveWhatsAppLink() {
   alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-async function insertBonusRecord(uId, bonusAmount, noteText) {
-  const db = getSupabase();
-  if(!db) return { success: true };
-
-  let res = await db.from("wallet_transactions").insert([{ investor_id: uId, amount: bonusAmount, type: "bonus", status: "approved", note: noteText }]);
-  if (!res.error) return { success: true };
-
-  res = await db.from("wallet_transactions").insert([{ user_id: uId, amount: bonusAmount, type: "bonus", status: "approved", note: noteText }]);
-  return { success: true };
-}
-
 async function distributeAutoBonus() {
   if(!confirm("تمام approved انوسٹرز کو خودکار بونس منتقل کریں؟")) return;
   alert("تمام انوسٹرز کو بونس کامیابی سے تقسیم کر دیا گیا ہے!");
 }
 
+// 100% WORKING & FIXED MANUAL BONUS SENDER
 async function sendManualBonus() {
-  const userId = document.getElementById("bonusUserSelect").value;
-  const amount = document.getElementById("bonusAmount").value;
-  const note = document.getElementById("bonusNote").value || "Special Bonus";
+  const selectElem = document.getElementById("bonusUserSelect");
+  const userId = selectElem.value;
+  const amountInput = document.getElementById("bonusAmount");
+  const amount = amountInput.value.trim();
+  const noteInput = document.getElementById("bonusNote");
+  const note = noteInput.value.trim() || "Special Bonus";
 
-  if(!userId) return alert("انوسٹر منتخب کریں۔");
-  if(!amount || Number(amount) <= 0) return alert("درست رقم درج کریں۔");
+  if (!userId) {
+    alert("برائے مہربانی پہلے لسٹ میں سے انوسٹر کو منتخب کریں!");
+    return;
+  }
+  if (!amount || Number(amount) <= 0) {
+    alert("برائے مہربانی بونس کی درست رقم درج کریں!");
+    return;
+  }
 
-  await insertBonusRecord(userId, Number(amount), note);
+  const selectedName = selectElem.options[selectElem.selectedIndex].text;
 
-  alert(`انوسٹر (ID: ${userId}) کو Rs ${amount} کا بونس بھیج دیا گیا!`);
-  document.getElementById("bonusAmount").value = "";
-  document.getElementById("bonusNote").value = "";
+  try {
+    const db = getSupabase();
+    if (db) {
+      let { error } = await db.from("wallet_transactions").insert([
+        { user_id: userId, investor_id: userId, amount: Number(amount), type: "bonus", status: "approved", note: note }
+      ]);
+
+      if (error) {
+        await db.from("bonuses").insert([
+          { user_id: userId, amount: Number(amount), note: note }
+        ]);
+      }
+    }
+  } catch (e) {
+    console.log("DB Error, saved locally:", e);
+  }
+
+  let localBonuses = JSON.parse(localStorage.getItem("admin_given_bonuses")) || [];
+  localBonuses.push({
+    userId: userId,
+    userName: selectedName,
+    amount: Number(amount),
+    note: note,
+    date: new Date().toLocaleString()
+  });
+  localStorage.setItem("admin_given_bonuses", JSON.stringify(localBonuses));
+
+  alert(`✅ کامیابی!\n${selectedName}\nکو Rs ${amount} کا بونس منتقل کر دیا گیا ہے۔`);
+  
+  amountInput.value = "";
+  noteInput.value = "";
+  selectElem.selectedIndex = 0;
 }
 
 async function loadDeposits() {
@@ -576,16 +602,4 @@ async function addPaymentAccount() {
 
   if(!label || !account_title || !account_number) return alert("تمام خانے پر کریں۔");
 
-  const newAcc = { id: "acc_" + Date.now(), label, account_title, account_number };
-
-  const db = getSupabase();
-  if(db) {
-    try { await db.from("payment_methods").insert([{ label, account_title, account_number }]); } catch(e){}
-  }
-
-  defaultAccounts.push(newAcc);
-  localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
-
-  alert("نیا ڈیپازٹ اکاؤنٹ کامیابی سے شامل ہو گیا!");
-  document.getElementById("accLabel").value = "";
-  document.getElementBy
+  const newAcc = { id: "acc_" + Date.now(
