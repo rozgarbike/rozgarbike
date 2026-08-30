@@ -31,8 +31,8 @@
   th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
   th { background: #f8fafc; color: #475569; }
 
-  /* Deposit Card Box */
-  .deposit-card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+  /* Request Card Box */
+  .req-card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
   .slip-img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; margin: 8px 0; background: #fff; cursor: pointer; }
   
   .btn-approve { background: #22c55e; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -62,7 +62,7 @@
       <button onclick="distributeAutoProfit()" class="btn-action" style="background: #16a34a;">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CUSTOM GIVEAWAY / BONUS -->
+    <!-- 2. CUSTOM GIVEAWAY / BONUS (Real Investor Names) -->
     <div class="section-title">🎁 Custom Bonus / Special Giveaway</div>
     <div class="card">
       <label style="font-size: 12px; font-weight: bold;">Select Investor User:</label>
@@ -76,15 +76,11 @@
       <button onclick="sendCustomBonus()" class="btn-gold">Send Bonus To User</button>
     </div>
 
-    <!-- 3. MANAGE INVESTMENT CAMPAIGNS -->
-    <div class="section-title">🚀 Manage Investment Campaigns</div>
+    <!-- 3. PENDING WITHDRAWALS (جدید سیکشن) -->
+    <div class="section-title">📤 Pending Withdrawals</div>
     <div class="card">
-      <input id="campTitle" class="input-box" placeholder="کیمپین کا نام (e.g. Bike Fleet Batch #3)" />
-      <input id="campTarget" type="number" class="input-box" placeholder="ٹارگٹ رقم (PKR)" />
-      <button onclick="addCampaign()" class="btn-action">+ Add New Campaign</button>
-
-      <div id="campaignsList" style="margin-top: 15px;">
-        <!-- Campaigns list -->
+      <div id="withdrawalsList">
+        <div style="font-size:13px; color:#64748b;">Loading pending withdrawals...</div>
       </div>
     </div>
 
@@ -96,7 +92,19 @@
       </div>
     </div>
 
-    <!-- 5. ADD / DELETE PAYMENT ACCOUNTS -->
+    <!-- 5. MANAGE INVESTMENT CAMPAIGNS -->
+    <div class="section-title">🚀 Manage Investment Campaigns</div>
+    <div class="card">
+      <input id="campTitle" class="input-box" placeholder="کیمپین کا نام (e.g. Bike Fleet Batch #3)" />
+      <input id="campTarget" type="number" class="input-box" placeholder="ٹارگٹ رقم (PKR)" />
+      <button onclick="addCampaign()" class="btn-action">+ Add New Campaign</button>
+
+      <div id="campaignsList" style="margin-top: 15px;">
+        <!-- Campaigns list -->
+      </div>
+    </div>
+
+    <!-- 6. ADD / DELETE PAYMENT ACCOUNTS -->
     <div class="section-title">💳 Official Payment Accounts</div>
     <div class="card">
       <div style="display: flex; gap: 5px;">
@@ -126,7 +134,7 @@
       </table>
     </div>
 
-    <!-- 6. WHATSAPP & SUPPORT SETTINGS -->
+    <!-- 7. WHATSAPP & SUPPORT SETTINGS -->
     <div class="section-title">📱 WhatsApp & Support Settings</div>
     <div class="card">
       <label style="font-size:12px; font-weight:bold;">WhatsApp Number / Channel Link:</label>
@@ -153,23 +161,22 @@
       }
 
       loadUsersDropdown(db);
-      loadCampaigns(db);
+      loadPendingWithdrawals(db);
       loadPendingDeposits(db);
+      loadCampaigns(db);
       loadPaymentAccounts(db);
       loadWhatsAppSetting(db);
     }
 
-    // 1. Fetch Real User Names & Emails Dynamically
+    // 1. Fetch Real Investor Names in Bonus Dropdown
     async function loadUsersDropdown(db) {
       const select = document.getElementById("investorSelect");
       select.innerHTML = `<option value="">-- یوزر لوڈ ہو رہے ہیں... --</option>`;
 
       try {
-        // Fetch profiles
         let { data: profiles, error } = await db.from("profiles").select("id, full_name, email, name, username");
 
         if (error || !profiles || profiles.length === 0) {
-          // Fallback if profiles table is empty or restricted
           const { data: investments } = await db.from("investments").select("investor_id");
           if (investments && investments.length > 0) {
             const uniqueUserIds = [...new Set(investments.map(item => item.investor_id))];
@@ -186,7 +193,6 @@
           return;
         }
 
-        // Render Users with actual full_name, username or email
         select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
           profiles.map(u => {
             const realName = u.full_name || u.name || u.username || u.email || ("User #" + u.id.substring(0, 5));
@@ -200,7 +206,47 @@
       }
     }
 
-    // 2. Send Custom Bonus
+    // 2. Load Pending Withdrawals
+    async function loadPendingWithdrawals(db) {
+      const box = document.getElementById("withdrawalsList");
+      const { data: withdraws, error } = await db.from("withdrawals")
+        .select("*, profiles(full_name, email)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error || !withdraws || withdraws.length === 0) {
+        box.innerHTML = `<div style="font-size:13px; color:#16a34a; font-weight:bold;">کوئی بھی پینڈنگ ودڈرال باقی نہیں ہے۔</div>`;
+        return;
+      }
+
+      box.innerHTML = withdraws.map(w => `
+        <div class="req-card">
+          <div style="font-weight:bold; color:#0b3c36;">${w.profiles?.full_name || 'Investor'} (${w.profiles?.email || w.investor_id.substring(0,8)})</div>
+          <div style="font-size:15px; margin:4px 0; color:#dc2626;">ودڈرال رقم: <strong>Rs ${Number(w.amount).toLocaleString()}</strong></div>
+          <div style="font-size:12px; color:#334155;">طریقہ: <strong>${w.method || 'Account'}</strong></div>
+          <div style="font-size:12px; color:#334155;">عنوان: <strong>${w.account_title || 'N/A'}</strong></div>
+          <div style="font-size:12px; color:#334155;">نمبر: <strong>${w.account_number || 'N/A'}</strong></div>
+          
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn-approve" onclick="updateWithdrawStatus('${w.id}', 'approved')">Approve (پیسے بھیج دیے)</button>
+            <button class="btn-reject" onclick="updateWithdrawStatus('${w.id}', 'rejected')">Reject (مسترد کریں)</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function updateWithdrawStatus(id, status) {
+      const db = getSupabase();
+      const { error } = await db.from("withdrawals").update({ status: status }).eq("id", id);
+
+      if (error) alert("Error: " + error.message);
+      else {
+        alert(`ودڈرال درخواست ${status === 'approved' ? 'منظور' : 'مسترد'} کر دی گئی ہے۔`);
+        loadPendingWithdrawals(db);
+      }
+    }
+
+    // 3. Custom Bonus
     async function sendCustomBonus() {
       const db = getSupabase();
       const userId = document.getElementById("investorSelect").value;
@@ -223,7 +269,7 @@
       }
     }
 
-    // 3. Auto Profit Distribution (5%)
+    // 4. Auto Profit Distribution (5%)
     async function distributeAutoProfit() {
       if (!confirm("کیا آپ تمام منظور شدہ انویسٹرز کو 5% پرافٹ منتقل کرنا چاہتے ہیں؟")) return;
 
@@ -251,7 +297,7 @@
       alert(`کامیابی! ${successCount} انویسٹرز کو پرافٹ منتقل کر دیا گیا ہے۔`);
     }
 
-    // 4. Load Pending Deposits & Review Slips
+    // 5. Load Pending Deposits
     async function loadPendingDeposits(db) {
       const box = document.getElementById("depositsList");
       const { data: deposits, error } = await db.from("investments")
@@ -265,7 +311,7 @@
       }
 
       box.innerHTML = deposits.map(dep => `
-        <div class="deposit-card">
+        <div class="req-card">
           <div style="font-weight:bold; color:#0b3c36;">${dep.profiles?.full_name || 'Investor'} (${dep.profiles?.email || dep.investor_id.substring(0,8)})</div>
           <div style="font-size:14px; margin:4px 0;">رقم: <strong>Rs ${Number(dep.amount).toLocaleString()}</strong></div>
           <div style="font-size:12px; color:#475569;">Trx ID: <strong>${dep.trx_id || 'N/A'}</strong></div>
@@ -291,7 +337,7 @@
       }
     }
 
-    // 5. Manage Investment Campaigns
+    // 6. Manage Investment Campaigns
     async function loadCampaigns(db) {
       const box = document.getElementById("campaignsList");
       const { data: camps } = await db.from("campaigns").select("*");
@@ -341,7 +387,7 @@
       loadCampaigns(db);
     }
 
-    // 6. Manage Payment Accounts
+    // 7. Payment Accounts
     async function loadPaymentAccounts(db) {
       const tbody = document.getElementById("accountsTable");
       const { data: methods } = await db.from("payment_methods").select("*");
@@ -382,7 +428,7 @@
       loadPaymentAccounts(db);
     }
 
-    // 7. Support Settings
+    // 8. Support Settings
     async function loadWhatsAppSetting(db) {
       const { data } = await db.from("app_settings").select("value").eq("key", "whatsapp").single();
       if (data) document.getElementById("waNumberInput").value = data.value;
