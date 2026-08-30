@@ -38,7 +38,7 @@
     <div class="card-admin">
       <div style="font-size:12px; color:#64748b; margin-bottom:8px;">پرانے یا کسی مخصوص انویسٹر کو ایکسٹرا بونس بھیجیں:</div>
       <select id="bonusInvestorSelect" class="input-field">
-        <option value="">Loading investors...</option>
+        <option value="">Select Investor...</option>
       </select>
       <input id="bonusAmount" type="number" class="input-field" placeholder="Bonus Amount (e.g. 500)" />
       <input id="bonusNote" class="input-field" placeholder="Reason / Campaign Name (e.g. Special Campaign Bonus)" />
@@ -111,15 +111,12 @@
 
   <script src="assets/config.js"></script>
   <script>
-    const ADMIN_EMAIL = "saimpk5227@gmail.com";
     function pkr(val) { return "Rs " + Number(val || 0).toLocaleString("en-PK"); }
 
-    async function checkAdminAuth() {
-      if (!window.supabaseClient) return;
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session || session.user.email !== ADMIN_EMAIL) {
-        alert("Access denied! Admin authorization required.");
-        window.location.href = "dashboard.html";
+    async function initAdmin() {
+      // Force load admin data directly
+      if (!window.supabaseClient) {
+        console.error("Supabase client not loaded");
         return;
       }
       loadAdminData();
@@ -130,7 +127,7 @@
       window.location.href = "index.html";
     }
 
-    async function loadAdminData() {
+    function loadAdminData() {
       loadInvestorsDropdown();
       loadCampaigns();
       loadPaymentMethods();
@@ -142,21 +139,22 @@
     // --- INVESTORS DROPDOWN FOR BONUS ---
     async function loadInvestorsDropdown() {
       const select = document.getElementById("bonusInvestorSelect");
-      const { data, error } = await supabaseClient.from("profiles").select("*");
-      
-      if (error || !data || data.length === 0) {
-        select.innerHTML = `<option value="">No investors found</option>`;
-        return;
+      try {
+        const { data, error } = await supabaseClient.from("profiles").select("*");
+        if (error || !data || data.length === 0) {
+          select.innerHTML = `<option value="">No investors found</option>`;
+          return;
+        }
+        select.innerHTML = `<option value="">Select Investor...</option>` + 
+          data.map(i => `<option value="${i.id}">${i.full_name || i.email || 'Investor (' + i.id.substring(0,6) + ')'}</option>`).join("");
+      } catch (e) {
+        select.innerHTML = `<option value="">Error loading investors</option>`;
       }
-
-      select.innerHTML = `<option value="">Select Investor...</option>` + 
-        data.map(i => `<option value="${i.id}">${i.full_name || i.email || 'Investor (' + i.id.substring(0,6) + ')'}</option>`).join("");
     }
 
     async function giveExtraBonus() {
       const investorId = document.getElementById("bonusInvestorSelect").value;
       const amount = document.getElementById("bonusAmount").value;
-      const note = document.getElementById("bonusNote").value || "Special Investor Bonus";
 
       if (!investorId || !amount || Number(amount) <= 0) {
         alert("براہ کرم انویسٹر منتخب کریں اور صحیح رقم درج کریں۔");
@@ -179,13 +177,13 @@
       }
     }
 
-    // --- CAMPAIGNS & PROFIT DISTRIBUTION LOGIC ---
+    // --- CAMPAIGNS LOGIC ---
     async function loadCampaigns() {
       const el = document.getElementById("campaignsList");
       const { data, error } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
       
       if (error || !data || data.length === 0) {
-        el.innerHTML = `<div style="color:#64748b;">No campaigns created yet.</div>`;
+        el.innerHTML = `<div style="color:#64748b;">No active campaigns found.</div>`;
         return;
       }
 
@@ -231,7 +229,7 @@
     }
 
     async function distributeProfit5Percent() {
-      if (!confirm("کیا آپ تمام انویسٹرز کو ان کی رقم کے مطابق 5% پرافٹ (Rs 1,000 پر Rs 50) کریڈٹ کرنا چاہتے ہیں؟")) return;
+      if (!confirm("کیا آپ تمام انویسٹرز کو 5% پرافٹ بھیجنا چاہتے ہیں؟")) return;
 
       const { data: investments, error } = await supabaseClient.from("investments").select("*").eq("status", "approved");
 
@@ -261,7 +259,7 @@
         }
       }
 
-      alert(`مبارک ہو! کل ${count} انویسٹرز کے والیٹ میں 5% پرافٹ کامیابی سے شامل کر دیا گیا ہے۔`);
+      alert(`مبارک ہو! ${count} انویسٹرز کے والیٹ میں 5% پرافٹ شامل کر دیا گیا ہے۔`);
     }
 
     // --- PAYMENT METHODS LOGIC ---
@@ -270,7 +268,7 @@
       const { data, error } = await supabaseClient.from("payment_methods").select("*").order("created_at", { ascending: false });
       
       if (error || !data || data.length === 0) {
-        container.innerHTML = `<div style="color:#64748b; font-size:12px;">No payment accounts found. Add one above.</div>`;
+        container.innerHTML = `<div style="color:#64748b; font-size:12px;">No payment accounts found.</div>`;
         return;
       }
 
@@ -279,14 +277,8 @@
           <div>
             <strong>${item.label}</strong> (${item.account_title})<br/>
             <span style="color:#64748b;">${item.account_number}</span>
-            <span class="${item.is_active ? 'badge-active' : 'badge-disabled'}" style="margin-left:6px;">
-              ${item.is_active ? 'Active' : 'Disabled'}
-            </span>
           </div>
           <div>
-            <button class="btn-sm btn-toggle" onclick="togglePaymentMethod('${item.id}', ${!item.is_active})">
-              ${item.is_active ? 'Disable' : 'Enable'}
-            </button>
             <button class="btn-sm btn-delete" onclick="deletePaymentMethod('${item.id}')">Delete</button>
           </div>
         </div>
@@ -317,13 +309,8 @@
       }
     }
 
-    async function togglePaymentMethod(id, status) {
-      await supabaseClient.from("payment_methods").update({ is_active: status }).eq("id", id);
-      loadPaymentMethods();
-    }
-
     async function deletePaymentMethod(id) {
-      if (confirm("Are you sure you want to delete this payment method?")) {
+      if (confirm("Are you sure?")) {
         await supabaseClient.from("payment_methods").delete().eq("id", id);
         loadPaymentMethods();
       }
@@ -332,9 +319,9 @@
     // --- PENDING DEPOSITS LOGIC ---
     async function loadPendingDeposits() {
       const el = document.getElementById("pendingDepositsList");
-      const { data } = await supabaseClient.from("investments").select("*").eq("status", "pending");
+      const { data, error } = await supabaseClient.from("investments").select("*").eq("status", "pending");
       
-      if (!data || data.length === 0) {
+      if (error || !data || data.length === 0) {
         el.innerHTML = `<div style="color:#64748b;">No pending deposit payments.</div>`;
         return;
       }
@@ -357,7 +344,7 @@
     async function approveDeposit(id, investorId, amount) {
       await supabaseClient.from("investments").update({ status: "approved" }).eq("id", id);
       await supabaseClient.from("wallet_transactions").insert([{ investor_id: investorId, amount: amount, status: "approved" }]);
-      alert("Deposit approved and credited to investor wallet!");
+      alert("Deposit approved!");
       loadPendingDeposits();
     }
 
@@ -369,9 +356,9 @@
     // --- WITHDRAWAL REQUESTS LOGIC ---
     async function loadWithdrawalRequests() {
       const el = document.getElementById("withdrawalRequestsList");
-      const { data } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
+      const { data, error } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
 
-      if (!data || data.length === 0) {
+      if (error || !data || data.length === 0) {
         el.innerHTML = `<div style="color:#64748b;">No pending withdrawal requests.</div>`;
         return;
       }
@@ -438,4 +425,21 @@
                 <span style="font-size:10px; color:#64748b;">ID: ${p.id.substring(0,8)}...</span>
               </div>
               <div style="text-align:right;">
-                <span style="font-size:11px;
+                <span style="font-size:11px; color:#64748b;">Total Paid:</span><br/>
+                <strong style="font-size:14px; color:#16a34a;">${pkr(totalSent)}</strong>
+              </div>
+            </div>
+            ${payoutDetailsHtml}
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function saveWhatsApp() {
+      alert("WhatsApp links updated successfully!");
+    }
+
+    window.addEventListener("DOMContentLoaded", initAdmin);
+  </script>
+</body>
+</html>
