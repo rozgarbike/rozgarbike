@@ -51,7 +51,6 @@
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session) { window.location.href = "index.html"; return; }
 
-      // Check if user is admin
       const { data: profile } = await supabaseClient.from("profiles").select("role").eq("id", session.user.id).single();
       if (!profile || profile.role !== 'admin') {
         alert("Access Denied! Sirf Admin is page ko dekh sakta hai.");
@@ -69,7 +68,7 @@
       const el = document.getElementById("adminCampaignsList");
 
       if (!invs || invs.length === 0) {
-        el.innerHTML = "<p>Puraney Rule: <b>Full Bike Campaign Joined (Active)</b> — Default Total Withdraw Received: <b>Rs 500</b></p>";
+        el.innerHTML = "<p>Rule: <b>Full Bike Campaign Joined (Active)</b> — Default Total Withdraw Received: <b>Rs 500</b></p>";
       } else {
         el.innerHTML = invs.map(i => `
           <div style="padding:10px 0; border-bottom:1px solid #eee;">
@@ -97,8 +96,8 @@
             <b>Transaction ID (TID):</b> <code style="background:#f1f1f1; padding:2px 5px;">${d.trx_id}</code><br>
             ${d.proof_img ? `<b>Receipt Pic:</b> <a href="${d.proof_img}" target="_blank" style="color:blue;">View Picture 🖼️</a><br>` : ''}
             <div style="margin-top:8px;">
-              <button class="btn-approve" onclick="updateDepositStatus('${d.id}', 'approved')">Approve</button>
-              <button class="btn-reject" onclick="updateDepositStatus('${d.id}', 'rejected')">Reject</button>
+              <button class="btn-approve" onclick="updateDepositStatus('${d.id}', '${d.user_id}', ${d.amount}, 'approved')">Approve</button>
+              <button class="btn-reject" onclick="updateDepositStatus('${d.id}', '${d.user_id}', ${d.amount}, 'rejected')">Reject</button>
             </div>
           </div>
         `).join("");
@@ -106,7 +105,7 @@
     }
 
     async function loadAdminWithdrawals() {
-      const { data: w) } = await supabaseClient.from("withdrawals").select("*, profiles(email)").eq("status", "pending");
+      const { data: w } = await supabaseClient.from("withdrawal_requests").select("*, profiles(email)").eq("status", "pending");
       const el = document.getElementById("adminWithdrawalsList");
 
       if (!w || w.length === 0) {
@@ -115,25 +114,38 @@
         el.innerHTML = w.map(x => `
           <div style="padding:10px 0; border-bottom:1px solid #eee;">
             <b>User:</b> ${x.profiles ? x.profiles.email : x.user_id}<br>
+            <b>Bank Platform:</b> ${x.bank_name || 'Bank'}<br>
+            <b>Account Title:</b> ${x.account_name || 'N/A'}<br>
+            <b>Account Number:</b> ${x.account_number || 'N/A'}<br>
             <b>Amount:</b> Rs ${Number(x.amount).toLocaleString()}<br>
-            <b>Account Info:</b> ${x.account}<br>
             <div style="margin-top:8px;">
-              <button class="btn-approve" onclick="updateWithdrawStatus('${x.id}', 'approved')">Mark Paid</button>
-              <button class="btn-reject" onclick="updateWithdrawStatus('${x.id}', 'rejected')">Reject</button>
+              <button class="btn-approve" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'approved')">Approve & Mark Paid</button>
+              <button class="btn-reject" onclick="updateWithdrawStatus('${x.id}', '${x.user_id}', ${x.amount}, 'rejected')">Reject</button>
             </div>
           </div>
         `).join("");
       }
     }
 
-    async function updateDepositStatus(id, status) {
+    async function updateDepositStatus(id, userId, amount, status) {
       await supabaseClient.from("deposits").update({ status: status }).eq("id", id);
+      if (status === 'approved') {
+        const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", userId).single();
+        const oldBal = prof ? (prof.balance || 0) : 0;
+        await supabaseClient.from("profiles").update({ balance: oldBal + amount }).eq("id", userId);
+      }
       alert("Deposit Status Updated: " + status);
       await loadAdminDeposits();
     }
 
-    async function updateWithdrawStatus(id, status) {
-      await supabaseClient.from("withdrawals").update({ status: status }).eq("id", id);
+    async function updateWithdrawStatus(id, userId, amount, status) {
+      await supabaseClient.from("withdrawal_requests").update({ status: status }).eq("id", id);
+      if (status === 'approved') {
+        const { data: prof } = await supabaseClient.from("profiles").select("balance").eq("id", userId).single();
+        const oldBal = prof ? (prof.balance || 0) : 0;
+        const newBal = Math.max(0, oldBal - amount);
+        await supabaseClient.from("profiles").update({ balance: newBal }).eq("id", userId);
+      }
       alert("Withdrawal Status Updated: " + status);
       await loadAdminWithdrawals();
     }
