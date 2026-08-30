@@ -6,275 +6,139 @@
 <title>Admin Panel — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .admin-card { background:#fff; padding:15px; border-radius:10px; border:1px solid #ddd; margin-bottom:15px; }
+  .btn-approve { background:#2ecc71; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
+  .btn-reject { background:#e74c3c; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; }
+</style>
 </head>
 <body>
+
   <div class="header">
     <div class="header-row">
-      <div class="brand"><span class="brand-badge">⚡</span> Admin Panel</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:4px 8px;font-size:11px;cursor:pointer;" onclick="logout()">Log out</button>
-    </div>
-    <div class="nav">
-      <a href="index.html">Bikes</a>
-      <a href="dashboard.html">My Dashboard</a>
-      <a href="admin.html" class="active" style="background:#e11d48;color:#fff;">Admin Control</a>
+      <div class="brand"><span class="brand-badge">⚙️</span> Admin Panel</div>
+      <a href="dashboard.html" style="color:#fff; text-decoration:none; font-size:13px;">Back to Dashboard</a>
     </div>
   </div>
 
   <div class="wrap">
-
-    <!-- 1. REFERRAL BONUS RELEASES -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;color:#d97706;">🎁 10-REFERRAL BONUS RELEASES</div>
-    <div class="card" style="margin-bottom:24px;border:2px solid #f59e0b;">
-      <div id="bonusReleaseList" style="display:flex;flex-direction:column;gap:10px;">Loading bonus requests...</div>
-    </div>
     
-    <!-- 2. PENDING INVESTMENTS -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">📥 PENDING INVESTMENTS (DEPOSITS)</div>
-    <div id="pendingInvestmentsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading deposits...</div>
+    <!-- ALL CAMPAIGNS & INVESTMENTS -->
+    <div class="admin-card">
+      <h3>🚲 All Campaigns & User Investments</h3>
+      <div id="adminCampaignsList" style="font-size:13px;">Loading investments & campaigns...</div>
+    </div>
 
-    <!-- 3. PENDING WITHDRAWALS -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">📤 PENDING WITHDRAWAL REQUESTS</div>
-    <div id="pendingWithdrawalsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading withdrawals...</div>
+    <!-- PENDING DEPOSITS & RECEIPT PICS -->
+    <div class="admin-card">
+      <h3>💳 Pending Deposit Requests</h3>
+      <div id="adminDepositsList" style="font-size:13px;">Loading deposit requests...</div>
+    </div>
 
-    <!-- 4. MANAGE PAYMENT METHODS -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">💳 MANAGE PAYMENT METHODS</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div style="font-weight:700;margin-bottom:8px;">Add New Account:</div>
-      <input id="pmLabel" placeholder="Account Type (e.g. JazzCash / EasyPaisa)" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
-      <input id="pmTitle" placeholder="Account Title Name" style="width:100%;padding:8px;margin-bottom:8px;border-radius:6px;border:1px solid #ccc;" />
-      <input id="pmNumber" placeholder="Account Number" style="width:100%;padding:8px;margin-bottom:12px;border-radius:6px;border:1px solid #ccc;" />
-      <button class="btn btn-primary" style="width:100%;cursor:pointer;" onclick="addPaymentMethod()">Add Payment Method</button>
-      
-      <div style="font-weight:700;margin:16px 0 8px;">Active Payment Accounts:</div>
-      <div id="activePaymentMethods" style="display:flex;flex-direction:column;gap:8px;">Loading...</div>
+    <!-- PENDING WITHDRAWALS -->
+    <div class="admin-card">
+      <h3>💸 Pending Withdrawal Requests</h3>
+      <div id="adminWithdrawalsList" style="font-size:13px;">Loading withdrawal requests...</div>
     </div>
 
   </div>
 
   <script src="assets/config.js"></script>
-  <script src="assets/app.js"></script>
   <script>
-    const ADMIN_EMAIL = "saimpk5227@gmail.com";
-
-    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
-    function toast(msg) { alert(msg); }
-
-    function logout() {
-      try { supabaseClient.auth.signOut(); } catch(e){}
-      localStorage.clear();
-      window.location.href = "index.html";
-    }
-
-    async function checkAdminAccess() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      const user = session?.user;
-      if (!user || !user.email || user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-        alert("Access Denied: Only Admin can access this page.");
-        window.location.href = "dashboard.html";
-        return false;
-      }
-      return true;
-    }
-
     async function initAdmin() {
-      const isOk = await checkAdminAccess();
-      if (!isOk) return;
+      if (typeof supabaseClient === 'undefined') return;
 
-      loadReferralBonusRequests();
-      loadPendingInvestments();
-      loadPendingWithdrawals();
-      loadPaymentMethodsAdmin();
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) { window.location.href = "index.html"; return; }
+
+      // Check if user is admin
+      const { data: profile } = await supabaseClient.from("profiles").select("role").eq("id", session.user.id).single();
+      if (!profile || profile.role !== 'admin') {
+        alert("Access Denied! Sirf Admin is page ko dekh sakta hai.");
+        window.location.href = "dashboard.html";
+        return;
+      }
+
+      await loadAdminCampaigns();
+      await loadAdminDeposits();
+      await loadAdminWithdrawals();
     }
 
-    // 1. Referral Bonuses Approval
-    async function loadReferralBonusRequests() {
-      const container = document.getElementById("bonusReleaseList");
-      try {
-        const { data: profiles } = await supabaseClient.from("profiles").select("id, email, name");
-        const { data: allRefs } = await supabaseClient.from("profiles").select("id, referred_by");
-        const { data: bonuses } = await supabaseClient.from("referral_bonuses").select("user_id");
+    async function loadAdminCampaigns() {
+      const { data: invs } = await supabaseClient.from("investments").select("*, profiles(email), campaigns(name)");
+      const el = document.getElementById("adminCampaignsList");
 
-        if (!profiles) return container.innerHTML = `<p class="muted">No user data found.</p>`;
-
-        let html = "";
-        profiles.forEach(u => {
-          const userRefs = allRefs ? allRefs.filter(r => r.referred_by === u.id).length : 0;
-          const claimedCount = bonuses ? bonuses.filter(b => b.user_id === u.id).length : 0;
-          const pendingBonusBatches = Math.floor(userRefs / 10) - claimedCount;
-
-          if (pendingBonusBatches > 0) {
-            html += `
-              <div style="background:#fff;padding:12px;border-radius:8px;border:1px solid #f59e0b;display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                  <div style="font-weight:800;font-size:14px;color:#1e293b;">${u.name || u.email}</div>
-                  <div style="font-size:12px;" class="muted">Total Referrals: <strong>${userRefs}</strong> | Pending Bonus Releases: <strong>${pendingBonusBatches}</strong></div>
-                </div>
-                <button class="btn btn-primary" style="background:#16a34a;color:#fff;font-size:12px;padding:6px 12px;cursor:pointer;" onclick="releaseBonus('${u.id}')">Release 10% Bonus</button>
-              </div>
-            `;
-          }
-        });
-
-        container.innerHTML = html || `<p class="muted" style="font-size:12px;">Filhal koi pending 10-referral bonus request nahi hai.</p>`;
-
-      } catch(e) {
-        container.innerHTML = `<p class="muted">Error loading bonus requests.</p>`;
+      if (!invs || invs.length === 0) {
+        el.innerHTML = "<p>Puraney Rule: <b>Full Bike Campaign Joined (Active)</b> — Default Total Withdraw Received: <b>Rs 500</b></p>";
+      } else {
+        el.innerHTML = invs.map(i => `
+          <div style="padding:10px 0; border-bottom:1px solid #eee;">
+            <b>User:</b> ${i.profiles ? i.profiles.email : i.user_id}<br>
+            <b>Campaign:</b> ${i.campaigns ? i.campaigns.name : 'Bike Fund'}<br>
+            <b>Investment Amount:</b> Rs ${Number(i.amount).toLocaleString()}<br>
+            <b>Withdrawal / Profit Paid:</b> Rs ${Number(i.profit_earned || 500).toLocaleString()}<br>
+            <b>Status:</b> <span style="color:green; font-weight:bold;">${i.status || 'ACTIVE'}</span>
+          </div>
+        `).join("");
       }
     }
 
-    async function releaseBonus(userId) {
-      if(!confirm("Kya aap is user ka 10-referral bonus release karna chahte hain?")) return;
+    async function loadAdminDeposits() {
+      const { data: deps } = await supabaseClient.from("deposits").select("*, profiles(email)").eq("status", "pending");
+      const el = document.getElementById("adminDepositsList");
 
-      const { error } = await supabaseClient.from("referral_bonuses").insert({
-        user_id: userId,
-        status: "released",
-        created_at: new Date()
-      });
-
-      if(error) return toast(error.message);
-      toast("Bonus released successfully! User target reset ho gaya.");
-      loadReferralBonusRequests();
-    }
-
-    // 2. Pending Investments
-    async function loadPendingInvestments() {
-      const container = document.getElementById("pendingInvestmentsList");
-      try {
-        const { data } = await supabaseClient
-          .from("investments")
-          .select("*, profiles(email), campaigns(name)")
-          .eq("status", "pending");
-
-        if (!data || !data.length) {
-          container.innerHTML = `<p class="muted">No pending investments.</p>`;
-          return;
-        }
-
-        container.innerHTML = data.map(inv => `
-          <div class="card">
-            <div style="font-weight:700;">User: ${inv.profiles?.email || inv.investor_id}</div>
-            <div>Campaign: ${inv.campaigns?.name || 'Bike'}</div>
-            <div>Amount: <strong>${pkr(inv.amount)}</strong></div>
-            <div>TRX / Phone: <strong>${inv.transaction_id}</strong></div>
-            ${inv.receipt_url ? `<a href="${inv.receipt_url}" target="_blank" style="color:#2563eb;font-weight:700;font-size:12px;">View Receipt Image</a>` : ''}
-            <div style="display:flex;gap:10px;margin-top:10px;">
-              <button class="btn btn-primary" style="background:#16a34a;flex:1;cursor:pointer;" onclick="updateInvestment('${inv.id}', 'approved', ${inv.amount})">Approve</button>
-              <button class="btn btn-outline" style="border-color:#dc2626;color:#dc2626;flex:1;cursor:pointer;" onclick="updateInvestment('${inv.id}', 'rejected', 0)">Reject</button>
+      if (!deps || deps.length === 0) {
+        el.innerHTML = "Koi pending deposit nahi hai.";
+      } else {
+        el.innerHTML = deps.map(d => `
+          <div style="padding:10px 0; border-bottom:1px solid #eee;">
+            <b>User:</b> ${d.profiles ? d.profiles.email : d.user_id}<br>
+            <b>Method:</b> ${d.method} | <b>Amount:</b> Rs ${Number(d.amount).toLocaleString()}<br>
+            <b>Transaction ID (TID):</b> <code style="background:#f1f1f1; padding:2px 5px;">${d.trx_id}</code><br>
+            ${d.proof_img ? `<b>Receipt Pic:</b> <a href="${d.proof_img}" target="_blank" style="color:blue;">View Picture 🖼️</a><br>` : ''}
+            <div style="margin-top:8px;">
+              <button class="btn-approve" onclick="updateDepositStatus('${d.id}', 'approved')">Approve</button>
+              <button class="btn-reject" onclick="updateDepositStatus('${d.id}', 'rejected')">Reject</button>
             </div>
           </div>
-        `).join('');
-      } catch(e) {
-        container.innerHTML = `<p class="muted">Error loading investments.</p>`;
+        `).join("");
       }
     }
 
-    async function updateInvestment(id, status, amount) {
-      const { error } = await supabaseClient.from("investments").update({
-        status: status,
-        received: status === 'approved' ? amount : 0
-      }).eq("id", id);
+    async function loadAdminWithdrawals() {
+      const { data: w) } = await supabaseClient.from("withdrawals").select("*, profiles(email)").eq("status", "pending");
+      const el = document.getElementById("adminWithdrawalsList");
 
-      if (error) return toast(error.message);
-      toast("Investment updated!");
-      loadPendingInvestments();
-    }
-
-    // 3. Pending Withdrawals
-    async function loadPendingWithdrawals() {
-      const container = document.getElementById("pendingWithdrawalsList");
-      try {
-        const { data } = await supabaseClient
-          .from("withdrawal_requests")
-          .select("*, profiles(email)")
-          .eq("status", "pending");
-
-        if (!data || !data.length) {
-          container.innerHTML = `<p class="muted">No pending withdrawal requests.</p>`;
-          return;
-        }
-
-        container.innerHTML = data.map(w => `
-          <div class="card">
-            <div style="font-weight:700;">User: ${w.profiles?.email || w.investor_id}</div>
-            <div>Method: ${w.method}</div>
-            <div>Account Number: <strong>${w.account_number}</strong></div>
-            <div>Amount: <strong>${pkr(w.amount)}</strong></div>
-            <div style="display:flex;gap:10px;margin-top:10px;">
-              <button class="btn btn-primary" style="background:#16a34a;flex:1;cursor:pointer;" onclick="updateWithdrawal('${w.id}', 'approved')">Mark Paid (Approve)</button>
-              <button class="btn btn-outline" style="border-color:#dc2626;color:#dc2626;flex:1;cursor:pointer;" onclick="updateWithdrawal('${w.id}', 'declined')">Decline</button>
+      if (!w || w.length === 0) {
+        el.innerHTML = "Koi pending withdrawal nahi hai.";
+      } else {
+        el.innerHTML = w.map(x => `
+          <div style="padding:10px 0; border-bottom:1px solid #eee;">
+            <b>User:</b> ${x.profiles ? x.profiles.email : x.user_id}<br>
+            <b>Amount:</b> Rs ${Number(x.amount).toLocaleString()}<br>
+            <b>Account Info:</b> ${x.account}<br>
+            <div style="margin-top:8px;">
+              <button class="btn-approve" onclick="updateWithdrawStatus('${x.id}', 'approved')">Mark Paid</button>
+              <button class="btn-reject" onclick="updateWithdrawStatus('${x.id}', 'rejected')">Reject</button>
             </div>
           </div>
-        `).join('');
-      } catch(e) {
-        container.innerHTML = `<p class="muted">Error loading withdrawals.</p>`;
+        `).join("");
       }
     }
 
-    async function updateWithdrawal(id, status) {
-      const { error } = await supabaseClient.from("withdrawal_requests").update({
-        status: status
-      }).eq("id", id);
-
-      if (error) return toast(error.message);
-      toast("Withdrawal status updated!");
-      loadPendingWithdrawals();
+    async function updateDepositStatus(id, status) {
+      await supabaseClient.from("deposits").update({ status: status }).eq("id", id);
+      alert("Deposit Status Updated: " + status);
+      await loadAdminDeposits();
     }
 
-    // 4. Payment Methods Admin
-    async function loadPaymentMethodsAdmin() {
-      const display = document.getElementById("activePaymentMethods");
-      try {
-        const { data } = await supabaseClient.from("payment_methods").select("*");
-        if (!data || !data.length) {
-          display.innerHTML = `<p class="muted">No payment methods added yet.</p>`;
-          return;
-        }
-
-        display.innerHTML = data.map(m => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">
-            <div>
-              <strong>${m.label}</strong> (${m.account_title}) — ${m.account_number}
-            </div>
-            <button style="background:#dc2626;color:#fff;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;" onclick="deletePaymentMethod('${m.id}')">Delete</button>
-          </div>
-        `).join('');
-      } catch(e) {
-        display.innerHTML = `<p class="muted">Error loading methods.</p>`;
-      }
+    async function updateWithdrawStatus(id, status) {
+      await supabaseClient.from("withdrawals").update({ status: status }).eq("id", id);
+      alert("Withdrawal Status Updated: " + status);
+      await loadAdminWithdrawals();
     }
 
-    async function addPaymentMethod() {
-      const label = document.getElementById("pmLabel").value.trim();
-      const title = document.getElementById("pmTitle").value.trim();
-      const num = document.getElementById("pmNumber").value.trim();
-
-      if (!label || !title || !num) return toast("Fill all account details!");
-
-      const { error } = await supabaseClient.from("payment_methods").insert({
-        label: label,
-        account_title: title,
-        account_number: num,
-        active: true
-      });
-
-      if (error) return toast(error.message);
-      toast("Payment Method Added!");
-      document.getElementById("pmLabel").value = "";
-      document.getElementById("pmTitle").value = "";
-      document.getElementById("pmNumber").value = "";
-      loadPaymentMethodsAdmin();
-    }
-
-    async function deletePaymentMethod(id) {
-      if(!confirm("Delete this payment method?")) return;
-      const { error } = await supabaseClient.from("payment_methods").delete().eq("id", id);
-      if (error) return toast(error.message);
-      toast("Deleted!");
-      loadPaymentMethodsAdmin();
-    }
-
-    document.addEventListener("DOMContentLoaded", initAdmin);
+    initAdmin();
   </script>
 </body>
 </html>
-
