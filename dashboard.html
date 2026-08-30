@@ -33,6 +33,13 @@
   
   .input-box { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; box-sizing: border-box; font-size: 14px; outline: none; }
 
+  /* Investment Item Styling */
+  .inv-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; display: inline-block; }
+  .badge-approved { background: #dcfce7; color: #15803d; }
+  .badge-pending { background: #fef3c7; color: #b45309; }
+  .badge-rejected { background: #fee2e2; color: #b91c1c; }
+
   /* Deposit Modal / Popup */
   .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1000; padding: 15px; box-sizing: border-box; }
   .modal-box { background: #fff; border-radius: 12px; padding: 20px; width: 100%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto; }
@@ -104,13 +111,13 @@
     <div class="section-label">📋 MY INVESTMENTS</div>
     <div class="card">
       <div id="investmentsList">
-        <div style="font-size:13px; color:#64748b;">No active investment found.</div>
+        <div style="font-size:13px; color:#64748b;">Loading investments...</div>
       </div>
     </div>
 
   </div>
 
-  <!-- DEPOSIT MODAL / POPUP WITH CHOOSE FILE & TRANSACTION ID -->
+  <!-- DEPOSIT MODAL / POPUP -->
   <div id="depositModal" class="modal-overlay">
     <div class="modal-box">
       <span class="close-modal" onclick="closeDepositModal()">&times;</span>
@@ -186,26 +193,51 @@
         document.getElementById("adminLink").style.display = "inline-block";
       }
 
-      // Approved Balance Calculation
-      const { data: approvedDeps } = await db.from("investments").select("amount, created_at, status, trx_id").eq("investor_id", user.id);
-      let totalInv = 0;
+      // Fetch ALL User Investments (Pending, Approved, Rejected)
+      const { data: userInvestments, error: invError } = await db
+        .from("investments")
+        .select("*")
+        .eq("investor_id", user.id)
+        .order("created_at", { ascending: false });
+
       const listContainer = document.getElementById("investmentsList");
-      
-      if (approvedDeps && approvedDeps.length > 0) {
+
+      if (invError) {
+        console.error("Investment fetch error:", invError);
+        listContainer.innerHTML = `<div style="font-size:13px; color:#dc2626;">انویسٹمنٹ ڈیٹا لوڈ کرنے میں مسئلہ آیا۔</div>`;
+      } else if (userInvestments && userInvestments.length > 0) {
         listContainer.innerHTML = "";
-        approvedDeps.forEach(inv => {
-          if (inv.status === "approved") totalInv += Number(inv.amount);
+        userInvestments.forEach(inv => {
+          let badgeClass = "badge-pending";
+          let statusLabel = "Pending (انتظار فرمائیں)";
+
+          if (inv.status === "approved") {
+            badgeClass = "badge-approved";
+            statusLabel = "Approved (منظور شدہ)";
+          } else if (inv.status === "rejected") {
+            badgeClass = "badge-rejected";
+            statusLabel = "Rejected (مسترد)";
+          }
+
+          const createdDate = inv.created_at ? new Date(inv.created_at).toLocaleDateString("ur-PK") : "";
+
           listContainer.innerHTML += `
-            <div style="margin-bottom: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">
-              <strong style="color:#0b3c36;">Rozgar Bike Fund</strong> - Rs ${Number(inv.amount).toLocaleString()}
-              ${inv.trx_id ? `<br/><span style="font-size:11px; color:#475569;">Trx ID: ${inv.trx_id}</span>` : ''}
-              <br/><span style="font-size:12px; color:${inv.status === 'approved' ? '#16a34a' : '#d97706'}; font-weight:bold;">Status: ${inv.status}</span>
+            <div class="inv-item">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <strong style="color:#0b3c36; font-size:15px;">Rozgar Bike Fund</strong>
+                <span class="badge ${badgeClass}">${statusLabel}</span>
+              </div>
+              <div style="font-size:14px; font-weight:bold; color:#1e293b;">Rs ${Number(inv.amount).toLocaleString()}</div>
+              ${inv.trx_id ? `<div style="font-size:12px; color:#64748b; margin-top:3px;">Trx ID: <strong>${inv.trx_id}</strong></div>` : ''}
+              ${createdDate ? `<div style="font-size:11px; color:#94a3b8; margin-top:2px;">تاریخ: ${createdDate}</div>` : ''}
             </div>
           `;
         });
+      } else {
+        listContainer.innerHTML = `<div style="font-size:13px; color:#64748b;">No active investment found.</div>`;
       }
 
-      // Wallet Balance / Profits
+      // Approved Balance / Wallet Profits Calculation
       const { data: txs } = await db.from("wallet_transactions").select("amount").eq("investor_id", user.id).eq("status", "approved");
       let profit = txs ? txs.reduce((sum, item) => sum + Number(item.amount), 0) : 0;
       
@@ -215,7 +247,7 @@
       let netBalance = profit - withdrawn;
       document.getElementById("approvedBalance").innerText = Math.max(0, netBalance).toLocaleString();
 
-      // Referrals count
+      // Referrals Count
       const { data: refs } = await db.from("profiles").select("id").eq("referred_by", user.id);
       if (refs && refs.length > 0) {
         document.getElementById("refCountText").innerText = `${refs.length} user(s) registered using your link.`;
@@ -256,22 +288,21 @@
         const fileName = `${user.id}_${Date.now()}.${fileExt}`;
         const filePath = `slips/${fileName}`;
 
-        // 1. Upload File to Supabase Bucket 'slips'
+        // Upload File to Supabase Storage Bucket 'slips'
         const { data: uploadData, error: uploadError } = await db.storage
           .from("slips")
           .upload(filePath, file);
 
         let publicUrl = "";
         if (uploadError) {
-          // Fallback if Storage Bucket setup issue
-          console.warn("Storage upload failed, fallback:", uploadError.message);
+          console.warn("Storage upload fallback:", uploadError.message);
           publicUrl = "Uploaded via File (" + file.name + ")";
         } else {
           const { data: urlData } = db.storage.from("slips").getPublicUrl(filePath);
           publicUrl = urlData.publicUrl;
         }
 
-        // 2. Insert into investments table
+        // Save into investments table
         const { error: dbError } = await db.from("investments").insert([{
           investor_id: user.id,
           amount: amount,
@@ -282,7 +313,7 @@
 
         if (dbError) throw dbError;
 
-        alert("سلپ اور Transaction ID کامیابی سے محفوظ ہو گئے ہیں!");
+        alert("سلپ اور Transaction ID کامیابی سے جمع ہو گئے ہیں!");
         closeDepositModal();
         location.reload();
 
@@ -291,6 +322,28 @@
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerText = "Submit Slip Request";
+      }
+    }
+
+    async function submitWithdrawal() {
+      const db = getSupabase();
+      const { data: { user } } = await db.auth.getUser();
+      const amount = Number(document.getElementById("wAmount").value);
+      const method = document.getElementById("wMethod").value;
+      const title = document.getElementById("wTitle").value.trim();
+      const number = document.getElementById("wNumber").value.trim();
+
+      if (amount < 100 || amount > 10000) return alert("ودڈرال Rs 100 سے Rs 10,000 کے درمیان ہونا چاہیے۔");
+      if (!title || !number) return alert("تمام معلومات فراہم کریں۔");
+
+      const { error } = await db.from("withdrawal_requests").insert([{
+        investor_id: user.id, payment_method: method, account_title: title, account_number: number, amount, status: "pending"
+      }]);
+
+      if (error) alert(error.message);
+      else {
+        alert("ودڈرال کی درخواست بھیج دی گئی ہے!");
+        location.reload();
       }
     }
 
