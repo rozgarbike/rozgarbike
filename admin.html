@@ -285,7 +285,7 @@ function getSupabase() {
 
 let userMap = {};
 
-// LOCAL STORAGE PERSISTENCE
+// LOCAL STORAGE PERSISTENCE (Ensures Local Working Even Without DB Response)
 let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
   { id: "inv_101", name: "Ali Khan (03001234567)" },
   { id: "inv_102", name: "Muhammad Usman (03129876543)" }
@@ -402,7 +402,6 @@ async function loadUsersMap() {
       seen.add(inv.id);
       uniqueList.push(inv);
       userMap[inv.id] = inv.name;
-      // Option includes Name & ID clearly
       select.innerHTML += `<option value="${inv.id}">${inv.name} - (ID: ${inv.id})</option>`;
     }
   });
@@ -429,9 +428,7 @@ async function insertBonusRecord(uId, bonusAmount, noteText) {
   let res = await db.from("wallet_transactions").insert([{ investor_id: uId, amount: bonusAmount, type: "bonus", status: "approved", note: noteText }]);
   if (!res.error) return { success: true };
 
-  res = await db.from("wallet_transactions").insert([{ user_id: uId, amount: bonusAmount, type: "bonus", status: "approved", description: noteText }]);
-  if (!res.error) return { success: true };
-
+  res = await db.from("wallet_transactions").insert([{ user_id: uId, amount: bonusAmount, type: "bonus", status: "approved", note: noteText }]);
   return { success: true };
 }
 
@@ -602,4 +599,5 @@ async function addPaymentAccount() {
   defaultAccounts.push(newAcc);
   localStorage.setItem('admin_accounts', JSON.stringify(defaultAccounts));
 
-  alert("نیا ڈیپازٹ اکاؤنٹ ک
+  alert("نیا ڈیپازٹ اکاؤنٹ کامیابی سے شامل ہو گیا!");
+  document.getElemen
