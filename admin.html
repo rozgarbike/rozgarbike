@@ -65,7 +65,7 @@
 
     <!-- ACTIVE CAMPAIGNS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS (PERCENTAGE PROFIT & BONUS)</div>
-    <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">No active campaigns.</div>
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">Fetching campaigns...</div>
 
     <!-- CLOSED CAMPAIGNS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">CLOSED CAMPAIGNS</div>
@@ -142,13 +142,13 @@
     async function loadPending() {
       const listEl = document.getElementById("pendingList");
       try {
-        const { data: pending, error } = await supabaseClient
+        const { data: pending } = await supabaseClient
           .from("deposits")
           .select("*, profiles(email)")
           .eq("status", "pending")
           .order("created_at", { ascending: true });
 
-        if (error || !pending || !pending.length) {
+        if (!pending || !pending.length) {
           listEl.innerHTML = `<p class="muted">No pending deposits.</p>`;
           return;
         }
@@ -175,13 +175,13 @@
     async function loadWithdrawals() {
       const listEl = document.getElementById("withdrawList");
       try {
-        const { data: reqs, error } = await supabaseClient
+        const { data: reqs } = await supabaseClient
           .from("withdrawal_requests")
           .select("*, profiles(email)")
           .eq("status", "pending")
           .order("created_at", { ascending: true });
 
-        if (error || !reqs || !reqs.length) {
+        if (!reqs || !reqs.length) {
           listEl.innerHTML = `<p class="muted">No withdrawal requests right now.</p>`;
           return;
         }
@@ -208,8 +208,8 @@
     async function loadReferrals() {
       const listEl = document.getElementById("referralsList");
       try {
-        const { data: refs, error } = await supabaseClient.from("referrals").select("*, referrer:referrer_id(email), referred:referred_id(email)");
-        if (error || !refs || !refs.length) {
+        const { data: refs } = await supabaseClient.from("referrals").select("*, referrer:referrer_id(email), referred:referred_id(email)");
+        if (!refs || !refs.length) {
           listEl.innerHTML = `<p class="muted">No referrals yet.</p>`;
           return;
         }
@@ -228,8 +228,8 @@
     async function loadMethods() {
       const listEl = document.getElementById("methodsList");
       try {
-        const { data: methods, error } = await supabaseClient.from("payment_methods").select("*");
-        if (error || !methods || !methods.length) {
+        const { data: methods } = await supabaseClient.from("payment_methods").select("*");
+        if (!methods || !methods.length) {
           listEl.innerHTML = `<p class="muted">No payment methods found.</p>`;
           return;
         }
@@ -250,15 +250,30 @@
       }
     }
 
+    async function createCampaign() {
+      const name = document.getElementById("newName").value.trim();
+      const target = Number(document.getElementById("newTarget").value || 0);
+      const margin = Number(document.getElementById("newMargin").value || 0);
+      if (!name) return toast("Name is required");
+
+      await supabaseClient.from("campaigns").insert({ name, target, margin, status: "active" });
+      toast("Campaign created");
+      document.getElementById("newName").value = "";
+      document.getElementById("newTarget").value = "";
+      document.getElementById("newMargin").value = "";
+      await loadCampaigns();
+    }
+
     async function loadCampaigns() {
       const activeEl = document.getElementById("campaignsList");
       const closedEl = document.getElementById("closedList");
 
       try {
+        // Fetch ALL campaigns regardless of exact string status casing
         const { data: campaigns, error } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
 
         if (error || !campaigns || campaigns.length === 0) {
-          activeEl.innerHTML = `<p class="muted">No active campaigns.</p>`;
+          activeEl.innerHTML = `<p class="muted">No active campaigns found in database.</p>`;
           closedEl.innerHTML = `<p class="muted">No closed campaigns.</p>`;
           return;
         }
@@ -268,41 +283,51 @@
 
         for (const c of campaigns) {
           const { data: investors } = await supabaseClient.from("investments").select("*, profiles(email)").eq("campaign_id", c.id);
-          const isClosed = c.status === "complete" || c.status === "closed";
+          const st = (c.status || '').toLowerCase();
+          const isClosed = st === "complete" || st === "closed";
           const totalPool = (investors || []).reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
 
           const div = document.createElement("div");
           div.className = "card";
+          div.style.border = "1px solid #cbd5e1";
+          div.style.marginBottom = "12px";
           div.innerHTML = `
-            <div style="font-weight:800;font-size:16px;">${c.name}</div>
-            <div class="muted">Target: ${pkr(c.target)} | Total Raised: ${pkr(totalPool)}</div>
+            <div style="font-weight:800;font-size:16px;color:var(--brand);">${c.name}
+              <span class="muted" style="font-weight:400;font-size:12px;"> ${isClosed ? "· CLOSED" : "· ACTIVE"}</span>
+            </div>
+            <div class="muted" style="margin-top:2px;">Target: ${pkr(c.target)} | Total Raised: ${pkr(totalPool)}</div>
 
             ${!isClosed ? `
-            <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:10px;">
+            <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:10px;border:1px solid #e2e8f0;">
               <div style="font-size:12px;font-weight:700;margin-bottom:6px;">🏍️ DISTRIBUTE PROFIT BY SHARE %</div>
-              <input id="sim-${c.id}" type="number" placeholder="Enter Total Profit (Rs)" style="width:100%;margin-bottom:8px;padding:8px;" />
+              <input id="sim-${c.id}" type="number" placeholder="Enter Total Profit Amount (Rs)" style="width:100%;margin-bottom:8px;padding:8px;" />
               <button class="btn btn-dark" style="width:100%;font-size:12px;" onclick="distributeProportional('${c.id}', ${totalPool})">Distribute Profit</button>
             </div>
             ` : ""}
 
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
-              ${(investors || []).map(inv => `
-                <div style="font-size:12px;padding:8px;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;">
+              <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Joined Investors (${(investors || []).length}):</div>
+              ${(investors && investors.length > 0) ? investors.map(inv => `
+                <div style="font-size:12px;padding:8px;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
                   <div>
-                    <div><b>${inv.profiles?.email || 'User'}</b></div>
-                    <div style="color:var(--brand);font-weight:700;">Earned Profit: ${pkr(inv.profit_earned || 0)}</div>
+                    <div style="font-weight:700;">${inv.profiles?.email || 'User: ' + inv.user_id.substring(0,8)}</div>
+                    <div style="color:var(--brand);font-weight:700;font-size:11px;">Earned Profit: ${pkr(inv.profit_earned || 0)}</div>
                   </div>
                   <b>Inv: ${pkr(inv.amount)}</b>
                 </div>
-              `).join("")}
+              `).join("") : '<div class="muted" style="font-size:12px;">No investors joined this campaign yet.</div>'}
             </div>
           `;
 
-          (isClosed ? closedEl : activeEl).appendChild(div);
+          if (isClosed) {
+            closedEl.appendChild(div);
+          } else {
+            activeEl.appendChild(div);
+          }
         }
       } catch(e) {
-        activeEl.innerHTML = `<p class="muted">No active campaigns.</p>`;
-        closedEl.innerHTML = `<p class="muted">No closed campaigns.</p>`;
+        console.error(e);
+        activeEl.innerHTML = `<p class="muted">Error loading campaigns.</p>`;
       }
     }
 
