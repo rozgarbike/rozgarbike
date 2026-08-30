@@ -1,242 +1,138 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RozgarBike — Ghar Baithay Hissedar Banein</title>
-<link rel="stylesheet" href="assets/style.css" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js"></script>
+<!-- Google Urdu Font link (Head section mein lagane ke liye) -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 
-<!-- Google AdSense Script -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
-</head>
-<body>
-  <div class="header">
-    <div class="header-row">
-      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <div id="userHeaderBtn">
-        <span class="muted" style="font-size:12px;color:#fff;">Not logged in</span>
-      </div>
+<style>
+  .urdu-poster-card {
+    background: #f8fafc;
+    border: 2px solid #0f3932;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+    direction: rtl;
+    text-align: center;
+    font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, sans-serif;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+
+  .poster-header {
+    background: linear-gradient(135deg, #0f3932 0%, #1e5e52 100%);
+    color: #ffffff;
+    padding: 18px 12px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  .poster-header h2 {
+    margin: 0 0 6px 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: #00ffaa;
+  }
+
+  .poster-header p {
+    margin: 0;
+    font-size: 15px;
+    opacity: 0.95;
+    line-height: 1.8;
+  }
+
+  .poster-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .poster-box {
+    flex: 1 1 45%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+
+  .box-label {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .box-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f3932;
+    direction: ltr;
+  }
+
+  .profit-highlight {
+    background: #dcfce7;
+    border: 1px dashed #16a34a;
+  }
+
+  .profit-highlight .box-value {
+    color: #15803d;
+  }
+
+  .poster-features {
+    display: flex;
+    justify-content: space-around;
+    background: #0f3932;
+    color: #fff;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .poster-footer-btn {
+    background: #25d366;
+    color: #ffffff;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    text-decoration: none;
+    display: block;
+    box-shadow: 0 4px 10px rgba(37,211,102,0.3);
+  }
+</style>
+
+<!-- MAIN POSTER BANNER -->
+<div class="urdu-poster-card">
+  
+  <!-- Header Title -->
+  <div class="poster-header">
+    <h2>تجارتی بائیک فلیٹ پارٹنرشپ</h2>
+    <p>90 دن کے فعال بزنس سائیکل کا حصہ بنیں</p>
+  </div>
+
+  <!-- Investment & Profit Details -->
+  <div class="poster-grid">
+    <div class="poster-box">
+      <div class="box-label">سرمایہ کاری (Flexi Unit)</div>
+      <div class="box-value">Rs 1,000 - 5,000</div>
     </div>
-    <div class="nav">
-      <a href="index.html" class="active">Bikes</a>
-      <a href="dashboard.html">My Dashboard</a>
-      <a href="admin.html">Admin</a>
+    
+    <div class="poster-box profit-highlight">
+      <div class="box-label">روزانہ کا منافع (Returns)</div>
+      <div class="box-value">Rs 50 - 350*</div>
+      <div style="font-size:10px; color:#166534; margin-top:2px;">(90 دن کی مسلسل پرفارمنس)</div>
     </div>
   </div>
 
-  <div class="wrap">
-    <!-- BANNER & URDU TEXT (UNTOUCHED) -->
-    <div class="card" style="margin-bottom:20px; background:#0f3932; color:#fff;">
-      <h2 style="margin:0 0 8px 0; font-size:20px;">Ghar baithay hissedar banein</h2>
-      <p style="margin:0 0 12px 0; font-size:13px; opacity:0.9;">Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.</p>
-      <p style="margin:0; font-size:12px; opacity:0.8;">1000 investment kry ya full bike khrdy or daily ka profit kamiy 1000 investment 50/60 daily ka profit ghr bhte ky abi humri team ka hissa bny</p>
-    </div>
-
-    <!-- TOP AD BANNER -->
-    <div class="card" style="margin-bottom:20px; text-align:center; padding:10px; background:#fff;">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-           data-ad-slot="1234567890"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
-    <!-- AUTH BOX (LOGIN / SIGNUP) -->
-    <div id="authBox" class="card" style="margin-bottom:24px;">
-      <div style="font-weight:800; font-size:14px; margin-bottom:12px;" id="authTitle">LOG IN</div>
-      
-      <input id="authEmail" type="email" placeholder="Email address" style="margin-bottom:8px; width:100%;" />
-      <input id="authPass" type="password" placeholder="Password" style="margin-bottom:12px; width:100%;" />
-      
-      <button id="authPrimaryBtn" class="btn btn-dark" style="width:100%; margin-bottom:10px;" onclick="handleAuth()">Log In</button>
-      
-      <div style="text-align:center; font-size:12px; color:var(--muted); margin-bottom:10px;">— or —</div>
-      
-      <button id="authToggleBtn" class="btn btn-outline" style="width:100%;" onclick="toggleAuthMode()">Create an account instead</button>
-      
-      <div style="margin-top:16px;">
-        <a href="#" class="btn btn-dark" style="width:100%; text-align:center; display:block; background:#114b3e; text-decoration:none;">📲 Download Android App (APK)</a>
-      </div>
-    </div>
-
-    <!-- CAMPAIGNS LIST (CONNECTED WITH ADMIN) -->
-    <div class="disp" style="font-size:16px; margin-bottom:12px;">AVAILABLE BIKES & CAMPAIGNS</div>
-    <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
-      <div class="card" style="text-align:center; padding:20px; color:var(--muted);">Loading bikes...</div>
-    </div>
-
-    <!-- BOTTOM AD BANNER -->
-    <div class="card" style="margin-bottom:20px; text-align:center; padding:10px; background:#fff;">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-           data-ad-slot="0987654321"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
+  <!-- Features List -->
+  <div class="poster-features">
+    <div>📊 شفاف ڈیش بورڈ</div>
+    <div>🗓 90 دن کا سائیکل</div>
+    <div>👥 بڑھتی برادری</div>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <!-- CTA Button -->
+  <a href="#authBox" class="poster-footer-btn">
+    📞 آج ہی رابطہ کریں اور اپنے کاروبار کا آغاز کریں!
+  </a>
 
-  <script>
-    let isSignUp = false;
-
-    function getDb() {
-      return window.supabaseClient || (typeof supabase !== 'undefined' ? supabase : null);
-    }
-
-    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
-
-    function toast(msg) {
-      const t = document.getElementById("toast");
-      if (t) {
-        t.textContent = msg;
-        t.className = "toast show";
-        setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
-      } else { alert(msg); }
-    }
-
-    function toggleAuthMode() {
-      isSignUp = !isSignUp;
-      document.getElementById("authTitle").textContent = isSignUp ? "CREATE AN ACCOUNT" : "LOG IN";
-      document.getElementById("authPrimaryBtn").textContent = isSignUp ? "Sign Up" : "Log In";
-      document.getElementById("authToggleBtn").textContent = isSignUp ? "Already have an account? Log In" : "Create an account instead";
-    }
-
-    async function checkUser() {
-      const db = getDb();
-      if (!db) return;
-      try {
-        const { data: { session } } = await db.auth.getSession();
-        if (session && session.user) {
-          document.getElementById("authBox").style.display = "none";
-          document.getElementById("userHeaderBtn").innerHTML = `
-            <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:4px 8px;font-size:11px;" onclick="logout()">Log out (${session.user.email.split('@')[0]})</button>
-          `;
-        }
-      } catch(e) {}
-    }
-
-    async function handleAuth() {
-      const db = getDb();
-      if (!db) return toast("Connecting to server, please wait...");
-
-      const email = document.getElementById("authEmail").value.trim();
-      const password = document.getElementById("authPass").value.trim();
-
-      if (!email || !password) return toast("Email and password required!");
-
-      try {
-        if (isSignUp) {
-          const { data, error } = await db.auth.signUp({ email, password });
-          if (error) throw error;
-          toast("Account created! Logging in...");
-          window.location.reload();
-        } else {
-          const { data, error } = await db.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-          toast("Logged in successfully!");
-          window.location.reload();
-        }
-      } catch (err) {
-        toast(err.message || "Auth error");
-      }
-    }
-
-    async function logout() {
-      const db = getDb();
-      try { if (db && db.auth) await db.auth.signOut(); } catch (e) {}
-      localStorage.clear();
-      window.location.reload();
-    }
-
-    async function loadCampaigns() {
-      const db = getDb();
-      const listEl = document.getElementById("campaignsList");
-
-      if (!db) {
-        setTimeout(loadCampaigns, 800);
-        return;
-      }
-
-      try {
-        // Fetch active campaigns added from Admin Panel
-        const { data: campaigns, error } = await db.from("campaigns")
-          .select("*")
-          .or('status.eq.active,status.is.null')
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          console.error("Fetch error:", error);
-          setTimeout(loadCampaigns, 1500);
-          return;
-        }
-
-        if (!campaigns || campaigns.length === 0) {
-          listEl.innerHTML = `<div class="card" style="text-align:center; padding:20px;">No active campaigns found.</div>`;
-          return;
-        }
-
-        listEl.innerHTML = "";
-
-        for (const c of campaigns) {
-          let raised = 0;
-          try {
-            const { data: invs } = await db.from("investments").select("amount").eq("campaign_id", c.id);
-            raised = (invs || []).reduce((sum, i) => sum + Number(i.amount || 0), 0);
-          } catch(e) {}
-
-          const target = Number(c.target || 0);
-          const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0;
-
-          const div = document.createElement("div");
-          div.className = "card";
-          div.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
-              <div>
-                <div style="font-weight:800; font-size:16px; color:var(--ink);">${c.name}</div>
-                <div class="muted" style="font-size:12px;">Delivery Partner · Verified</div>
-              </div>
-              <div style="width:36px; height:36px; border-radius:50%; border:3px solid #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;">
-                ${pct}%
-              </div>
-            </div>
-            
-            <div style="font-size:13px; font-weight:700; margin:8px 0 12px 0;">
-              ${pkr(raised)} <span class="muted" style="font-weight:400; font-size:12px;">raised of ${pkr(target)} target</span>
-            </div>
-
-            <button class="btn btn-dark" style="width:100%; background:var(--gold); color:#000; font-weight:700;" onclick="contribute('${c.id}')">Contribute</button>
-          `;
-          listEl.appendChild(div);
-        }
-      } catch (err) {
-        console.error("Load campaigns error:", err);
-        setTimeout(loadCampaigns, 1500);
-      }
-    }
-
-    async function contribute(campaignId) {
-      const db = getDb();
-      if (!db) return;
-      const { data: { session } } = await db.auth.getSession();
-      if (!session) {
-        toast("Please log in first to contribute!");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-      window.location.href = `dashboard.html?campaign=${campaignId}`;
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      checkUser();
-      loadCampaigns();
-    });
-  </script>
-</body>
-</html>
+</div>
