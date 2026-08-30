@@ -115,6 +115,18 @@ body{
   outline:none
 }
 
+.file-input{
+  width:100%;
+  padding:8px;
+  background:#374151;
+  border:1px dashed #e29d38;
+  color:#fff;
+  border-radius:6px;
+  margin-bottom:12px;
+  font-size:13px;
+  cursor:pointer;
+}
+
 .table-responsive{ overflow-x:auto }
 table{ width:100%; border-collapse:collapse; font-size:13px; text-align:left }
 th, td{ padding:10px; border-bottom:1px solid #374151; vertical-align:middle }
@@ -146,7 +158,7 @@ th{ background:#111827; color:#9ca3af }
     <button onclick="openWithdrawModal()" class="btn-action btn-withdraw">📤 Withdraw Funds</button>
   </div>
 
-  <!-- REFERRAL SYSTEM CARD (RESTORED) -->
+  <!-- REFERRAL SYSTEM CARD -->
   <div class="card">
     <div class="card-title">👥 Refer & Earn (ریفرل سسٹم)</div>
     <p style="font-size:13px;color:#9ca3af;margin-top:0;">اپنا ریفرل لنک کاپی کریں اور دوستوں کے ساتھ شیئر کر کے بونس کمائیں۔</p>
@@ -192,8 +204,8 @@ th{ background:#111827; color:#9ca3af }
     <label style="font-size:12px;color:#9ca3af">Transaction ID (Trx ID):</label>
     <input id="depTrx" class="input-box" placeholder="e.g. 8234910293">
 
-    <label style="font-size:12px;color:#9ca3af">Slip Image URL (Optional):</label>
-    <input id="depSlip" class="input-box" placeholder="https://...">
+    <label style="font-size:12px;color:#9ca3af">Upload Payment Receipt / Slip Image (Choose File):</label>
+    <input id="depFile" type="file" accept="image/*" class="file-input">
 
     <button onclick="submitDeposit()" class="btn-action btn-deposit" style="width:100%;margin-top:10px;">Submit Deposit</button>
   </div>
@@ -283,21 +295,43 @@ function closeWithdrawModal() {
   document.getElementById("withdrawModal").classList.remove("active");
 }
 
-// SUBMIT DEPOSIT
+// SUBMIT DEPOSIT (WITH FILE UPLOAD TO SUPABASE STORAGE)
 async function submitDeposit() {
   const db = getSupabase();
   const amount = document.getElementById("depAmount").value;
   const trx_id = document.getElementById("depTrx").value;
-  const slip_url = document.getElementById("depSlip").value;
+  const fileInput = document.getElementById("depFile");
 
   if(!amount || Number(amount) <= 0) return alert("برائے مہربانی درست رقم درج کریں۔");
   if(!trx_id) return alert("برائے مہربانی Trx ID درج کریں۔");
+
+  let uploadedSlipUrl = null;
+
+  // Image Upload Logic to Supabase Storage
+  if (fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `slips/${fileName}`;
+
+    const { data: uploadData, error: uploadError } = await db.storage
+      .from('deposit_slips')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      alert("تصویر اپلوڈ کرنے میں مسئلہ آیا: " + uploadError.message);
+      return;
+    }
+
+    const { data: urlData } = db.storage.from('deposit_slips').getPublicUrl(filePath);
+    uploadedSlipUrl = urlData.publicUrl;
+  }
 
   const payload = {
     investor_id: currentUserId,
     amount: Number(amount),
     trx_id: trx_id,
-    slip_url: slip_url || null,
+    slip_url: uploadedSlipUrl,
     status: "pending"
   };
 
@@ -306,11 +340,11 @@ async function submitDeposit() {
   if(error) {
     alert("ڈیپازٹ میں مسئلہ آیا: " + error.message);
   } else {
-    alert("ڈیپازٹ کی درخواست بھیج دی گئی ہے!");
+    alert("ڈیپازٹ کی درخواست کامیابی سے بھیج دی گئی ہے!");
     closeDepositModal();
     document.getElementById("depAmount").value = "";
     document.getElementById("depTrx").value = "";
-    document.getElementById("depSlip").value = "";
+    document.getElementById("depFile").value = "";
     loadUserData();
   }
 }
