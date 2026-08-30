@@ -8,7 +8,75 @@
 <link rel="manifest" href="manifest.json" />
 <meta name="theme-color" content="#123D3D" />
 <link rel="apple-touch-icon" href="assets/icon-192.png" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  /* Urdu Banner Styling */
+  .ad-banner-container {
+    background: linear-gradient(135deg, #0f3932 0%, #164e43 100%);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 16px;
+    margin: 12px 0 18px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    border: 1px solid #1e5e52;
+    text-align: center;
+    direction: rtl;
+    font-family: 'Noto Nastaliq Urdu', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .ad-banner-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 4px;
+    line-height: 1.8;
+  }
+  .ad-banner-subtitle {
+    font-size: 13px;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+  .ad-banner-box {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+  .ad-banner-amount {
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffffff;
+    direction: ltr;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .ad-banner-profit {
+    background: #16a34a;
+    color: #ffffff;
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 6px;
+    direction: ltr;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .ad-banner-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+  .ad-feature-item {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 4px;
+    border-radius: 6px;
+  }
+</style>
 </head>
 <body>
   <div class="header">
@@ -19,6 +87,24 @@
   </div>
 
   <div class="wrap">
+
+    <!-- URDU AD BANNER -->
+    <div class="ad-banner-container">
+      <div class="ad-banner-title">کم سرمایہ کاری، زیادہ منافع</div>
+      <div class="ad-banner-subtitle">آج سرمایہ لگائیں، کل بہتر زندگی پائیں</div>
+      
+      <div class="ad-banner-box">
+        <div class="ad-banner-amount">Rs 5,000 Investment</div>
+        <div class="ad-banner-profit">Daily Profit: Rs 300-350</div>
+      </div>
+
+      <div class="ad-banner-features">
+        <div class="ad-feature-item">🛡️ 100% محفوظ</div>
+        <div class="ad-feature-item">📈 بہتر مستقبل</div>
+        <div class="ad-feature-item">⏰ روزانہ منافع</div>
+      </div>
+    </div>
+
     <div class="disp" style="font-size:26px;line-height:1.2;color:var(--petrol);margin-bottom:6px;">
       Ghar baithay hissedar banein
     </div>
