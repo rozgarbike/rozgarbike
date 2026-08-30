@@ -6,347 +6,218 @@
 <title>Dashboard — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/config.js"></script>
+<style>
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:999; justify-content:center; align-items:center; }
+  .modal-content { background:#fff; padding:20px; border-radius:12px; width:90%; max-width:400px; box-shadow:0 4px 10px rgba(0,0,0,0.3); }
+  .btn-pay { width:100%; padding:10px; margin-top:8px; border-radius:8px; font-weight:bold; cursor:pointer; border:none; color:#fff; }
+  .btn-easypaisa { background:#00a859; }
+  .btn-jazzcash { background:#ff0000; }
+</style>
 </head>
-<body style="background-color: #f4f6f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0;">
+<body>
 
-  <!-- HEADER & NAVIGATION -->
-  <div style="background: #0f172a; color: #fff; padding: 15px 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; max-width: 600px; margin: 0 auto 10px auto;">
-      <div style="font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 6px;">
-        🚲 RozgarBike
+  <div class="header">
+    <div class="header-row">
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
+      <div id="authArea" style="font-size:13px; display:flex; align-items:center; gap:10px;">
+        <span id="userEmailLabel">User</span>
+        <button onclick="handleLogout()" style="background:rgba(255,255,255,0.2); border:1px solid #fff; color:#fff; padding:4px 8px; border-radius:6px; cursor:pointer;">Log out</button>
       </div>
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span id="userNameDisplay" style="font-size: 13px; color: #e2e8f0; font-weight: 700;">Loading...</span>
-        <button style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.3); padding: 5px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;" onclick="logout()">Log out</button>
-      </div>
-    </div>
-    <div style="display: flex; gap: 10px; justify-content: center; max-width: 600px; margin: 0 auto; flex-wrap: wrap;">
-      <a href="index.html" style="color: #94a3b8; text-decoration: none; font-size: 13px; font-weight: 600; padding: 4px 8px;">Bikes</a>
-      <a href="dashboard.html" style="color: #38bdf8; text-decoration: none; font-size: 13px; font-weight: 700; border-bottom: 2px solid #38bdf8; padding: 4px 8px;">My Dashboard</a>
-      <a href="admin.html" id="adminLink" style="display: none; background: #e11d48; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; text-decoration: none;">Admin Panel</a>
     </div>
   </div>
 
-  <div style="max-width: 600px; margin: 20px auto; padding: 0 15px;">
-    
-    <!-- WITHDRAWAL SECTION -->
-    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">WITHDRAWAL</div>
-    <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
-      <div style="font-size: 13px; color: #64748b; font-weight: 600;">Available for Withdrawal</div>
-      <div id="availAmount" style="font-size: 32px; font-weight: 900; margin: 8px 0 16px; color: #0f172a;">Rs 0</div>
-      <button style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
+  <div class="wrap">
+    <!-- NAVIGATION TABS -->
+    <div style="display:flex; gap:15px; margin-bottom:15px; border-bottom:1px solid #ccc; padding-bottom:8px;">
+      <a href="index.html" style="text-decoration:none; color:var(--petrol); font-weight:600;">Bikes</a>
+      <a href="dashboard.html" style="text-decoration:none; color:var(--petrol); font-weight:700; border-bottom:2px solid var(--petrol);">My Dashboard</a>
+      <a id="adminTabLink" href="admin.html" style="display:none; text-decoration:none; color:red; font-weight:700;">⚙️ Admin Panel</a>
     </div>
 
-    <!-- REFERRAL SECTION -->
-    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">🎁 REFERRAL & 10% EXTRA BONUS</div>
-    <div style="margin-bottom: 24px; background: #fff; border: 2px solid #3b82f6; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 18px;">
-      
-      <div id="bonusBox" style="padding: 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; font-weight: 800; text-align: center; background: #e0f2fe; color: #0369a1; border: 1px dashed #0284c7; line-height: 1.5;">
-        🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/>
-        <span style="font-size: 12px; font-weight: 600; color: #0369a1;">Aap ko 10% extra profit bonus haasil karne ke liye <span id="remCountText" style="color: #d97706; font-weight: 900;">10</span> doston ko invite karna hai!</span>
-      </div>
-
-      <div style="margin-bottom: 14px;">
-        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; margin-bottom: 6px; color: #334155;">
-          <span>Target Progress:</span>
-          <span id="refCount" style="color: #2563eb;">0 / 10 Joined</span>
+    <!-- BALANCE & DEPOSIT CARD -->
+    <div class="card" style="margin-bottom:15px;">
+      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase;">WALLET BALANCE</div>
+      <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span class="muted" style="font-size:12px;">Available Balance</span>
+          <div id="availBalance" class="disp" style="font-size:28px; color:var(--petrol); margin:4px 0;">Rs 0</div>
         </div>
-        <div style="width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; overflow: hidden;">
-          <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #16a34a); transition: width 0.4s ease;"></div>
-        </div>
+        <button class="btn btn-primary" onclick="openDepositModal()" style="padding:8px 16px;">+ Deposit</button>
       </div>
-
-      <div style="margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #1e293b;">📋 Aap Ka Unique Referral Link:</div>
-      <div style="display: flex; gap: 8px; margin-bottom: 16px;">
-        <input id="refLinkInput" readonly style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12px; background: #f8fafc; font-weight: 600; color: #0f172a;" />
-        <button style="background: #16a34a; color: #fff; border: none; font-weight: 800; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 12px;" onclick="copyRefLink()">🔗 Copy Link</button>
-      </div>
-
-      <div style="font-weight: 800; font-size: 13px; margin-bottom: 10px; border-top: 1px solid #e2e8f0; padding-top: 12px; color: #1e293b;">
-        👥 Aap Ke Link Se Join Hone Wale Log:
-      </div>
-      <div id="referredUsersList" style="display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto;">
-        <p style="font-size: 12px; color: #64748b; margin: 0;">Data load ho raha hai...</p>
-      </div>
-
+      <hr style="margin:12px 0; border:0; border-top:1px solid #eee;" />
+      <button class="btn" style="width:100%; background:#333; color:#fff;" onclick="requestWithdrawal()">Request Withdrawal</button>
     </div>
 
-    <!-- DEPOSIT / INVEST SECTION -->
-    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">INVEST IN ROZGARBIKE</div>
-    <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Select a bike campaign:</div>
-      <select id="campaignSelect" style="width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; background: #fff;"></select>
-      
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Investment Amount (Min Rs 1,000)</div>
-      <input id="investAmount" type="number" placeholder="e.g. 1000" style="margin-bottom: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
-      
-      <button style="width: 100%; background: #eab308; color: #000; border: none; font-weight: 800; padding: 12px; border-radius: 8px; font-size: 14px; cursor: pointer;" onclick="startInvestment()">Continue to Payment</button>
-    </div>
-
-    <!-- PAYMENT DETAILS INSTRUCTION -->
-    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">SEND YOUR PAYMENT</div>
-    <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 8px; font-weight: 600;">Transfer amount to any payment method below:</div>
-      <div id="methodsDisplay" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-        <p style="font-size: 12px; color: #64748b; margin: 0;">Accounts loading...</p>
+    <!-- REFERRAL & 10% EXTRA BONUS CARD -->
+    <div class="card" style="margin-bottom:15px; border:2px solid #2196F3; background:#f4f9ff;">
+      <div class="disp" style="font-size:15px; color:#1976D2;">🎁 REFERRAL & 10% EXTRA BONUS</div>
+      <div style="background:#e3f2fd; padding:10px; border-radius:8px; margin:10px 0; font-size:13px; text-align:center; color:#0d47a1;">
+        🚀 <b>10% Extra Bonus Unlocked Karein!</b><br>
+        10 doston ko invite karke 10% extra profit bonus haasil karein!
       </div>
       
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Enter Transaction ID / Sender Number:</div>
-      <input id="trxInput" placeholder="e.g. 03245380453 or TRX12345" style="margin-bottom: 12px; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
+      <div style="font-size:12px; font-weight:700; margin-bottom:4px;">
+        Target Progress: <span id="refCountText">0 / 10 Joined</span>
+      </div>
+      <div style="width:100%; background:#ddd; height:10px; border-radius:5px; overflow:hidden; margin-bottom:12px;">
+        <div id="refProgressBar" style="width:0%; background:#2196F3; height:100%; transition: width 0.3s;"></div>
+      </div>
 
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Upload Payment Receipt Photo (Optional):</div>
-      <input id="receiptFileInput" type="file" accept="image/*" style="margin-bottom: 16px; width: 100%; font-size: 12px;" />
+      <div style="font-size:12px; font-weight:700; margin-bottom:4px;">📋 Unique Referral Link:</div>
+      <div style="display:flex; gap:6px;">
+        <input id="refLinkInput" readonly style="flex:1; padding:8px; border:1px solid #ccc; border-radius:6px; font-size:12px;" value="Loading..." />
+        <button class="btn btn-primary" style="background:#4CAF50; border:none;" onclick="copyRefLink()">Copy Link</button>
+      </div>
 
-      <button id="submitBtn" style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="submitTrx()">Submit Payment Details</button>
+      <div style="margin-top:15px;">
+        <div style="font-size:13px; font-weight:700; margin-bottom:6px;">👥 Referred Users:</div>
+        <div id="refUsersList" style="font-size:12px; color:#555;">Data load ho raha hai...</div>
+      </div>
     </div>
 
     <!-- MY INVESTMENTS LIST -->
-    <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">MY INVESTMENTS</div>
-    <div id="myInvestments" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
-      <p style="font-size: 12px; color: #64748b; margin: 0;">Loading...</p>
+    <div class="card">
+      <div class="muted" style="font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:10px;">MY ACTIVE INVESTMENTS</div>
+      <div id="myInvestmentsList" style="font-size:13px;" class="muted">Loading investments...</div>
     </div>
-
   </div>
 
-  <!-- WITHDRAW MODAL -->
-  <div id="withdrawModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="width: 90%; max-width: 400px; background: #fff; padding: 20px; border-radius: 12px; position: relative;">
-      <div style="font-weight: 800; font-size: 18px; margin-bottom: 12px; color: #0f172a;">Request Withdrawal</div>
+  <!-- DEPOSIT PAYMENT MODAL -->
+  <div id="depositModal" class="modal">
+    <div class="modal-content">
+      <h3 style="margin-top:0;">Deposit Funds</h3>
+      <p style="font-size:13px; color:#666;">Payment Method Select Karein:</p>
       
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Select Payment Method:</div>
-      <select id="wMethod" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px;">
-        <option value="JazzCash">JazzCash</option>
-        <option value="EasyPaisa">EasyPaisa</option>
-        <option value="Bank Transfer">Bank Transfer</option>
-      </select>
-
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Account Title / Name:</div>
-      <input id="wTitle" placeholder="e.g. Ali Khan" style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
-
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Account / Phone Number:</div>
-      <input id="wNumber" placeholder="e.g. 03001234567" style="margin-bottom: 10px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
-
-      <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Withdrawal Amount (Rs 100 - Rs 10,000):</div>
-      <input id="wAmount" type="number" placeholder="Min 100, Max 10000" style="margin-bottom: 14px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; box-sizing: border-box;" />
-
-      <div style="display: flex; gap: 10px;">
-        <button id="wSubmitBtn" style="flex: 1; background: #0f172a; color: #fff; padding: 10px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer;" onclick="submitWithdrawal()">Submit</button>
-        <button style="flex: 1; background: #fff; color: #64748b; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: 700; cursor: pointer;" onclick="closeWithdrawModal()">Cancel</button>
+      <div style="background:#f9f9f9; padding:10px; border-radius:8px; margin-bottom:10px; font-size:13px;">
+        <b>Easypaisa Account:</b> 03001234567<br>
+        <b>Jazzcash Account:</b> 03007654321<br>
+        <b>Account Title:</b> RozgarBike Official
       </div>
+
+      <input type="number" id="depositAmount" placeholder="Amount (e.g. 5000)" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px;" />
+      <input type="text" id="trxIdInput" placeholder="Transaction ID (TID)" style="width:100%; padding:8px; margin-bottom:10px; border:1px solid #ccc; border-radius:6px;" />
+
+      <button class="btn-pay btn-easypaisa" onclick="submitDeposit('Easypaisa')">Submit Easypaisa Payment</button>
+      <button class="btn-pay btn-jazzcash" onclick="submitDeposit('JazzCash')">Submit JazzCash Payment</button>
+      <button onclick="closeDepositModal()" style="width:100%; padding:8px; margin-top:8px; background:none; border:none; color:#666; cursor:pointer;">Cancel</button>
     </div>
   </div>
 
+  <div id="toast" class="toast"></div>
+
+  <script src="assets/config.js"></script>
   <script>
-    let currentBalance = 0;
-    let selectedCampaignId = null;
     let currentUser = null;
 
-    const ADMIN_EMAIL = "saimpk5227@gmail.com";
+    async function initDashboard() {
+      if (typeof supabaseClient === 'undefined') return;
+      
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "index.html";
+        return;
+      }
 
-    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString(); }
-    function toast(msg) { alert(msg); }
+      currentUser = session.user;
+      document.getElementById("userEmailLabel").textContent = currentUser.email;
 
-    function logout() {
-      try { supabaseClient.auth.signOut(); } catch(e){}
-      localStorage.clear();
-      window.location.href = "index.html";
+      // Check Profile & Admin Role
+      const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", currentUser.id).single();
+      if (profile) {
+        if (profile.role === 'admin') {
+          document.getElementById("adminTabLink").style.display = "inline-block";
+        }
+        document.getElementById("availBalance").textContent = "Rs " + Number(profile.balance || 0).toLocaleString();
+        
+        const refCode = profile.referral_code || currentUser.id.substring(0, 8);
+        const refUrl = window.location.origin + window.location.pathname.replace("dashboard.html", "index.html") + "?ref=" + refCode;
+        document.getElementById("refLinkInput").value = refUrl;
+      }
+
+      await loadReferrals();
+      await loadInvestments();
     }
 
-    function openWithdrawModal() {
-      document.getElementById("wAmount").value = (currentBalance >= 100 && currentBalance <= 10000) ? currentBalance : "";
-      document.getElementById("withdrawModal").style.display = "flex";
-    }
+    async function loadReferrals() {
+      const { data: refs } = await supabaseClient.from("referrals").select("*").eq("referrer_id", currentUser.id);
+      const listEl = document.getElementById("refUsersList");
+      const count = refs ? refs.length : 0;
+      
+      document.getElementById("refCountText").textContent = `${count} / 10 Joined`;
+      const pct = Math.min((count / 10) * 100, 100);
+      document.getElementById("refProgressBar").style.width = pct + "%";
 
-    function closeWithdrawModal() {
-      document.getElementById("withdrawModal").style.display = "none";
-    }
-
-    async function init() {
-      try {
-        if (typeof supabaseClient === 'undefined') {
-          document.getElementById("userNameDisplay").textContent = "Config Missing";
-          return;
-        }
-
-        // Fetch User Session Safely
-        const sessionRes = await supabaseClient.auth.getSession();
-        currentUser = sessionRes?.data?.session?.user;
-
-        if (!currentUser) {
-          const userRes = await supabaseClient.auth.getUser();
-          currentUser = userRes?.data?.user;
-        }
-
-        if (!currentUser) {
-          // Fallback check from localStorage
-          const localUser = localStorage.getItem("sb-user") || localStorage.getItem("user");
-          if(localUser) {
-            try { currentUser = JSON.parse(localUser); } catch(e){}
-          }
-        }
-
-        if (!currentUser) {
-          window.location.href = "index.html";
-          return;
-        }
-
-        // Set Display Name
-        let emailStr = currentUser.email || "user@gmail.com";
-        let displayName = emailStr.split('@')[0];
-        document.getElementById("userNameDisplay").textContent = "👤 " + displayName;
-
-        // SHOW ADMIN LINK
-        if (emailStr.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-          document.getElementById("adminLink").style.display = "inline-block";
-        }
-
-        // Set Referral Link
-        const base = window.location.href.split('dashboard.html')[0];
-        document.getElementById("refLinkInput").value = base + "index.html?ref=" + encodeURIComponent(displayName);
-
-        // Load modules asynchronously
-        setTimeout(loadPaymentMethods, 10);
-        setTimeout(loadCampaignsSelect, 20);
-        setTimeout(loadInvestmentsAndBalance, 30);
-        setTimeout(loadReferralData, 40);
-
-      } catch(err) {
-        console.error("Init Error:", err);
+      if (!refs || refs.length === 0) {
+        listEl.innerHTML = "Abhi tak kisi ne aap ke link se join nahi kiya.";
+      } else {
+        listEl.innerHTML = `<p style="color:green; font-weight:bold;">Total Referred: ${count} Members</p>`;
       }
     }
 
-    async function loadReferralData() {
-      const listContainer = document.getElementById("referredUsersList");
-      try {
-        const { data: list } = await supabaseClient
-          .from("profiles")
-          .select("email, created_at")
-          .eq("referred_by", currentUser.id)
-          .order("created_at", { ascending: false });
+    async function loadInvestments() {
+      const { data: invs } = await supabaseClient.from("investments").select("*, campaigns(name)").eq("user_id", currentUser.id);
+      const el = document.getElementById("myInvestmentsList");
+      if (!invs || invs.length === 0) {
+        el.innerHTML = "Aap ki koi active investment nahi hai.";
+      } else {
+        el.innerHTML = invs.map(i => `
+          <div style="padding:8px 0; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+            <span><b>${i.campaigns ? i.campaigns.name : 'Bike Investment'}</b></span>
+            <span>Rs ${Number(i.amount).toLocaleString()} (${i.status})</span>
+          </div>
+        `).join("");
+      }
+    }
 
-        let claimedMilestones = 0;
-        try {
-          const { data: bonusData } = await supabaseClient
-            .from("referral_bonuses")
-            .select("*")
-            .eq("user_id", currentUser.id);
-          claimedMilestones = bonusData ? bonusData.length : 0;
-        } catch(e){}
+    function openDepositModal() { document.getElementById("depositModal").style.display = "flex"; }
+    function closeDepositModal() { document.getElementById("depositModal").style.display = "none"; }
 
-        const totalRef = list ? list.length : 0;
-        const count = Math.max(0, totalRef - (claimedMilestones * 10));
+    async function submitDeposit(method) {
+      const amount = document.getElementById("depositAmount").value;
+      const trxId = document.getElementById("trxIdInput").value;
+      if(!amount || !trxId) { alert("Please enter amount and Transaction ID!"); return; }
 
-        document.getElementById("refCount").textContent = `${Math.min(count, 10)} / 10 Joined`;
-        document.getElementById("progressBar").style.width = Math.min(100, (count / 10) * 100) + "%";
+      const { error } = await supabaseClient.from("deposits").insert([{
+        user_id: currentUser.id,
+        amount: parseFloat(amount),
+        method: method,
+        trx_id: trxId,
+        status: "pending"
+      }]);
 
-        const bonusBox = document.getElementById("bonusBox");
-        if (count >= 10) {
-          bonusBox.style.background = "#fef3c7";
-          bonusBox.style.color = "#b45309";
-          bonusBox.style.borderColor = "#f59e0b";
-          bonusBox.innerHTML = `🎉 <strong>10 Referrals Completed!</strong><br/><span style="font-size:12px;">Bonus verification ke liye Admin panel ko bhej diya gaya hai!</span>`;
-        } else {
-          const remaining = 10 - count;
-          bonusBox.style.background = "#e0f2fe";
-          bonusBox.style.color = "#0369a1";
-          bonusBox.style.borderColor = "#0284c7";
-          bonusBox.innerHTML = `🚀 <strong>10% Extra Bonus Unlocked Karein!</strong><br/><span style="font-size:12px;">Aap ko 10% profit bonus ke liye sirf <strong style="color:#d97706;">${remaining}</strong> aur doston ko invite karna hai!</span>`;
-        }
-
-        if (list && list.length > 0) {
-          listContainer.innerHTML = list.map((item, index) => {
-            const parts = (item.email || "user@gmail.com").split('@');
-            const maskedEmail = parts[0].substring(0, 3) + "***@" + (parts[1] || "gmail.com");
-            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Recent';
-            return `
-              <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:8px 10px;border-radius:6px;border:1px solid #cbd5e1;font-size:12px;">
-                <span><strong>#${index + 1}</strong> ${maskedEmail}</span>
-                <span style="color:#64748b;">${dateStr}</span>
-              </div>
-            `;
-          }).join('');
-        } else {
-          listContainer.innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;padding:10px;background:#f8fafc;border-radius:6px;border:1px dashed #cbd5e1;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
-        }
-      } catch(e) {
-        listContainer.innerHTML = `<p style="font-size:12px;color:#64748b;text-align:center;margin:0;">Abhi tak koi referral link se join nahi hua.</p>`;
+      if(error) {
+        alert("Deposit failed: " + error.message);
+      } else {
+        toast("Deposit Request Submitted! Pending Approval.");
+        closeDepositModal();
       }
     }
 
     function copyRefLink() {
-      const copyText = document.getElementById("refLinkInput");
-      if(!copyText.value) return toast("Referral link loading...");
-      copyText.select();
-      copyText.setSelectionRange(0, 99999);
-      navigator.clipboard.writeText(copyText.value);
-      toast("Referral Link Copy ho gaya hai!");
+      const input = document.getElementById("refLinkInput");
+      input.select();
+      document.execCommand("copy");
+      toast("Referral Link Copied!");
     }
 
-    async function loadInvestmentsAndBalance() {
-      const container = document.getElementById("myInvestments");
-      try {
-        const { data: invs } = await supabaseClient
-          .from("investments")
-          .select("*, campaigns(name)")
-          .eq("investor_id", currentUser.id);
-
-        let totalReceived = 0;
-        if (invs && invs.length > 0) {
-          container.innerHTML = "";
-          invs.forEach(inv => {
-            totalReceived += Number(inv.received || 0);
-            const div = document.createElement("div");
-            div.style.cssText = "background:#fff;padding:14px;border-radius:10px;border:1px solid #e2e8f0;";
-            div.innerHTML = `
-              <div style="font-weight:700;font-size:15px;color:#0f172a;">${inv.campaigns?.name || "Bike Campaign"}</div>
-              <div style="font-size:12px;color:#64748b;margin-top:2px;">Amount: ${pkr(inv.amount)} | Received: ${pkr(inv.received)}</div>
-              <div style="margin-top:6px;font-size:12px;font-weight:800;color:${inv.status==='approved' || inv.status==='active'?'#16a34a':inv.status==='pending'?'#d97706':'#dc2626'};">
-                STATUS: ${(inv.status || 'pending').toUpperCase()}
-              </div>
-            `;
-            container.appendChild(div);
-          });
-        } else {
-          container.innerHTML = `<p style="font-size:13px;color:#64748b;margin:0;">Abhi tak koi investment nahi hai.</p>`;
-        }
-
-        let totalRequested = 0;
-        try {
-          const { data: withdrawals } = await supabaseClient
-            .from("withdrawal_requests")
-            .select("amount")
-            .eq("investor_id", currentUser.id)
-            .neq("status", "declined");
-
-          if (withdrawals && withdrawals.length > 0) {
-            withdrawals.forEach(w => totalRequested += Number(w.amount || 0));
-          }
-        } catch(e){}
-
-        currentBalance = Math.max(0, totalReceived - totalRequested);
-        document.getElementById("availAmount").textContent = pkr(currentBalance);
-      } catch(e) {
-        container.innerHTML = `<p style="font-size:13px;color:#64748b;margin:0;">Abhi tak koi investment nahi hai.</p>`;
-      }
+    async function handleLogout() {
+      await supabaseClient.auth.signOut();
+      window.location.href = "index.html";
     }
 
-    async function loadCampaignsSelect() {
-      const sel = document.getElementById("campaignSelect");
-      try {
-        const { data } = await supabaseClient.from("campaigns").select("*").eq("status", "active");
-        if (!data || !data.length) {
-          sel.innerHTML = `<option value="">Standard Bike Plan — Min Rs 1,000</option>`;
-          return;
-        }
-        sel.innerHTML = data.map(c => `<option value="${c.id}">${c.name} — Target: ${pkr(c.target)}</option>`).join('');
-      } catch(e) {
-        sel.innerHTML = `<option value="">Standard Bike Plan — Min Rs 1,000</option>`;
-      }
+    function requestWithdrawal() {
+      toast("Withdrawal System Admin review mein hai.");
     }
 
-    async function loadPaymentMethods() {
-      const display = document.getElementById("methodsDisplay");
-      try {
-        const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-        if 
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) { alert(msg); return; }
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 3000);
+    }
+
+    initDashboard();
+  </script>
+</body>
+</html>
