@@ -31,7 +31,7 @@ body{
 .logo-box{ background:#e29d38; padding:4px 8px; border-radius:6px; color:#000 }
 .btn-dash{ background:#e29d38; color:#000; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:bold; text-decoration:none }
 
-.container{ max-width:800px; margin:auto; padding:15px }
+.container{ max-width:850px; margin:auto; padding:15px }
 
 .card{
   background:#1f2937;
@@ -75,7 +75,7 @@ body{
 }
 
 .btn-act{
-  padding:8px 14px;
+  padding:6px 12px;
   border:0;
   border-radius:6px;
   font-weight:bold;
@@ -83,21 +83,19 @@ body{
   font-size:12px
 }
 .btn-primary{ background:#e29d38; color:#000 }
-.btn-approve{ background:#10b981; color:#fff }
+.btn-approve{ background:#10b981; color:#fff; margin-right:4px }
 .btn-reject{ background:#ef4444; color:#fff }
 .btn-delete{ background:#dc2626; color:#fff }
 
 .table-responsive{ overflow-x:auto }
 table{ width:100%; border-collapse:collapse; font-size:13px; text-align:left }
-th, td{ padding:10px; border-bottom:1px solid #374151 }
+th, td{ padding:10px; border-bottom:1px solid #374151; vertical-align:middle }
 th{ background:#111827; color:#9ca3af }
 
 .badge{ padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold }
 .badge-pending{ background:#f59e0b; color:#000 }
-.badge-approved{ background:#10b981; color:#fff }
-.badge-rejected{ background:#ef4444; color:#fff }
 
-.slip-link{ color:#38bdf8; text-decoration:underline; cursor:pointer }
+.slip-link{ color:#38bdf8; text-decoration:underline; font-weight:bold; cursor:pointer }
 </style>
 </head>
 
@@ -140,12 +138,12 @@ th{ background:#111827; color:#9ca3af }
     <label style="font-size:12px;color:#9ca3af">Bonus Note:</label>
     <input id="bonusNote" class="input-box" placeholder="مثلاً Special Bonus">
 
-    <button onclick="sendManualBonus()" class="btn-act btn-primary" style="width:100%">🎁 Send Bonus</button>
+    <button onclick="sendManualBonus()" class="btn-act btn-primary" style="width:100%;padding:10px">🎁 Send Bonus</button>
   </div>
 
-  <!-- DEPOSIT REQUESTS -->
+  <!-- PENDING DEPOSIT REQUESTS ONLY -->
   <div class="card">
-    <div class="card-title">📥 Deposit Requests & Verification</div>
+    <div class="card-title">📥 Pending Deposit Requests (پینڈنگ ڈیپازٹس)</div>
     <div class="table-responsive">
       <table>
         <thead>
@@ -165,9 +163,9 @@ th{ background:#111827; color:#9ca3af }
     </div>
   </div>
 
-  <!-- WITHDRAWAL REQUESTS -->
+  <!-- PENDING WITHDRAWAL REQUESTS ONLY -->
   <div class="card">
-    <div class="card-title">📤 Withdrawal Requests</div>
+    <div class="card-title">📤 Pending Withdrawal Requests (پینڈنگ ودڈرال)</div>
     <div class="table-responsive">
       <table>
         <thead>
@@ -270,7 +268,7 @@ async function initAdmin() {
   }
 }
 
-// Map Users with Real Names / Emails
+// Fetch Users for Dropdown & Names Mapping
 async function loadUsersMap(db) {
   const { data: profiles } = await db.from("profiles").select("id, full_name, email");
   const select = document.getElementById("bonusUserSelect");
@@ -285,20 +283,33 @@ async function loadUsersMap(db) {
   }
 }
 
-// 1. DEPOSIT REQUESTS
+// 1. DEPOSIT REQUESTS (Sirf Pending Show Honge)
 async function loadDeposits(db) {
   const tbody = document.getElementById("depositTableBody");
-  const { data } = await db.from("investments").select("*").order("created_at", { ascending: false });
   
+  const { data, error } = await db
+    .from("investments")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if(error) {
+    tbody.innerHTML = `<tr><td colspan="6">Error loading deposits.</td></tr>`;
+    return;
+  }
+
   if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6">No deposit requests found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ موجود نہیں ہے۔</td></tr>`;
     return;
   }
 
   tbody.innerHTML = data.map(d => {
-    const userName = userMap[d.investor_id || d.user_id] || "User";
-    const slipHtml = d.slip_url ? `<a href="${d.slip_url}" target="_blank" class="slip-link">View Slip</a>` : "No Slip";
-    const isPending = d.status === "pending";
+    const userName = userMap[d.investor_id || d.user_id] || "Investor";
+    
+    // Slip Check
+    const slipHtml = d.slip_url 
+      ? `<a href="${d.slip_url}" target="_blank" class="slip-link">👁️ View Slip</a>` 
+      : `<span style="color:#6b7280">No Slip</span>`;
 
     return `
       <tr>
@@ -306,12 +317,10 @@ async function loadDeposits(db) {
         <td>Rs ${Number(d.amount).toLocaleString()}</td>
         <td>${d.trx_id || '-'}</td>
         <td>${slipHtml}</td>
-        <td><span class="badge badge-${d.status}">${d.status}</span></td>
+        <td><span class="badge badge-pending">pending</span></td>
         <td>
-          ${isPending ? `
-            <button onclick="updateDepositStatus('${d.id}', 'approved')" class="btn-act btn-approve">Approve</button>
-            <button onclick="updateDepositStatus('${d.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
-          ` : '-'}
+          <button onclick="updateDepositStatus('${d.id}', 'approved')" class="btn-act btn-approve">Approve</button>
+          <button onclick="updateDepositStatus('${d.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
         </td>
       </tr>
     `;
@@ -325,24 +334,33 @@ async function updateDepositStatus(id, status) {
   const { error } = await db.from("investments").update({ status }).eq("id", id);
   if(error) alert("Error: " + error.message);
   else {
-    alert(`Deposit ${status} successfully.`);
-    loadDeposits(db);
+    alert(`Deposit ${status} successfully!`);
+    loadDeposits(db); // List refresh ho jayegi aur yeh item gayab ho jayega
   }
 }
 
-// 2. WITHDRAWAL REQUESTS
+// 2. WITHDRAWAL REQUESTS (Sirf Pending Show Honge)
 async function loadWithdrawals(db) {
   const tbody = document.getElementById("withdrawTableBody");
-  const { data } = await db.from("withdrawals").select("*").order("created_at", { ascending: false });
+  
+  const { data, error } = await db
+    .from("withdrawals")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if(error) {
+    tbody.innerHTML = `<tr><td colspan="6">Error loading withdrawals.</td></tr>`;
+    return;
+  }
 
   if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6">No withdrawal requests found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال موجود نہیں ہے۔</td></tr>`;
     return;
   }
 
   tbody.innerHTML = data.map(w => {
-    const userName = userMap[w.investor_id || w.user_id] || "User";
-    const isPending = w.status === "pending";
+    const userName = userMap[w.investor_id || w.user_id] || "Investor";
 
     return `
       <tr>
@@ -350,12 +368,10 @@ async function loadWithdrawals(db) {
         <td>Rs ${Number(w.amount).toLocaleString()}</td>
         <td>${w.payment_method || 'Method'}</td>
         <td>${w.account_title || ''}<br><small>${w.account_number || ''}</small></td>
-        <td><span class="badge badge-${w.status}">${w.status}</span></td>
+        <td><span class="badge badge-pending">pending</span></td>
         <td>
-          ${isPending ? `
-            <button onclick="updateWithdrawStatus('${w.id}', 'approved')" class="btn-act btn-approve">Approve</button>
-            <button onclick="updateWithdrawStatus('${w.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
-          ` : '-'}
+          <button onclick="updateWithdrawStatus('${w.id}', 'approved')" class="btn-act btn-approve">Approve</button>
+          <button onclick="updateWithdrawStatus('${w.id}', 'rejected')" class="btn-act btn-reject">Reject</button>
         </td>
       </tr>
     `;
@@ -369,8 +385,8 @@ async function updateWithdrawStatus(id, status) {
   const { error } = await db.from("withdrawals").update({ status }).eq("id", id);
   if(error) alert("Error: " + error.message);
   else {
-    alert(`Withdrawal ${status} successfully.`);
-    loadWithdrawals(db);
+    alert(`Withdrawal ${status} successfully!`);
+    loadWithdrawals(db); // Item gayab ho jayega
   }
 }
 
