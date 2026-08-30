@@ -30,7 +30,7 @@
 
   <div style="max-width: 600px; margin: 20px auto; padding: 0 15px;">
     
-    <!-- 1. WITHDRAWAL SECTION -->
+    <!-- WITHDRAWAL SECTION -->
     <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">WITHDRAWAL</div>
     <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
       <div style="font-size: 13px; color: #64748b; font-weight: 600;">Available for Withdrawal</div>
@@ -38,7 +38,7 @@
       <button style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="openWithdrawModal()">Request Withdrawal</button>
     </div>
 
-    <!-- 2. REFERRAL SECTION -->
+    <!-- REFERRAL SECTION -->
     <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">🎁 REFERRAL & 10% EXTRA BONUS</div>
     <div style="margin-bottom: 24px; background: #fff; border: 2px solid #3b82f6; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 18px;">
       
@@ -72,7 +72,7 @@
 
     </div>
 
-    <!-- 3. DEPOSIT / INVEST SECTION -->
+    <!-- DEPOSIT / INVEST SECTION -->
     <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">INVEST IN ROZGARBIKE</div>
     <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 24px;">
       <div style="font-size: 12px; color: #64748b; margin-bottom: 6px; font-weight: 600;">Select a bike campaign:</div>
@@ -101,7 +101,7 @@
       <button id="submitBtn" style="width: 100%; background: #0f172a; color: #fff; padding: 12px; border: none; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer;" onclick="submitTrx()">Submit Payment Details</button>
     </div>
 
-    <!-- 4. MY INVESTMENTS LIST -->
+    <!-- MY INVESTMENTS LIST -->
     <div style="font-size: 14px; font-weight: 800; color: #475569; margin-bottom: 8px; text-transform: uppercase;">MY INVESTMENTS</div>
     <div id="myInvestments" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
       <p style="font-size: 12px; color: #64748b; margin: 0;">Loading...</p>
@@ -163,20 +163,27 @@
     }
 
     async function init() {
-      console.log("Initializing Dashboard...");
       try {
         if (typeof supabaseClient === 'undefined') {
-          document.getElementById("userNameDisplay").textContent = "Config Error!";
-          alert("Error: assets/config.js file load nahi hui.");
+          document.getElementById("userNameDisplay").textContent = "Config Missing";
           return;
         }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        currentUser = session?.user;
+        // Fetch User Session Safely
+        const sessionRes = await supabaseClient.auth.getSession();
+        currentUser = sessionRes?.data?.session?.user;
 
         if (!currentUser) {
-          const res = await supabaseClient.auth.getUser();
-          currentUser = res?.data?.user;
+          const userRes = await supabaseClient.auth.getUser();
+          currentUser = userRes?.data?.user;
+        }
+
+        if (!currentUser) {
+          // Fallback check from localStorage
+          const localUser = localStorage.getItem("sb-user") || localStorage.getItem("user");
+          if(localUser) {
+            try { currentUser = JSON.parse(localUser); } catch(e){}
+          }
         }
 
         if (!currentUser) {
@@ -184,12 +191,13 @@
           return;
         }
 
-        // Set User Email / Name
-        let displayName = currentUser.email ? currentUser.email.split('@')[0] : "User";
+        // Set Display Name
+        let emailStr = currentUser.email || "user@gmail.com";
+        let displayName = emailStr.split('@')[0];
         document.getElementById("userNameDisplay").textContent = "👤 " + displayName;
 
         // SHOW ADMIN LINK
-        if (currentUser.email && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+        if (emailStr.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
           document.getElementById("adminLink").style.display = "inline-block";
         }
 
@@ -197,11 +205,11 @@
         const base = window.location.href.split('dashboard.html')[0];
         document.getElementById("refLinkInput").value = base + "index.html?ref=" + encodeURIComponent(displayName);
 
-        // Load details independently
-        loadPaymentMethods();
-        loadCampaignsSelect();
-        loadInvestmentsAndBalance();
-        loadReferralData();
+        // Load modules asynchronously
+        setTimeout(loadPaymentMethods, 10);
+        setTimeout(loadCampaignsSelect, 20);
+        setTimeout(loadInvestmentsAndBalance, 30);
+        setTimeout(loadReferralData, 40);
 
       } catch(err) {
         console.error("Init Error:", err);
@@ -227,8 +235,7 @@
         } catch(e){}
 
         const totalRef = list ? list.length : 0;
-        const currentBatchRef = totalRef - (claimedMilestones * 10);
-        const count = Math.max(0, currentBatchRef);
+        const count = Math.max(0, totalRef - (claimedMilestones * 10));
 
         document.getElementById("refCount").textContent = `${Math.min(count, 10)} / 10 Joined`;
         document.getElementById("progressBar").style.width = Math.min(100, (count / 10) * 100) + "%";
@@ -342,8 +349,4 @@
       const display = document.getElementById("methodsDisplay");
       try {
         const { data } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-        if (!data || !data.length) {
-          display.innerHTML = `<p style="font-size:12px;color:#64748b;margin:0;">Admin ne abhi tak koi payment method add nahi kiya.</p>`;
-          return;
-        }
-        display.i
+        if 
