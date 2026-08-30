@@ -19,7 +19,7 @@
   .btn-download-app { background: #22c55e; color: #fff; border: none; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px; cursor: pointer; }
   .btn-download-app:hover { background: #16a34a; }
 
-  .btn-nav { background: #1a564d; color: #fff; border: none; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; cursor: pointer; }
+  .btn-nav { background: #f59e0b; color: #000; border: none; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold; cursor: pointer; }
   .btn-logout { background: transparent; border: 1px solid #718096; color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
 
   .container { max-width: 500px; margin: 0 auto; padding: 15px; }
@@ -54,28 +54,24 @@
 </head>
 <body>
 
-  <!-- NAVBAR -->
   <div class="navbar">
     <div class="logo-area">
       <div class="logo-box">🚲</div>
       <span>RozgarBike</span>
     </div>
     <div class="nav-btns">
-      <!-- DOWNLOAD APP BUTTON -->
       <a href="RozgarBike.apk" download class="btn-download-app">
         <span>📲</span> App
       </a>
-      <a id="adminLink" href="admin.html" class="btn-nav" style="display:none; background:#f59e0b; color:#000;">Admin</a>
+      <a id="adminLink" href="admin.html" class="btn-nav" style="display:none;">Admin</a>
       <button onclick="handleLogout()" class="btn-logout">Log out</button>
     </div>
   </div>
 
   <div class="container">
     
-    <!-- WELCOME USER -->
     <div class="greeting">Welcome, <span id="userName">User</span></div>
 
-    <!-- APP DOWNLOAD PROMO CARD (OPTIONAL TOP BANNER) -->
     <div class="card" style="background: #e0f2fe; border: 1px solid #bae6fd; display: flex; align-items: center; justify-content: space-between; padding: 12px;">
       <div>
         <div style="font-weight: bold; color: #0369a1; font-size: 14px;">RozgarBike Mobile App</div>
@@ -86,7 +82,6 @@
       </a>
     </div>
 
-    <!-- 1. REFERRAL PROGRAM -->
     <div class="section-label">🎁 REFERRAL PROGRAM</div>
     <div class="card">
       <div style="font-size: 14px; margin-bottom: 8px;">Name: <strong id="displayName">Loading...</strong></div>
@@ -98,7 +93,6 @@
       <div id="refCountText" style="font-size: 13px; color: #64748b; margin-top: 2px;">No active referrals yet.</div>
     </div>
 
-    <!-- 2. WITHDRAWAL SECTION -->
     <div class="section-label">💰 WITHDRAWAL</div>
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
@@ -121,13 +115,11 @@
       <button id="toggleWithdrawBtn" class="btn-dark" onclick="toggleWithdraw()">Request Withdrawal</button>
     </div>
 
-    <!-- 3. DEPOSIT / FUND BIKE -->
     <div class="section-label">📥 DEPOSIT / FUND BIKE</div>
     <div class="card">
       <button class="btn-main" onclick="openDepositModal()">Make a Deposit / Add Slip</button>
     </div>
 
-    <!-- 4. MY INVESTMENTS -->
     <div class="section-label">📋 MY INVESTMENTS</div>
     <div class="card">
       <div id="investmentsList">
@@ -137,7 +129,6 @@
 
   </div>
 
-  <!-- DEPOSIT MODAL / POPUP -->
   <div id="depositModal" class="modal-overlay">
     <div class="modal-box">
       <span class="close-modal" onclick="closeDepositModal()">&times;</span>
@@ -200,8 +191,20 @@
       const { data: { user } } = await db.auth.getUser();
       if (!user) { window.location.href = "index.html"; return; }
 
-      // Profile Fetch
+      // -------------------------------------------------------------------
+      // 🔒 STRICT ADMIN CHECK FOR YOUR EMAIL ONLY
+      // -------------------------------------------------------------------
+      const MY_ADMIN_EMAIL = "saimpk5227@gmail.com";
+
       const { data: profile } = await db.from("profiles").select("*").eq("id", user.id).single();
+      
+      if (user.email === MY_ADMIN_EMAIL) {
+        document.getElementById("adminLink").style.display = "inline-block";
+      } else {
+        document.getElementById("adminLink").style.display = "none";
+      }
+
+      // Display User Name & Referral Link
       const name = profile?.full_name || user.email.split("@")[0];
       document.getElementById("userName").innerText = name;
       document.getElementById("displayName").innerText = name;
@@ -209,11 +212,7 @@
       const refUrl = window.location.origin + "/index.html?ref=" + user.id;
       document.getElementById("refInput").value = refUrl;
 
-      if (profile?.role === "admin" || user.email?.includes("admin")) {
-        document.getElementById("adminLink").style.display = "inline-block";
-      }
-
-      // Fetch ALL User Investments (Pending, Approved, Rejected)
+      // Fetch ALL Investments for Logged In User
       const { data: userInvestments, error: invError } = await db
         .from("investments")
         .select("*")
@@ -223,7 +222,6 @@
       const listContainer = document.getElementById("investmentsList");
 
       if (invError) {
-        console.error("Investment fetch error:", invError);
         listContainer.innerHTML = `<div style="font-size:13px; color:#dc2626;">انویسٹمنٹ ڈیٹا لوڈ کرنے میں مسئلہ آیا۔</div>`;
       } else if (userInvestments && userInvestments.length > 0) {
         listContainer.innerHTML = "";
@@ -257,7 +255,7 @@
         listContainer.innerHTML = `<div style="font-size:13px; color:#64748b;">No active investment found.</div>`;
       }
 
-      // Approved Balance / Wallet Profits Calculation
+      // Approved Balance Calculation
       const { data: txs } = await db.from("wallet_transactions").select("amount").eq("investor_id", user.id).eq("status", "approved");
       let profit = txs ? txs.reduce((sum, item) => sum + Number(item.amount), 0) : 0;
       
@@ -273,7 +271,6 @@
         document.getElementById("refCountText").innerText = `${refs.length} user(s) registered using your link.`;
       }
 
-      // Load Accounts for Modal
       loadAccountsForModal(db);
     }
 
@@ -297,7 +294,7 @@
 
       if (amount < 1000) return alert("کم از کم انویسٹمنٹ 1,000 روپے ہے۔");
       if (!trxId) return alert("براہ کرم Transaction ID (Trx ID) درج کریں۔");
-      if (!fileInput.files || fileInput.files.length === 0) return alert("براہ کرم سلپ کی تصویر سلیکٹ کریں (Choose File)۔");
+      if (!fileInput.files || fileInput.files.length === 0) return alert("براہ کرم سلپ کی تصویر سلیکٹ کریں۔");
 
       submitBtn.disabled = true;
       submitBtn.innerText = "Uploading Slip...";
@@ -308,21 +305,16 @@
         const fileName = `${user.id}_${Date.now()}.${fileExt}`;
         const filePath = `slips/${fileName}`;
 
-        // Upload File to Supabase Storage Bucket 'slips'
-        const { data: uploadData, error: uploadError } = await db.storage
-          .from("slips")
-          .upload(filePath, file);
+        const { error: uploadError } = await db.storage.from("slips").upload(filePath, file);
 
         let publicUrl = "";
         if (uploadError) {
-          console.warn("Storage upload fallback:", uploadError.message);
           publicUrl = "Uploaded via File (" + file.name + ")";
         } else {
           const { data: urlData } = db.storage.from("slips").getPublicUrl(filePath);
           publicUrl = urlData.publicUrl;
         }
 
-        // Save into investments table
         const { error: dbError } = await db.from("investments").insert([{
           investor_id: user.id,
           amount: amount,
@@ -333,7 +325,7 @@
 
         if (dbError) throw dbError;
 
-        alert("سلپ اور Transaction ID کامیابی سے جمع ہو گئے ہیں!");
+        alert("سلپ کامیابی سے جمع ہو گئی ہے!");
         closeDepositModal();
         location.reload();
 
