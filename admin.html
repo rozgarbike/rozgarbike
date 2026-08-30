@@ -21,6 +21,7 @@
   </div>
 
   <div class="wrap">
+    <!-- WHATSAPP & SUPPORT -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WHATSAPP LINKS & SUPPORT</div>
     <div class="card" style="margin-bottom:24px;">
       <div class="muted" style="margin-bottom:6px;">WhatsApp Number — e.g. 923245380453</div>
@@ -30,15 +31,19 @@
       <button class="btn btn-dark" style="width:100%;" onclick="saveWhatsApp()">Save WhatsApp Links</button>
     </div>
 
+    <!-- PENDING PAYMENTS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING PAYMENTS (DEPOSITS)</div>
     <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
+    <!-- WITHDRAWAL REQUESTS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
     <div id="withdrawList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
+    <!-- REFERRAL TEAMS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">REFERRAL TEAMS & BONUSES</div>
     <div id="referralsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">Loading...</div>
 
+    <!-- PAYMENT METHODS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">PAYMENT METHODS</div>
     <div id="methodsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">Loading...</div>
     <div class="card" style="margin-bottom:24px;">
@@ -49,6 +54,7 @@
       <button class="btn btn-dark" style="width:100%;" onclick="addMethod()">Add Account</button>
     </div>
 
+    <!-- CREATE CAMPAIGN -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">CREATE A CAMPAIGN</div>
     <div class="card" style="margin-bottom:20px;">
       <input id="newName" placeholder="Bike name, e.g. Bike #14" style="margin-bottom:8px;" />
@@ -57,9 +63,11 @@
       <button class="btn btn-dark" style="width:100%;" onclick="createCampaign()">Create Campaign</button>
     </div>
 
+    <!-- ACTIVE CAMPAIGNS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE CAMPAIGNS (PERCENTAGE PROFIT & BONUS)</div>
     <div id="campaignsList" style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">Loading...</div>
 
+    <!-- CLOSED CAMPAIGNS -->
     <div class="disp" style="font-size:16px;margin-bottom:8px;">CLOSED CAMPAIGNS</div>
     <div id="closedList" style="display:flex;flex-direction:column;gap:12px;">Loading...</div>
   </div>
@@ -406,14 +414,7 @@
 
             <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;" id="investorList-${c.id}">
               ${(investors || []).map(inv => `
-                <div style="font-size:12px;padding:6px;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;">
-                  <span>${inv.profiles?.email || 'User'}</span>
-                  <b>Rs ${Number(inv.amount).toLocaleString()}</b>
-                </div>
-              `).join("")}
-            </div>
-
-            ${isClosed ? "" : `<button class="btn btn-outline" style="width:100%;margin-top:12px;border-color:var(--rust);color:var(--rust);" onclick="closeCampaign('${c.id}')">Close Campaign</button>`}
-          `;
-
-          (isClosed ? closedEl : activeEl).appendChil
+                <div style="font-size:12px;padding:8px;background:#f1f5f9;border-radius:6px;display:flex;justify-content:space-between;align-items:center;">
+                  <div>
+                    <div style="font-weight:700;">${inv.profiles?.email || 'User'}</div>
+                    <div style="color:var(--brand);font-size:11px;">Earned Profit: ${pkr(inv.profi
