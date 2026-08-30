@@ -19,6 +19,7 @@
   .btn-sm { padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; border: none; font-weight: 600; }
   .btn-toggle { background: #e2e8f0; color: #334155; }
   .btn-delete { background: #ef4444; color: #fff; margin-left: 4px; }
+  .payout-detail { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 8px; margin-top: 6px; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -63,20 +64,23 @@
       <div id="pendingDepositsList" style="font-size:12px;">Loading pending deposits...</div>
     </div>
 
-    <!-- WITHDRAWAL REQUESTS & SENT DETAILS -->
-    <div class="title-section">WITHDRAWAL REQUESTS & PAID HISTORY</div>
+    <!-- WITHDRAWAL REQUESTS -->
+    <div class="title-section">PENDING WITHDRAWAL REQUESTS</div>
     <div class="card-admin">
       <div id="withdrawalRequestsList" style="font-size:12px;">Loading withdrawal requests...</div>
     </div>
 
-    <!-- INVESTORS & CAMPAIGNS OVERVIEW -->
-    <div class="title-section">INVESTORS & CAMPAIGNS OVERVIEW</div>
+    <!-- INVESTOR PAID PAYOUTS HISTORY -->
+    <div class="title-section">INVESTOR PAYOUT DETAILS (کونسی رقم کس کو بھیجی)</div>
     <div class="card-admin">
-      <div style="font-weight:700; font-size:13px; margin-bottom:6px;">Registered Investors & Sent Amounts:</div>
-      <div id="investorsList" style="font-size:12px; max-height:180px; overflow-y:auto; margin-bottom:12px;">Loading...</div>
+      <div style="font-weight:700; font-size:13px; margin-bottom:8px;">ہر انویسٹر کو دی گئی رقم کی مکمل تفصیلات:</div>
+      <div id="investorPayoutsList" style="font-size:12px; max-height:280px; overflow-y:auto;">Loading payouts history...</div>
+    </div>
 
-      <div style="font-weight:700; font-size:13px; margin-bottom:6px; border-top:1px solid #e2e8f0; padding-top:10px;">Active & Past Campaigns:</div>
-      <div id="campaignsList" style="font-size:12px;">Loading...</div>
+    <!-- INVESTORS & CAMPAIGNS OVERVIEW -->
+    <div class="title-section">ACTIVE & PAST CAMPAIGNS</div>
+    <div class="card-admin">
+      <div id="campaignsList" style="font-size:12px;">Loading campaigns...</div>
     </div>
 
   </div>
@@ -106,7 +110,7 @@
       loadPaymentMethods();
       loadPendingDeposits();
       loadWithdrawalRequests();
-      loadInvestors();
+      loadInvestorPayoutsHistory();
       loadCampaigns();
     }
 
@@ -201,9 +205,7 @@
     }
 
     async function approveDeposit(id, investorId, amount) {
-      // 1. Update investment status
       await supabaseClient.from("investments").update({ status: "approved" }).eq("id", id);
-      // 2. Add to wallet transaction balance
       await supabaseClient.from("wallet_transactions").insert([{ investor_id: investorId, amount: amount, status: "approved" }]);
       alert("Deposit approved and credited to investor wallet!");
       loadPendingDeposits();
@@ -217,10 +219,10 @@
     // --- WITHDRAWAL REQUESTS LOGIC ---
     async function loadWithdrawalRequests() {
       const el = document.getElementById("withdrawalRequestsList");
-      const { data } = await supabaseClient.from("withdrawal_requests").select("*, profiles(full_name)").order("created_at", { ascending: false });
+      const { data } = await supabaseClient.from("withdrawal_requests").select("*, profiles(full_name)").eq("status", "pending").order("created_at", { ascending: false });
 
       if (!data || data.length === 0) {
-        el.innerHTML = `<div>No withdrawal requests found.</div>`;
+        el.innerHTML = `<div>No pending withdrawal requests.</div>`;
         return;
       }
 
@@ -229,14 +231,11 @@
           <div>
             <strong>${w.profiles?.full_name || 'Investor'}</strong> - ${pkr(w.amount)}<br/>
             Method: ${w.payment_method} | Title: ${w.account_title}<br/>
-            Account #: ${w.account_number}<br/>
-            <span class="${w.status === 'approved' ? 'badge-active' : 'badge-disabled'}">Status: ${w.status}</span>
+            Account #: ${w.account_number}
           </div>
           <div>
-            ${w.status === 'pending' ? `
-              <button class="btn-sm" style="background:#16a34a; color:#fff;" onclick="approveWithdrawal('${w.id}')">Mark Paid</button>
-              <button class="btn-sm btn-delete" onclick="rejectWithdrawal('${w.id}')">Reject</button>
-            ` : ''}
+            <button class="btn-sm" style="background:#16a34a; color:#fff;" onclick="approveWithdrawal('${w.id}')">Mark Paid</button>
+            <button class="btn-sm btn-delete" onclick="rejectWithdrawal('${w.id}')">Reject</button>
           </div>
         </div>
       `).join("");
@@ -246,7 +245,7 @@
       await supabaseClient.from("withdrawal_requests").update({ status: "approved" }).eq("id", id);
       alert("Withdrawal marked as paid!");
       loadWithdrawalRequests();
-      loadInvestors();
+      loadInvestorPayoutsHistory();
     }
 
     async function rejectWithdrawal(id) {
@@ -254,26 +253,46 @@
       loadWithdrawalRequests();
     }
 
-    // --- INVESTORS AND SENT DETAILS LOGIC ---
-    async function loadInvestors() {
-      const el = document.getElementById("investorsList");
+    // --- INVESTOR PAYOUTS & SENT DETAILS LOGIC ---
+    async function loadInvestorPayoutsHistory() {
+      const el = document.getElementById("investorPayoutsList");
       const { data: profiles } = await supabaseClient.from("profiles").select("*");
-      const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "approved");
+      const { data: approvedPayouts } = await supabaseClient.from("withdrawal_requests").select("*").eq("status", "approved").order("created_at", { ascending: false });
 
       if (!profiles || profiles.length === 0) {
-        el.innerHTML = `<div>No investors found.</div>`;
+        el.innerHTML = `<div>No investor payout history found.</div>`;
         return;
       }
 
       el.innerHTML = profiles.map(p => {
-        const paidTotal = (withdrawals || [])
-          .filter(w => w.investor_id === p.id)
-          .reduce((sum, w) => sum + Number(w.amount || 0), 0);
+        const userPayouts = (approvedPayouts || []).filter(w => w.investor_id === p.id);
+        const totalSent = userPayouts.reduce((sum, w) => sum + Number(w.amount || 0), 0);
+
+        let payoutDetailsHtml = userPayouts.map(w => `
+          <div class="payout-detail">
+            💵 <strong>${pkr(w.amount)}</strong> sent via <strong>${w.payment_method}</strong><br/>
+            Account Title: ${w.account_title} (${w.account_number})<br/>
+            <span style="color:#64748b;">Date: ${new Date(w.created_at).toLocaleDateString()}</span>
+          </div>
+        `).join("");
+
+        if (userPayouts.length === 0) {
+          payoutDetailsHtml = `<div style="color:#94a3b8; font-size:11px; margin-top:4px;">No payouts sent yet.</div>`;
+        }
 
         return `
-          <div style="border-bottom:1px solid #eee; padding:6px 0;">
-            <strong>${p.full_name || 'User'}</strong> (ID: ${p.id.substring(0,6)}...)<br/>
-            <span style="color:#16a34a;">Total Withdrawal Paid: <strong>${pkr(paidTotal)}</strong></span>
+          <div style="border: 1px solid #e2e8f0; border-radius:8px; padding:10px; margin-bottom:10px; background:#ffffff;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong style="font-size:13px; color:#0f172a;">${p.full_name || 'Investor'}</strong><br/>
+                <span style="font-size:10px; color:#64748b;">ID: ${p.id}</span>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:11px; color:#64748b;">Total Paid:</span><br/>
+                <strong style="font-size:14px; color:#16a34a;">${pkr(totalSent)}</strong>
+              </div>
+            </div>
+            ${payoutDetailsHtml}
           </div>
         `;
       }).join("");
@@ -288,14 +307,14 @@
         return;
       }
       el.innerHTML = data.map(c => `
-        <div style="border-bottom:1px solid #eee; padding:4px 0;">
+        <div style="border-bottom:1px solid #eee; padding:6px 0;">
           • <strong>${c.name}</strong> - Target: ${pkr(c.target)}
         </div>
       `).join("");
     }
 
     async function saveWhatsApp() {
-      alert("WhatsApp links updated!");
+      alert("WhatsApp links updated successfully!");
     }
 
     window.addEventListener("DOMContentLoaded", checkAdminAuth);
