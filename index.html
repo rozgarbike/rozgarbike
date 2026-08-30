@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>RozgarBike — Join Fleet Partnership</title>
 
-<!-- Stylesheet & Google Fonts -->
-<link rel="stylesheet" href="assets/style.css" />
+<!-- Google Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Custom Config File -->
+<!-- Inline Configuration to Fix Login Initialization -->
+<script>
+  window.SUPABASE_URL = "https://your-supabase-url.supabase.co"; // Replace with your URL if different
+  window.SUPABASE_ANON_KEY = "your-anon-key"; // Replace with your Anon Key if different
+</script>
 <script src="assets/config.js"></script>
-
-<!-- Google AdSense Script -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 
 <style>
   body {
@@ -75,7 +75,7 @@
     border: 2px solid #0f3932;
     border-radius: 16px;
     padding: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     direction: rtl;
     text-align: center;
     font-family: 'Noto Nastaliq Urdu', 'Segoe UI', Tahoma, sans-serif;
@@ -286,17 +286,6 @@
       </a>
     </div>
 
-    <!-- TOP AD BANNER -->
-    <div class="card" style="text-align:center; padding:10px; min-height:90px;">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-           data-ad-slot="1234567890"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-    </div>
-
     <!-- 2. AUTH BOX (LOGIN / SIGNUP) -->
     <div id="authBox" class="card">
       <div class="form-title" id="authTitle">Login to Account</div>
@@ -310,25 +299,14 @@
       
       <button id="authToggleBtn" type="button" class="btn btn-outline" onclick="toggleAuthMode()">Create New Account</button>
       
-      <!-- APP DOWNLOAD BUTTON -->
-      <a href="app-release.apk" id="appDownloadBtn" class="btn btn-apk">📲 Download Android App (APK)</a>
+      <!-- APP DOWNLOAD BUTTON (Updated to avoid 404 error) -->
+      <a href="https://wa.me/" id="appDownloadBtn" target="_blank" class="btn btn-apk">📲 Contact Support / Get App</a>
     </div>
 
     <!-- 3. CAMPAIGNS / BIKES LIST -->
     <div style="font-size:18px; font-weight:700; margin-bottom:12px; color:#0f3932;">Available Bike Fleets</div>
     <div id="campaignsList" style="display:flex; flex-direction:column; gap:16px;">
       <div class="card" style="text-align:center; color:#64748b;">Loading Available Fleets...</div>
-    </div>
-
-    <!-- BOTTOM AD BANNER -->
-    <div class="card" style="margin-top:20px; text-align:center; padding:10px; min-height:90px;">
-      <ins class="adsbygoogle"
-           style="display:block"
-           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-           data-ad-slot="0987654321"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
     </div>
 
   </div>
@@ -339,14 +317,15 @@
   <script>
     let isSignUp = false;
 
-    // Securely Fetch or Create Supabase Client
     function getDb() {
       if (window.supabaseClient) return window.supabaseClient;
-      if (typeof supabase !== 'undefined' && supabase.createClient) {
-        if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
-          window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          return window.supabaseClient;
-        }
+      
+      const url = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : null);
+      const key = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : null);
+
+      if (typeof supabase !== 'undefined' && supabase.createClient && url && key) {
+        window.supabaseClient = supabase.createClient(url, key);
+        return window.supabaseClient;
       }
       return null;
     }
@@ -386,24 +365,24 @@
     async function handleAuth() {
       const db = getDb();
       if (!db || !db.auth) {
-        return toast("Supabase load nahi hua. Apna assets/config.js check karein!");
+        return toast("Connection Error: Check assets/config.js setup!");
       }
 
       const email = document.getElementById("authEmail").value.trim();
       const password = document.getElementById("authPass").value.trim();
 
-      if (!email || !password) return toast("Email aur Password dono daalein!");
+      if (!email || !password) return toast("Enter both Email and Password!");
 
       try {
         if (isSignUp) {
           const { data, error } = await db.auth.signUp({ email, password });
           if (error) throw error;
-          toast("Account ban gaya! Page reload ho raha hai...");
+          toast("Account created successfully!");
           setTimeout(() => window.location.reload(), 1000);
         } else {
           const { data, error } = await db.auth.signInWithPassword({ email, password });
           if (error) throw error;
-          toast("Login Kamyab!");
+          toast("Login Successful!");
           setTimeout(() => window.location.reload(), 1000);
         }
       } catch (err) {
@@ -433,12 +412,12 @@
           .order("created_at", { ascending: false });
 
         if (error) {
-          listEl.innerHTML = `<div class="card" style="text-align:center; color:red;">Fleets load nahi ho sake. Refresh karein.</div>`;
+          listEl.innerHTML = `<div class="card" style="text-align:center; color:red;">Fleets load nahi ho sake. Page refresh karein.</div>`;
           return;
         }
 
         if (!campaigns || campaigns.length === 0) {
-          listEl.innerHTML = `<div class="card" style="text-align:center;">Koi active bike fleet majood nahi hai.</div>`;
+          listEl.innerHTML = `<div class="card" style="text-align:center;">No active bike fleet available right now.</div>`;
           return;
         }
 
@@ -486,7 +465,7 @@
       if (!db) return;
       const { data: { session } } = await db.auth.getSession();
       if (!session) {
-        toast("Pehle Login karein!");
+        toast("Please login first to invest!");
         window.scrollTo({ top: document.getElementById("authBox").offsetTop, behavior: 'smooth' });
         return;
       }
