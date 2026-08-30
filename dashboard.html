@@ -356,7 +356,6 @@ async function submitDeposit() {
 
   let uploadedSlipUrl = null;
 
-  // Image Upload Logic to Supabase Storage ('slips' Bucket)
   if (fileInput.files.length > 0) {
     const file = fileInput.files[0];
     const fileExt = file.name.split('.').pop();
@@ -375,7 +374,6 @@ async function submitDeposit() {
     uploadedSlipUrl = urlData.publicUrl;
   }
 
-  // Pehle active campaign ID nikalne ki koshish karein
   let campaignId = null;
   const { data: campData } = await db.from("campaigns").select("id").limit(1);
   if (campData && campData.length > 0) {
@@ -419,7 +417,6 @@ async function submitWithdraw() {
   if(!amount || Number(amount) <= 0) return alert("برائے مہربانی درست رقم درج کریں۔");
   if(!account_title || !account_number) return alert("اکاؤنٹ کی تفصیلات مکمل پر کریں۔");
 
-  // Fallback Payload agar payment_method column na ho
   const payload = {
     investor_id: currentUserId,
     amount: Number(amount),
@@ -431,7 +428,6 @@ async function submitWithdraw() {
 
   let { error } = await db.from("withdrawals").insert([payload]);
 
-  // Agar payment_method column na hone ka error aaye to bina uske insert karein
   if(error && error.message.includes("payment_method")) {
     delete payload.payment_method;
     const retry = await db.from("withdrawals").insert([payload]);
@@ -476,7 +472,6 @@ async function loadUserData() {
     });
   }
 
-  // Update Balance
   const netBalance = totalApprovedDeposit - totalApprovedWithdraw;
   document.getElementById("userBalance").innerText = `Rs ${netBalance.toLocaleString()}`;
 
