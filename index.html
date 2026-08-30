@@ -12,7 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-  /* Urdu Banner Styling */
+  /* Urdu Ad Banner Styling */
   .ad-banner-container {
     background: linear-gradient(135deg, #0f3932 0%, #164e43 100%);
     color: #ffffff;
@@ -38,15 +38,20 @@
     margin-bottom: 12px;
     line-height: 1.6;
   }
+  .ad-banner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
   .ad-banner-box {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 12px;
+    padding: 10px 6px;
   }
   .ad-banner-amount {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
     color: #ffffff;
     direction: ltr;
@@ -56,13 +61,23 @@
     background: #16a34a;
     color: #ffffff;
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 13px;
+    padding: 3px 8px;
+    border-radius: 15px;
+    font-size: 11.5px;
     font-weight: 700;
-    margin-top: 6px;
+    margin-top: 5px;
     direction: ltr;
     font-family: system-ui, -apple-system, sans-serif;
+  }
+  .ad-banner-badge {
+    background: #eab308;
+    color: #000;
+    font-size: 10.5px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: inline-block;
   }
   .ad-banner-features {
     display: grid;
@@ -93,15 +108,26 @@
       <div class="ad-banner-title">کم سرمایہ کاری، زیادہ منافع</div>
       <div class="ad-banner-subtitle">آج سرمایہ لگائیں، کل بہتر زندگی پائیں</div>
       
-      <div class="ad-banner-box">
-        <div class="ad-banner-amount">Rs 5,000 Investment</div>
-        <div class="ad-banner-profit">Daily Profit: Rs 300-350</div>
+      <div class="ad-banner-grid">
+        <!-- Option 1: 1000 Investment -->
+        <div class="ad-banner-box">
+          <div class="ad-banner-amount">Rs 1,000</div>
+          <div class="ad-banner-profit">Daily Profit: Rs 50 - 60</div>
+          <div class="ad-banner-badge">مدت: 90 دن</div>
+        </div>
+
+        <!-- Option 2: 5000 Investment -->
+        <div class="ad-banner-box">
+          <div class="ad-banner-amount">Rs 5,000</div>
+          <div class="ad-banner-profit">Daily Profit: Rs 300 - 350</div>
+          <div class="ad-banner-badge">مستحکم اور بااعتماد</div>
+        </div>
       </div>
 
       <div class="ad-banner-features">
         <div class="ad-feature-item">🛡️ 100% محفوظ</div>
-        <div class="ad-feature-item">📈 بہتر مستقبل</div>
-        <div class="ad-feature-item">⏰ روزانہ منافع</div>
+        <div class="ad-feature-item">📈 روزانہ کیش آؤٹ</div>
+        <div class="ad-feature-item">⏰ 90 دن کا پلان</div>
       </div>
     </div>
 
@@ -137,6 +163,7 @@
       <div id="authMsg" class="muted" style="margin-top:8px;"></div>
     </div>
 
+    <!-- CAMPAIGNS LIST FROM DATABASE -->
     <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
   </div>
 
@@ -249,7 +276,7 @@
         .from("campaigns").select("*").eq("status", "active").order("created_at", { ascending: false });
       const listEl = document.getElementById("campaignsList");
       if (error) { listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; return; }
-      if (!campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
+      if (!campaigns || !campaigns.length) { listEl.innerHTML = `<p class="muted">No active campaigns right now — check back soon.</p>`; return; }
       listEl.innerHTML = "";
       for (const c of campaigns) {
         const { data: invSum } = await supabaseClient.from("investments").select("amount").eq("campaign_id", c.id).eq("status", "approved");
