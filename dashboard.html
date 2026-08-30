@@ -14,6 +14,9 @@
   .logo-area { font-weight: bold; font-size: 20px; display: flex; align-items: center; gap: 8px; }
   .logo-box { background: #e29d38; padding: 4px 8px; border-radius: 6px; }
 
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .btn-admin-link { background: #e29d38; color: #000; border: none; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-decoration: none; display: none; }
+
   .container { max-width: 500px; margin: 0 auto; padding: 15px; }
 
   /* Wallet Cards */
@@ -53,7 +56,10 @@
       <div class="logo-box">🚲</div>
       <span>RozgarBike</span>
     </div>
-    <div id="userGreeting" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">Loading...</div>
+    <div class="nav-right">
+      <a id="adminBtn" href="admin.html" class="btn-admin-link">⚙️ Admin Panel</a>
+      <div id="userGreeting" style="font-size: 12px; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">Loading...</div>
+    </div>
   </div>
 
   <div class="container">
@@ -173,6 +179,11 @@
         return;
       }
 
+      // Show Admin Button if admin is logged in
+      if (user.email === "saimpk5227@gmail.com") {
+        document.getElementById("adminBtn").style.display = "inline-block";
+      }
+
       // User Info & Referral Link
       document.getElementById("userGreeting").innerText = user.email ? user.email.split('@')[0] : "User";
       const refLink = `${window.location.origin}/signup.html?ref=${user.id}`;
@@ -186,28 +197,32 @@
       loadWhatsAppLink(db);
     }
 
-    // 1. Calculate Balances
+    // 1. Calculate Balances Correctly
     async function loadUserBalances(db, userId) {
       let totalInvested = 0;
       let totalProfit = 0;
       let totalWithdrawn = 0;
 
-      // Investments
+      // Approved Investments
       const { data: investments } = await db.from("investments").select("amount").eq("investor_id", userId).eq("status", "approved");
       if (investments) {
         investments.forEach(i => totalInvested += Number(i.amount || 0));
       }
 
-      // Wallet Transactions (Profits, Bonuses)
+      // Wallet Profits & Bonuses
       const { data: txs } = await db.from("wallet_transactions").select("amount").eq("investor_id", userId).eq("status", "approved");
       if (txs) {
         txs.forEach(t => totalProfit += Number(t.amount || 0));
       }
 
-      // Withdrawals Approved
-      const { data: withdraws } = await db.from("withdrawals").select("amount").eq("investor_id", userId).eq("status", "approved");
+      // Withdrawals (Both pending and approved reduce current balance)
+      const { data: withdraws } = await db.from("withdrawals").select("amount, status").eq("investor_id", userId);
       if (withdraws) {
-        withdraws.forEach(w => totalWithdrawn += Number(w.amount || 0));
+        withdraws.forEach(w => {
+          if (w.status === "approved" || w.status === "pending" || w.status === "read") {
+            totalWithdrawn += Number(w.amount || 0);
+          }
+        });
       }
 
       const totalBalance = (totalInvested + totalProfit) - totalWithdrawn;
