@@ -4,8 +4,184 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>My Dashboard — RozgarBike</title>
-<link rel="stylesheet" href="assets/style.css" />
+
+<!-- Google Fonts & Styles -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root {
+    --petrol: #0f3932;
+    --petrol-light: #164e43;
+    --ink: #1e293b;
+    --line: #e2e8f0;
+    --mustard: #f59e0b;
+    --mustard-deep: #d97706;
+    --rust: #dc2626;
+    --success: #16a34a;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f1f5f9;
+    margin: 0;
+    padding: 0;
+    color: var(--ink);
+  }
+
+  .header {
+    background: var(--petrol);
+    color: #ffffff;
+  }
+
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+  }
+
+  .brand {
+    font-weight: 700;
+    font-size: 18px;
+  }
+
+  .brand-badge {
+    margin-right: 4px;
+  }
+
+  .nav {
+    display: flex;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--petrol-light);
+    font-size: 14px;
+  }
+
+  .nav a {
+    color: #cbd5e1;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .nav a.active {
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .wrap {
+    padding: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .disp {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .muted {
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .mono {
+    font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+
+  .card {
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  .btn {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    box-sizing: border-box;
+    text-align: center;
+    display: inline-block;
+  }
+
+  .btn-primary {
+    background: var(--petrol);
+    color: #ffffff;
+  }
+
+  .btn-dark {
+    background: var(--ink);
+    color: #ffffff;
+  }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--petrol);
+    color: var(--petrol);
+  }
+
+  input, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 14px;
+  }
+
+  .progress-track {
+    background: #e2e8f0;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    background: var(--mustard);
+    height: 100%;
+    transition: width 0.3s ease;
+  }
+
+  .tier-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .tier-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .tier-btn.selected {
+    background: var(--petrol);
+    color: #fff;
+    border-color: var(--petrol);
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+    z-index: 9999;
+  }
+</style>
 </head>
 <body>
   <div class="header">
@@ -22,7 +198,7 @@
 
   <div class="wrap">
 
-    <div id="welcomeName" class="disp" style="font-size:20px;color:var(--petrol);margin-bottom:16px;"></div>
+    <div id="welcomeName" class="disp" style="font-size:20px;color:var(--petrol);margin-bottom:16px;">Welcome, Investor</div>
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
     <div class="card" style="margin-bottom:24px;">
@@ -33,7 +209,7 @@
 
     <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL PROGRAM</div>
     <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:10px;">Your name: <strong style="color:var(--ink);" id="myNameInline"></strong></div>
+      <div class="muted" style="margin-bottom:10px;">Your name: <strong style="color:var(--ink);" id="myNameInline">Investor</strong></div>
 
       <div id="milestoneReadyBox" style="display:none;padding:16px;border-radius:12px;margin-bottom:14px;text-align:center;background:linear-gradient(135deg, var(--mustard), var(--mustard-deep));color:#fff;">
         <div style="font-size:15px;font-weight:800;">🎉 10 Referrals Complete!</div>
@@ -73,6 +249,7 @@
     <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;"></div>
   </div>
 
+  <!-- PAYMENT & DEPOSIT MODALS -->
   <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.5);align-items:flex-end;justify-content:center;z-index:20;">
     <div class="card" style="border-radius:18px 18px 0 0;width:100%;max-width:480px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -129,24 +306,53 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="assets/config.js"></script>
-  <script src="assets/app.js"></script>
   <script>
+    // DIRECT INJECTED CREDENTIALS (AUTOLOAD DATA)
+    const SUPABASE_URL = "https://iqwknfpmwekxdpmaykse.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_Q4q2sgleePgGeoevraRKTw_UqNuvhV_";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let profile = null;
     let activeCampaignId = null;
     let pendingAmount = null;
     let currentWalletBalance = 0;
 
+    function pkr(val) { return "PKR " + Number(val || 0).toLocaleString(); }
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (t) {
+        t.textContent = msg;
+        t.style.display = "block";
+        setTimeout(() => { t.style.display = "none"; }, 3500);
+      } else { alert(msg); }
+    }
+
+    async function logout() {
+      await supabaseClient.auth.signOut();
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
     async function init() {
-      profile = await requireSession(false);
-      if (!profile) return;
-      if (profile.role === "admin") document.getElementById("adminLink").style.display = "inline-block";
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const { data: prof } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
+      profile = prof || { id: session.user.id, full_name: session.user.email.split("@")[0], referral_code: "" };
+
+      if (profile.role === "admin") {
+        document.getElementById("adminLink").style.display = "inline-block";
+      }
 
       document.getElementById("welcomeName").textContent = "Welcome, " + (profile.full_name || "Investor");
       document.getElementById("myNameInline").textContent = profile.full_name || "Investor";
 
       const base = window.location.href.replace("dashboard.html", "");
-      document.getElementById("refLinkInput").value = base + `index.html?ref=${profile.referral_code}`;
+      document.getElementById("refLinkInput").value = base + `index.html?ref=${profile.referral_code || ""}`;
 
       await loadWallet();
       await loadReferrals();
@@ -154,15 +360,15 @@
       await loadInvestments();
 
       const params = new URLSearchParams(window.location.search);
-      const contributeId = params.get("contribute");
+      const contributeId = params.get("campaign") || params.get("contribute");
       if (contributeId) openModalFor(contributeId);
     }
 
     async function loadWallet() {
       const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", profile.id);
-      const earned = (txns || []).reduce((s, t) => s + Number(t.amount), 0);
+      const earned = (txns || []).reduce((s, t) => s + Number(t.amount || 0), 0);
       const { data: withdrawals } = await supabaseClient.from("withdrawal_requests").select("amount").eq("investor_id", profile.id).in("status", ["pending", "paid"]);
-      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount), 0);
+      const withdrawn = (withdrawals || []).reduce((s, w) => s + Number(w.amount || 0), 0);
       const available = earned - withdrawn;
       document.getElementById("walletBalance").textContent = pkr(available);
       currentWalletBalance = available;
@@ -185,7 +391,7 @@
           readyBox.style.display = "none";
           progressBox.style.display = "block";
           document.getElementById("refCount").textContent = `${withinCycle} / 10`;
-          document.getElementById("progressBar").style.width = (withinCycle / 10) * 100 + "%";
+          document.getElementById("progressBar").style.width = Math.min(100, (withinCycle / 10) * 100) + "%";
         }
 
         const { data: joined } = await supabaseClient
@@ -211,7 +417,7 @@
 
     function copyRefLink() {
       navigator.clipboard.writeText(document.getElementById("refLinkInput").value);
-      toast("Referral link copied");
+      toast("Referral link copied!");
     }
 
     async function loadCampaignSelect() {
@@ -298,94 +504,4 @@
 
     function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
     function closePaymentModal() { document.getElementById("paymentOverlay").style.display = "none"; }
-    function closeWithdrawModal() { document.getElementById("withdrawOverlay").style.display = "none"; }
-
-    async function goToPaymentStep() {
-      const amt = Number(document.getElementById("customAmount").value);
-      if (!amt || amt < 1000) return toast("Minimum contribution is Rs 1,000");
-      pendingAmount = amt;
-      closeModal();
-
-      const { data: methods } = await supabaseClient.from("payment_methods").select("*").eq("active", true);
-      const listEl = document.getElementById("paymentMethodsList");
-      listEl.innerHTML = "";
-      (methods || []).forEach(m => {
-        const row = document.createElement("div");
-        row.className = "card";
-        row.style.padding = "12px";
-        row.innerHTML = `
-          <div style="font-weight:700;font-size:13px;">${m.label}</div>
-          <div class="muted" style="margin-top:2px;">${m.account_title}</div>
-          <div class="mono" style="font-size:15px;margin-top:2px;">${m.account_number}</div>
-        `;
-        listEl.appendChild(row);
-      });
-      document.getElementById("payAmountText").textContent = pkr(amt);
-      document.getElementById("transactionId").value = "";
-      document.getElementById("receiptFile").value = "";
-      document.getElementById("paymentOverlay").style.display = "flex";
-    }
-
-    async function confirmContribute() {
-      const transactionId = document.getElementById("transactionId").value.trim();
-      const fileInput = document.getElementById("receiptFile");
-      const file = fileInput.files[0];
-
-      if (!transactionId) return toast("Enter your transaction / receipt ID");
-      if (!file) return toast("Please upload a screenshot of your payment");
-
-      const submitBtn = document.getElementById("submitBtn");
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Uploading...";
-
-      try {
-        const fileExt = file.name.split(".").pop();
-        const uniqueId = Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-        const filePath = `${profile.id}-${uniqueId}.${fileExt}`;
-
-        const { error: uploadError } = await supabaseClient.storage.from("receipts").upload(filePath, file, { upsert: true });
-        if (uploadError) {
-          return toast("Upload failed: " + uploadError.message + " — please try again");
-        }
-
-        const { data: urlData } = supabaseClient.storage.from("receipts").getPublicUrl(filePath);
-        const receiptUrl = urlData.publicUrl;
-
-        const { error } = await supabaseClient.rpc("record_investment_and_bonuses", {
-          p_campaign_id: activeCampaignId,
-          p_amount: pendingAmount,
-          p_receipt_url: receiptUrl,
-          p_transaction_id: transactionId,
-        });
-
-        if (error) return toast(error.message);
-        toast("Submitted — waiting for admin to confirm your payment");
-        closePaymentModal();
-        await loadInvestments();
-      } catch (err) {
-        toast("Something went wrong — please check your connection and try again");
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Submit for approval";
-      }
-    }
-
-    function requestWithdraw() {
-      if (currentWalletBalance < 100) {
-        return toast(`Minimum withdrawal is Rs 100. Your balance: ${pkr(currentWalletBalance)}`);
-      }
-      document.getElementById("withdrawAmount").value = "";
-      document.getElementById("withdrawMethod").value = "JazzCash";
-      document.getElementById("withdrawAccount").value = "";
-      document.getElementById("withdrawOverlay").style.display = "flex";
-    }
-
-    async function submitWithdraw() {
-      const amount = Number(document.getElementById("withdrawAmount").value);
-      const method = document.getElementById("withdrawMethod").value;
-      const account_number = document.getElementById("withdrawAccount").value.trim();
-      if (!amount) return toast("Enter an amount");
-      if (!account_number) return toast("Enter your account number");
-      const { error } = await supabaseClient.rpc("request_withdrawal", { p_amount: amount, p_method: method, p_account_number: account_number });
-      if (error) return toast(error.message);
-      toast("Withdrawal request 
+    function 
