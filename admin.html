@@ -26,23 +26,17 @@
   .btn-action { width: 100%; background: #0b3c36; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; }
   .btn-gold { background: #e29d38; color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
   
-  /* Status Badges */
-  .badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
-  .badge-approved { background: #dcfce7; color: #15803d; }
-  .badge-pending { background: #fef3c7; color: #b45309; }
-  .badge-rejected { background: #fee2e2; color: #b91c1c; }
-
   /* Table Styling */
   table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
   th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
   th { background: #f8fafc; color: #475569; }
 
-  /* Deposit Item Box */
+  /* Deposit Card Box */
   .deposit-card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
-  .slip-img { width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; margin: 8px 0; background: #fff; }
+  .slip-img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; margin: 8px 0; background: #fff; cursor: pointer; }
   
-  .btn-approve { background: #22c55e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
-  .btn-reject { background: #ef4444; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+  .btn-approve { background: #22c55e; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+  .btn-reject { background: #ef4444; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
   .btn-delete { background: #dc2626; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
 </style>
 </head>
@@ -73,7 +67,7 @@
     <div class="card">
       <label style="font-size: 12px; font-weight: bold;">Select Investor User:</label>
       <select id="investorSelect" class="input-box">
-        <option value="">-- Loading Users... --</option>
+        <option value="">-- یوزر لوڈ ہو رہے ہیں... --</option>
       </select>
       
       <label style="font-size: 12px; font-weight: bold;">Bonus Amount (PKR):</label>
@@ -82,7 +76,7 @@
       <button onclick="sendCustomBonus()" class="btn-gold">Send Bonus To User</button>
     </div>
 
-    <!-- 3. MANAGE INVESTMENT CAMPAIGNS / FUNDS -->
+    <!-- 3. MANAGE INVESTMENT CAMPAIGNS -->
     <div class="section-title">🚀 Manage Investment Campaigns</div>
     <div class="card">
       <input id="campTitle" class="input-box" placeholder="کیمپین کا نام (e.g. Bike Fleet Batch #3)" />
@@ -90,7 +84,7 @@
       <button onclick="addCampaign()" class="btn-action">+ Add New Campaign</button>
 
       <div id="campaignsList" style="margin-top: 15px;">
-        <!-- Campaigns list dynamically loaded -->
+        <!-- Campaigns list -->
       </div>
     </div>
 
@@ -152,7 +146,6 @@
 
       const { data: { user } } = await db.auth.getUser();
       
-      // Admin Security Restriction
       if (!user || user.email !== "saimpk5227@gmail.com") {
         alert("رسائی کی اجازت نہیں ہے۔ صرف ایڈمن لاگ ان کر سکتا ہے۔");
         window.location.href = "dashboard.html";
@@ -166,18 +159,43 @@
       loadWhatsAppSetting(db);
     }
 
-    // 1. Load All Registered Users into Dropdown
+    // 1. Fetch All Users Dynamically (Fixes Empty Dropdown)
     async function loadUsersDropdown(db) {
       const select = document.getElementById("investorSelect");
-      const { data: profiles, error } = await db.from("profiles").select("id, full_name, email");
+      select.innerHTML = `<option value="">-- یوزر لوڈ ہو رہے ہیں... --</option>`;
 
-      if (error || !profiles || profiles.length === 0) {
-        select.innerHTML = `<option value="">کوئی یوزر نہیں ملا</option>`;
-        return;
+      try {
+        let { data: profiles } = await db.from("profiles").select("id, full_name, email");
+
+        // Fallback to Investments table if Profiles table returns empty due to RLS
+        if (!profiles || profiles.length === 0) {
+          const { data: investments } = await db.from("investments").select("investor_id");
+          if (investments && investments.length > 0) {
+            const uniqueUserIds = [...new Set(investments.map(item => item.investor_id))];
+            profiles = uniqueUserIds.map((id, index) => ({
+              id: id,
+              full_name: `Investor User #${index + 1}`,
+              email: id.substring(0, 8) + "..."
+            }));
+          }
+        }
+
+        if (!profiles || profiles.length === 0) {
+          select.innerHTML = `<option value="">کوئی بھی رجسٹرڈ یوزر نہیں ملا</option>`;
+          return;
+        }
+
+        select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
+          profiles.map(u => {
+            const name = u.full_name || u.email || "User";
+            const shortId = u.id ? `(${u.id.substring(0, 6)}...)` : "";
+            return `<option value="${u.id}">${name} ${shortId}</option>`;
+          }).join("");
+
+      } catch (err) {
+        console.error("Error loading users:", err);
+        select.innerHTML = `<option value="">ڈیٹا لوڈ کرنے میں مسئلہ آیا</option>`;
       }
-
-      select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
-        profiles.map(u => `<option value="${u.id}">${u.full_name || u.email || 'User'} (${u.id.substring(0,6)}...)</option>`).join("");
     }
 
     // 2. Send Custom Bonus
@@ -216,7 +234,7 @@
 
       let successCount = 0;
       for (let inv of investments) {
-        let profit = (Number(inv.amount) * 0.05); // 5% profit
+        let profit = (Number(inv.amount) * 0.05);
         if (profit > 0) {
           await db.from("wallet_transactions").insert([{
             investor_id: inv.investor_id,
@@ -246,11 +264,11 @@
 
       box.innerHTML = deposits.map(dep => `
         <div class="deposit-card">
-          <div style="font-weight:bold; color:#0b3c36;">${dep.profiles?.full_name || 'User'} (${dep.profiles?.email || ''})</div>
+          <div style="font-weight:bold; color:#0b3c36;">${dep.profiles?.full_name || 'Investor'} (${dep.profiles?.email || dep.investor_id.substring(0,8)})</div>
           <div style="font-size:14px; margin:4px 0;">رقم: <strong>Rs ${Number(dep.amount).toLocaleString()}</strong></div>
           <div style="font-size:12px; color:#475569;">Trx ID: <strong>${dep.trx_id || 'N/A'}</strong></div>
           
-          ${dep.slip_url ? `<img src="${dep.slip_url}" class="slip-img" alt="Payment Slip" onclick="window.open('${dep.slip_url}')" title="بڑا دیکھنے کے لیے کلک کریں" />` : '<div style="color:#dc2626; font-size:11px;">سلپ اپلوڈ نہیں کی گئی</div>'}
+          ${dep.slip_url ? `<img src="${dep.slip_url}" class="slip-img" alt="Payment Slip" onclick="window.open('${dep.slip_url}')" title="بڑا دیکھنے کے لیے کلک کریں" />` : '<div style="color:#dc2626; font-size:11px; margin: 5px 0;">سلپ اپلوڈ نہیں کی گئی</div>'}
           
           <div style="display:flex; gap:10px; margin-top:8px;">
             <button class="btn-approve" onclick="updateDepositStatus('${dep.id}', 'approved')">Approve (منظور کریں)</button>
@@ -284,8 +302,8 @@
       box.innerHTML = camps.map(c => `
         <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:6px; border:1px solid #e2e8f0;">
           <div>
-            <strong>${c.title}</strong>
-            <div style="font-size:11px; color:#64748b;">Target: Rs ${Number(c.target).toLocaleString()} | Status: ${c.is_active ? 'Active' : 'Disabled'}</div>
+            <strong>${c.title || c.name || 'Campaign'}</strong>
+            <div style="font-size:11px; color:#64748b;">Target: Rs ${Number(c.target || c.amount || 0).toLocaleString()} | Status: ${c.is_active ? 'Active' : 'Disabled'}</div>
           </div>
           <div style="display:flex; gap:4px;">
             <button onclick="toggleCampaign('${c.id}', ${!c.is_active})" style="font-size:11px; cursor:pointer;">${c.is_active ? 'Disable' : 'Enable'}</button>
