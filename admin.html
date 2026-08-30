@@ -32,6 +32,24 @@
   </div>
 
   <div class="admin-wrap">
+
+    <!-- CREATE & MANAGE CAMPAIGNS -->
+    <div class="title-section">MANAGE CAMPAIGNS & PROFIT SHARE</div>
+    <div class="card-admin">
+      <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Add New Campaign</div>
+      <input id="cmpName" class="input-field" placeholder="Campaign Name (e.g. Honda CD 70 Bike #12)" />
+      <input id="cmpTarget" type="number" class="input-field" placeholder="Target Amount (e.g. 150000)" />
+      <button class="btn-submit" style="margin-bottom:16px;" onclick="addCampaign()">Create Campaign</button>
+
+      <div style="font-weight:700; font-size:13px; margin-bottom:8px; border-top:1px solid #e2e8f0; padding-top:12px;">Active Campaigns:</div>
+      <div id="campaignsList" style="font-size:12px;">Loading campaigns...</div>
+
+      <div style="border-top:1px solid #e2e8f0; margin-top:12px; padding-top:12px;">
+        <div style="font-weight:700; font-size:13px; color:#1e293b;">Distribute Profit (5% Formula)</div>
+        <div style="font-size:11px; color:#64748b; margin-bottom:10px;">ہربندہ کی انویسٹمنٹ کے مطابق: Rs 1,000 پر Rs 50 پرافٹ ان کے والیٹ میں خودبخود چلا جائے گا۔</div>
+        <button class="btn-submit" style="background:#16a34a;" onclick="distributeProfit5Percent()">Distribute 5% Profit To All Investors</button>
+      </div>
+    </div>
     
     <!-- WHATSAPP LINKS & SUPPORT -->
     <div class="title-section">WHATSAPP LINKS & SUPPORT</div>
@@ -77,12 +95,6 @@
       <div id="investorPayoutsList" style="font-size:12px; max-height:280px; overflow-y:auto;">Loading payouts history...</div>
     </div>
 
-    <!-- INVESTORS & CAMPAIGNS OVERVIEW -->
-    <div class="title-section">ACTIVE & PAST CAMPAIGNS</div>
-    <div class="card-admin">
-      <div id="campaignsList" style="font-size:12px;">Loading campaigns...</div>
-    </div>
-
   </div>
 
   <script src="assets/config.js"></script>
@@ -107,11 +119,99 @@
     }
 
     async function loadAdminData() {
+      loadCampaigns();
       loadPaymentMethods();
       loadPendingDeposits();
       loadWithdrawalRequests();
       loadInvestorPayoutsHistory();
-      loadCampaigns();
+    }
+
+    // --- CAMPAIGNS & PROFIT DISTRIBUTION LOGIC ---
+    async function loadCampaigns() {
+      const el = document.getElementById("campaignsList");
+      const { data, error } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
+      
+      if (error || !data || data.length === 0) {
+        el.innerHTML = `<div style="color:#64748b;">No campaigns created yet.</div>`;
+        return;
+      }
+
+      el.innerHTML = data.map(c => `
+        <div class="item-box">
+          <div>
+            <strong>${c.name}</strong><br/>
+            Target: ${pkr(c.target)}
+          </div>
+          <div>
+            <button class="btn-sm btn-delete" onclick="deleteCampaign('${c.id}')">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function addCampaign() {
+      const name = document.getElementById("cmpName").value;
+      const target = document.getElementById("cmpTarget").value;
+
+      if (!name || !target) { alert("Please fill campaign name and target!"); return; }
+
+      const { error } = await supabaseClient.from("campaigns").insert([{
+        name: name,
+        target: Number(target),
+        status: "active"
+      }]);
+
+      if (error) { alert("Error adding campaign: " + error.message); }
+      else {
+        alert("Campaign created successfully!");
+        document.getElementById("cmpName").value = "";
+        document.getElementById("cmpTarget").value = "";
+        loadCampaigns();
+      }
+    }
+
+    async function deleteCampaign(id) {
+      if (confirm("Are you sure you want to delete this campaign?")) {
+        await supabaseClient.from("campaigns").delete().eq("id", id);
+        loadCampaigns();
+      }
+    }
+
+    async function distributeProfit5Percent() {
+      if (!confirm("کیا آپ تمام انویسٹرز کو ان کی رقم کے مطابق 5% پرافٹ (Rs 1,000 پر Rs 50) کریڈٹ کرنا چاہتے ہیں؟")) return;
+
+      // Fetch all approved investments
+      const { data: investments, error } = await supabaseClient.from("investments").select("*").eq("status", "approved");
+
+      if (error || !investments || investments.length === 0) {
+        alert("کوئی ایکٹیو انویسٹمنٹ نہیں ملی۔");
+        return;
+      }
+
+      // Group investments by investor
+      const investorTotals = {};
+      investments.forEach(inv => {
+        const uid = inv.investor_id;
+        investorTotals[uid] = (investorTotals[uid] || 0) + Number(inv.amount || 0);
+      });
+
+      // Distribute 5% profit for each investor
+      let count = 0;
+      for (const [investorId, totalAmount] of Object.entries(investorTotals)) {
+        const profit = Math.round(totalAmount * 0.05); // 5% formula (50 per 1000)
+        
+        if (profit > 0) {
+          await supabaseClient.from("wallet_transactions").insert([{
+            investor_id: investorId,
+            amount: profit,
+            type: "profit_payout",
+            status: "approved"
+          }]);
+          count++;
+        }
+      }
+
+      alert(`مبارک ہو! کل ${count} انویسٹرز کے والیٹ میں 5% پرافٹ کامیابی سے شامل کر دیا گیا ہے۔`);
     }
 
     // --- PAYMENT METHODS LOGIC ---
@@ -253,7 +353,7 @@
       loadWithdrawalRequests();
     }
 
-    // --- INVESTOR PAYOUTS & SENT DETAILS LOGIC ---
+    // --- INVESTOR PAYOUTS HISTORY LOGIC ---
     async function loadInvestorPayoutsHistory() {
       const el = document.getElementById("investorPayoutsList");
       const { data: profiles } = await supabaseClient.from("profiles").select("*");
@@ -296,21 +396,6 @@
           </div>
         `;
       }).join("");
-    }
-
-    // --- CAMPAIGNS LOGIC ---
-    async function loadCampaigns() {
-      const el = document.getElementById("campaignsList");
-      const { data } = await supabaseClient.from("campaigns").select("*");
-      if (!data || data.length === 0) {
-        el.innerHTML = `<div>No campaigns found.</div>`;
-        return;
-      }
-      el.innerHTML = data.map(c => `
-        <div style="border-bottom:1px solid #eee; padding:6px 0;">
-          • <strong>${c.name}</strong> - Target: ${pkr(c.target)}
-        </div>
-      `).join("");
     }
 
     async function saveWhatsApp() {
