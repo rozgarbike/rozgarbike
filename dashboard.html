@@ -72,7 +72,7 @@ body{
 }
 .btn-deposit{ background:#10b981; color:#fff; }
 .btn-withdraw{ background:#e29d38; color:#000; }
-.btn-action:hover{ opacity:0.9; }
+.btn-copy{ background:#3b82f6; color:#fff; padding:8px 14px; border:0; border-radius:6px; cursor:pointer; font-weight:bold }
 
 /* MODAL STYLES */
 .modal{
@@ -144,6 +144,18 @@ th{ background:#111827; color:#9ca3af }
   <div class="action-grid">
     <button onclick="openDepositModal()" class="btn-action btn-deposit">📥 Deposit Funds</button>
     <button onclick="openWithdrawModal()" class="btn-action btn-withdraw">📤 Withdraw Funds</button>
+  </div>
+
+  <!-- REFERRAL SYSTEM CARD (RESTORED) -->
+  <div class="card">
+    <div class="card-title">👥 Refer & Earn (ریفرل سسٹم)</div>
+    <p style="font-size:13px;color:#9ca3af;margin-top:0;">اپنا ریفرل لنک کاپی کریں اور دوستوں کے ساتھ شیئر کر کے بونس کمائیں۔</p>
+    
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input id="refLinkInput" class="input-box" style="margin-bottom:0;" readonly value="Loading referral link...">
+      <button onclick="copyReferralLink()" class="btn-copy">Copy Link</button>
+    </div>
+    <small style="color:#10b981;" id="copySuccessMsg"></small>
   </div>
 
   <!-- RECENT TRANSACTIONS -->
@@ -229,16 +241,31 @@ async function initDashboard() {
     return;
   }
 
-  // Get current session or active user
   const { data: { session } } = await db.auth.getSession();
   if(session && session.user) {
     currentUserId = session.user.id;
   } else {
-    // Demo fallback or saved user
     currentUserId = localStorage.getItem("user_id") || "demo-user-id";
   }
 
+  // Generate Referral Link
+  const currentOrigin = window.location.origin + window.location.pathname.replace("dashboard.html", "");
+  const refLink = `${currentOrigin}signup.html?ref=${currentUserId}`;
+  document.getElementById("refLinkInput").value = refLink;
+
   loadUserData();
+}
+
+// COPY REFERRAL LINK
+function copyReferralLink() {
+  const refInput = document.getElementById("refLinkInput");
+  refInput.select();
+  refInput.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(refInput.value);
+  
+  const msg = document.getElementById("copySuccessMsg");
+  msg.innerText = "✓ ریفرل لنک کاپی ہو گیا ہے!";
+  setTimeout(() => { msg.innerText = ""; }, 3000);
 }
 
 // MODAL CONTROLS
@@ -279,7 +306,7 @@ async function submitDeposit() {
   if(error) {
     alert("ڈیپازٹ میں مسئلہ آیا: " + error.message);
   } else {
-    alert("ڈیپازٹ کی درخواست بھیج دی گئی ہے! ایڈمن ویری فائی کرے گا۔");
+    alert("ڈیپازٹ کی درخواست بھیج دی گئی ہے!");
     closeDepositModal();
     document.getElementById("depAmount").value = "";
     document.getElementById("depTrx").value = "";
@@ -327,7 +354,6 @@ async function loadUserData() {
   const db = getSupabase();
   const tbody = document.getElementById("txHistoryBody");
 
-  // Fetch investments
   const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
   const { data: wits } = await db.from("withdrawals").select("*").eq("investor_id", currentUserId);
 
