@@ -3,94 +3,141 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>RozgarBike — Admin Panel</title>
+<title>RozgarBike — Admin Control Panel</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
-  .admin-wrap { max-width: 1000px; margin: 0 auto; }
-  .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
-  .section-title { font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 12px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-  th, td { padding: 10px; border-bottom: 1px solid #334155; white-space: nowrap; }
-  th { background: #0f172a; color: #94a3b8; }
-  .btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
-  .btn-approve { background: #16a34a; color: #fff; }
-  .btn-reject { background: #dc2626; color: #fff; margin-left: 4px; }
-  .btn-primary { background: #0284c7; color: #fff; width: 100%; padding: 10px; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
-  .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: #fff; box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f4efe6; color: #1e293b; margin: 0; padding: 0; }
+  
+  /* Navbar */
+  .navbar { background: #0b3c36; color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+  .logo-area { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 20px; }
+  .logo-box { background: #e29d38; padding: 6px; border-radius: 8px; }
+  .btn-dashboard { background: #e29d38; color: #000; border: none; padding: 6px 14px; border-radius: 20px; text-decoration: none; font-size: 13px; font-weight: bold; }
+
+  .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+
+  /* Section Styling */
+  .section-title { font-size: 14px; font-weight: 800; text-transform: uppercase; color: #0b3c36; margin: 15px 0 6px 0; display: flex; align-items: center; gap: 6px; }
+  .card { background: #ffffff; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+  /* Inputs & Buttons */
+  .input-box { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; box-sizing: border-box; font-size: 14px; outline: none; }
+  .btn-action { width: 100%; background: #0b3c36; color: #fff; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+  .btn-gold { background: #e29d38; color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
+  
+  /* Status Badges */
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+  .badge-approved { background: #dcfce7; color: #15803d; }
+  .badge-pending { background: #fef3c7; color: #b45309; }
+  .badge-rejected { background: #fee2e2; color: #b91c1c; }
+
+  /* Table Styling */
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th, td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: #f8fafc; color: #475569; }
+
+  /* Deposit Item Box */
+  .deposit-card { background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+  .slip-img { width: 100%; max-height: 200px; object-fit: contain; border-radius: 6px; border: 1px solid #cbd5e1; margin: 8px 0; background: #fff; }
+  
+  .btn-approve { background: #22c55e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+  .btn-reject { background: #ef4444; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+  .btn-delete { background: #dc2626; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
 </style>
 </head>
 <body>
 
-  <div class="admin-wrap">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-      <h2 style="margin:0; color:#fff;">🛠️ Admin Master Dashboard</h2>
-      <a href="dashboard.html" style="color:#38bdf8; text-decoration:none; font-weight:bold;">← Back to Dashboard</a>
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="logo-area">
+      <div class="logo-box">🚲</div>
+      <span>Admin Panel</span>
     </div>
+    <a href="dashboard.html" class="btn-dashboard">Dashboard ➔</a>
+  </div>
+
+  <div class="container">
 
     <!-- 1. AUTO PROFIT DISTRIBUTOR -->
-    <div class="card" style="border:1px solid #eab308;">
-      <div class="section-title" style="color:#facc15;">⚡ One-Click Auto Profit Distributor</div>
-      <p style="color:#cbd5e1; font-size:13px;">فارمولا: 1000 پر 50 روپے / 2000 پر 100 روپے (5% پرافٹ) تمام منظور شدہ انویسٹرز کو منتقل کریں۔</p>
-      <button class="btn btn-primary" style="background:#eab308; color:#000; font-size:15px;" onclick="distributeAutoProfit()">⚡ Distribute Profit To All Investors Now</button>
+    <div class="section-title">⚡ Auto Profit Distributor</div>
+    <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+      <div style="font-size:13px; color:#166534; margin-bottom:8px;">
+        فارمولا: 1000 روپے پر 50 روپے (5% پرافٹ) تمام منظور شدہ انویسٹرز کو منتقل کریں۔
+      </div>
+      <button onclick="distributeAutoProfit()" class="btn-action" style="background: #16a34a;">⚡ Distribute Profit To All Investors Now</button>
     </div>
 
-    <!-- 2. CUSTOM BONUS BOX -->
+    <!-- 2. CUSTOM GIVEAWAY / BONUS -->
+    <div class="section-title">🎁 Custom Bonus / Special Giveaway</div>
     <div class="card">
-      <div class="section-title">🎁 Custom Giveaway / Special Bonus Box</div>
-      <select id="userSelect" class="input-field" style="background:#f8fafc; color:#000; font-weight:bold;">
-        <option value="">-- Select Investor User --</option>
+      <label style="font-size: 12px; font-weight: bold;">Select Investor User:</label>
+      <select id="investorSelect" class="input-box">
+        <option value="">-- Loading Users... --</option>
       </select>
-      <input id="bonusAmount" type="number" class="input-field" placeholder="Bonus Amount (PKR)" />
-      <input id="bonusNote" class="input-field" placeholder="Reason / Description" />
-      <button class="btn btn-primary" style="background:#9333ea;" onclick="sendCustomBonus()">Send Bonus To User</button>
+      
+      <label style="font-size: 12px; font-weight: bold;">Bonus Amount (PKR):</label>
+      <input id="bonusAmount" type="number" class="input-box" placeholder="مثلاً: 500" />
+      
+      <button onclick="sendCustomBonus()" class="btn-gold">Send Bonus To User</button>
     </div>
 
-    <!-- 3. PAYMENT ACCOUNTS -->
+    <!-- 3. MANAGE INVESTMENT CAMPAIGNS / FUNDS -->
+    <div class="section-title">🚀 Manage Investment Campaigns</div>
     <div class="card">
-      <div class="section-title">💳 Add / Delete Payment Accounts</div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-        <input id="accLabel" class="input-field" placeholder="Method (JazzCash/Bank)" />
-        <input id="accTitle" class="input-field" placeholder="Account Title" />
-        <input id="accNumber" class="input-field" placeholder="Account Number" />
-      </div>
-      <button class="btn btn-primary" onclick="handleAddAccount()">+ Add Payment Account</button>
+      <input id="campTitle" class="input-box" placeholder="کیمپین کا نام (e.g. Bike Fleet Batch #3)" />
+      <input id="campTarget" type="number" class="input-box" placeholder="ٹارگٹ رقم (PKR)" />
+      <button onclick="addCampaign()" class="btn-action">+ Add New Campaign</button>
 
-      <div style="margin-top:15px; overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>Method</th><th>Title</th><th>Number</th><th>Action</th></tr>
-          </thead>
-          <tbody id="accountsTable"><tr><td colspan="4">Loading...</td></tr></tbody>
-        </table>
+      <div id="campaignsList" style="margin-top: 15px;">
+        <!-- Campaigns list dynamically loaded -->
       </div>
     </div>
 
-    <!-- 4. PENDING DEPOSITS WITH TRX ID & SLIPS -->
+    <!-- 4. APPROVE DEPOSITS & SLIPS -->
+    <div class="section-title">📥 Pending Deposits & Payment Slips</div>
     <div class="card">
-      <div class="section-title">📥 Pending Deposits (Trx ID & Slips)</div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>Investor Name</th><th>Amount</th><th>Trx ID</th><th>Slip Image</th><th>Action</th></tr>
-          </thead>
-          <tbody id="depositsTable"><tr><td colspan="5">Loading...</td></tr></tbody>
-        </table>
+      <div id="depositsList">
+        <div style="font-size:13px; color:#64748b;">Loading pending deposits...</div>
       </div>
     </div>
 
-    <!-- 5. PENDING WITHDRAWALS -->
+    <!-- 5. ADD / DELETE PAYMENT ACCOUNTS -->
+    <div class="section-title">💳 Official Payment Accounts</div>
     <div class="card">
-      <div class="section-title">📤 Pending Withdrawals</div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr><th>Investor Name</th><th>Method</th><th>Account Details</th><th>Amount</th><th>Action</th></tr>
-          </thead>
-          <tbody id="withdrawalsTable"><tr><td colspan="5">Loading...</td></tr></tbody>
-        </table>
+      <div style="display: flex; gap: 5px;">
+        <select id="accMethod" class="input-box" style="width: 35%;">
+          <option value="JazzCash">JazzCash</option>
+          <option value="EasyPaisa">EasyPaisa</option>
+          <option value="SadaPay">SadaPay</option>
+          <option value="Bank">Bank Account</option>
+        </select>
+        <input id="accTitle" class="input-box" placeholder="Account Title" style="width: 32%;" />
+        <input id="accNumber" class="input-box" placeholder="Account Number" style="width: 33%;" />
       </div>
+      <button onclick="addPaymentAccount()" class="btn-action">+ Add Payment Account</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Title</th>
+            <th>Number</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="accountsTable">
+          <!-- Accounts loaded dynamically -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 6. WHATSAPP & SUPPORT SETTINGS -->
+    <div class="section-title">📱 WhatsApp & Support Settings</div>
+    <div class="card">
+      <label style="font-size:12px; font-weight:bold;">WhatsApp Number / Channel Link:</label>
+      <input id="waNumberInput" class="input-box" placeholder="e.g. 923001234567 یا چیلنل لنک" />
+      <button onclick="updateWhatsAppNumber()" class="btn-gold">Update Support Channel</button>
     </div>
 
   </div>
@@ -99,113 +146,236 @@
   <script>
     function getSupabase() { return window.supabaseClient || window.supabase; }
 
-    async function initAdmin() {
+    async function checkAdminAuth() {
       const db = getSupabase();
+      if (!db) return;
+
+      const { data: { user } } = await db.auth.getUser();
+      
+      // Admin Security Restriction
+      if (!user || user.email !== "saimpk5227@gmail.com") {
+        alert("رسائی کی اجازت نہیں ہے۔ صرف ایڈمن لاگ ان کر سکتا ہے۔");
+        window.location.href = "dashboard.html";
+        return;
+      }
+
       loadUsersDropdown(db);
-      loadAccounts(db);
-      loadDeposits(db);
-      loadWithdrawals(db);
+      loadCampaigns(db);
+      loadPendingDeposits(db);
+      loadPaymentAccounts(db);
+      loadWhatsAppSetting(db);
     }
 
+    // 1. Load All Registered Users into Dropdown
     async function loadUsersDropdown(db) {
-      const { data: users } = await db.from("profiles").select("id, email, full_name");
-      const select = document.getElementById("userSelect");
-      if (users) {
-        select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
-          users.map(u => `<option value="${u.id}">${u.full_name ? u.full_name + ' ('+u.email+')' : u.email}</option>`).join("");
+      const select = document.getElementById("investorSelect");
+      const { data: profiles, error } = await db.from("profiles").select("id, full_name, email");
+
+      if (error || !profiles || profiles.length === 0) {
+        select.innerHTML = `<option value="">کوئی یوزر نہیں ملا</option>`;
+        return;
       }
+
+      select.innerHTML = `<option value="">-- Select Investor User --</option>` + 
+        profiles.map(u => `<option value="${u.id}">${u.full_name || u.email || 'User'} (${u.id.substring(0,6)}...)</option>`).join("");
     }
 
-    async function distributeAutoProfit() {
-      const db = getSupabase();
-      if (!confirm("کیا آپ واقعی 5% پرافٹ منتقل کرنا چاہتے ہیں؟")) return;
-
-      const { data: invs } = await db.from("investments").select("*").eq("status", "approved");
-      if (!invs || invs.length === 0) return alert("کوئی ایکٹو انویسٹمنٹ نہیں ملی۔");
-
-      let count = 0;
-      for (let inv of invs) {
-        let profit = Math.floor(inv.amount * 0.05);
-        if (profit > 0) {
-          await db.from("wallet_transactions").insert([{ investor_id: inv.investor_id, amount: profit, description: "Auto Daily Profit (5%)", status: "approved" }]);
-          count++;
-        }
-      }
-      alert(`کامیابی! کل ${count} انویسٹرز کو پرافٹ بھیج دیا گیا ہے۔`);
-    }
-
+    // 2. Send Custom Bonus
     async function sendCustomBonus() {
       const db = getSupabase();
-      const userId = document.getElementById("userSelect").value;
+      const userId = document.getElementById("investorSelect").value;
       const amount = Number(document.getElementById("bonusAmount").value);
-      const note = document.getElementById("bonusNote").value.trim() || "Giveaway Bonus";
 
-      if (!userId || amount <= 0) return alert("یوزر منتخب کریں اور صحیح رقم درج کریں۔");
+      if (!userId) return alert("براہ کرم یوزر منتخب کریں۔");
+      if (!amount || amount <= 0) return alert("درست بونس رقم درج کریں۔");
 
-      await db.from("wallet_transactions").insert([{ investor_id: userId, amount, description: note, status: "approved" }]);
-      alert("بونس منتقل کر دیا گیا!");
+      const { error } = await db.from("wallet_transactions").insert([{
+        investor_id: userId,
+        amount: amount,
+        type: "bonus",
+        status: "approved"
+      }]);
+
+      if (error) alert("Error: " + error.message);
+      else {
+        alert("بونس کامیابی سے بھیج دیا گیا ہے!");
+        document.getElementById("bonusAmount").value = "";
+      }
     }
 
-    async function loadAccounts(db) {
+    // 3. Auto Profit Distribution (5%)
+    async function distributeAutoProfit() {
+      if (!confirm("کیا آپ تمام منظور شدہ انویسٹرز کو 5% پرافٹ منتقل کرنا چاہتے ہیں؟")) return;
+
+      const db = getSupabase();
+      const { data: investments } = await db.from("investments").select("*").eq("status", "approved");
+
+      if (!investments || investments.length === 0) {
+        return alert("کوئی منظُور شدہ انویسٹمنٹ نہیں ملی۔");
+      }
+
+      let successCount = 0;
+      for (let inv of investments) {
+        let profit = (Number(inv.amount) * 0.05); // 5% profit
+        if (profit > 0) {
+          await db.from("wallet_transactions").insert([{
+            investor_id: inv.investor_id,
+            amount: profit,
+            type: "daily_profit",
+            status: "approved"
+          }]);
+          successCount++;
+        }
+      }
+
+      alert(`کامیابی! ${successCount} انویسٹرز کو پرافٹ منتقل کر دیا گیا ہے۔`);
+    }
+
+    // 4. Load Pending Deposits & Review Slips
+    async function loadPendingDeposits(db) {
+      const box = document.getElementById("depositsList");
+      const { data: deposits, error } = await db.from("investments")
+        .select("*, profiles(full_name, email)")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error || !deposits || deposits.length === 0) {
+        box.innerHTML = `<div style="font-size:13px; color:#16a34a; font-weight:bold;">کوئی بھی پینڈنگ ڈپازٹ باقی نہیں ہے۔</div>`;
+        return;
+      }
+
+      box.innerHTML = deposits.map(dep => `
+        <div class="deposit-card">
+          <div style="font-weight:bold; color:#0b3c36;">${dep.profiles?.full_name || 'User'} (${dep.profiles?.email || ''})</div>
+          <div style="font-size:14px; margin:4px 0;">رقم: <strong>Rs ${Number(dep.amount).toLocaleString()}</strong></div>
+          <div style="font-size:12px; color:#475569;">Trx ID: <strong>${dep.trx_id || 'N/A'}</strong></div>
+          
+          ${dep.slip_url ? `<img src="${dep.slip_url}" class="slip-img" alt="Payment Slip" onclick="window.open('${dep.slip_url}')" title="بڑا دیکھنے کے لیے کلک کریں" />` : '<div style="color:#dc2626; font-size:11px;">سلپ اپلوڈ نہیں کی گئی</div>'}
+          
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button class="btn-approve" onclick="updateDepositStatus('${dep.id}', 'approved')">Approve (منظور کریں)</button>
+            <button class="btn-reject" onclick="updateDepositStatus('${dep.id}', 'rejected')">Reject (مسترد کریں)</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function updateDepositStatus(depId, status) {
+      const db = getSupabase();
+      const { error } = await db.from("investments").update({ status: status }).eq("id", depId);
+
+      if (error) alert("Error: " + error.message);
+      else {
+        alert(`ڈپازٹ ${status === 'approved' ? 'منظور' : 'مسترد'} کر دیا گیا ہے۔`);
+        loadPendingDeposits(db);
+      }
+    }
+
+    // 5. Manage Investment Campaigns
+    async function loadCampaigns(db) {
+      const box = document.getElementById("campaignsList");
+      const { data: camps } = await db.from("campaigns").select("*");
+
+      if (!camps || camps.length === 0) {
+        box.innerHTML = `<div style="font-size:12px; color:#64748b;">کوئی کیمپین موجود نہیں ہے۔</div>`;
+        return;
+      }
+
+      box.innerHTML = camps.map(c => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom:6px; border:1px solid #e2e8f0;">
+          <div>
+            <strong>${c.title}</strong>
+            <div style="font-size:11px; color:#64748b;">Target: Rs ${Number(c.target).toLocaleString()} | Status: ${c.is_active ? 'Active' : 'Disabled'}</div>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button onclick="toggleCampaign('${c.id}', ${!c.is_active})" style="font-size:11px; cursor:pointer;">${c.is_active ? 'Disable' : 'Enable'}</button>
+            <button class="btn-delete" onclick="deleteCampaign('${c.id}')">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function addCampaign() {
+      const db = getSupabase();
+      const title = document.getElementById("campTitle").value.trim();
+      const target = Number(document.getElementById("campTarget").value);
+
+      if (!title || !target) return alert("تمام معلومات درج کریں۔");
+
+      await db.from("campaigns").insert([{ title, target, is_active: true }]);
+      document.getElementById("campTitle").value = "";
+      document.getElementById("campTarget").value = "";
+      loadCampaigns(db);
+    }
+
+    async function toggleCampaign(id, status) {
+      const db = getSupabase();
+      await db.from("campaigns").update({ is_active: status }).eq("id", id);
+      loadCampaigns(db);
+    }
+
+    async function deleteCampaign(id) {
+      if (!confirm("کیا آپ اس کیمپین کو ڈیلیٹ کرنا چاہتے ہیں؟")) return;
+      const db = getSupabase();
+      await db.from("campaigns").delete().eq("id", id);
+      loadCampaigns(db);
+    }
+
+    // 6. Manage Payment Accounts
+    async function loadPaymentAccounts(db) {
       const tbody = document.getElementById("accountsTable");
-      const { data } = await db.from("payment_methods").select("*");
-      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="4">کوئی اکاؤنٹ نہیں ملا۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(a => `<tr><td>${a.label}</td><td>${a.account_title}</td><td>${a.account_number}</td><td><button class="btn btn-reject" onclick="deleteAccount('${a.id}')">Delete</button></td></tr>`).join("");
-    }
+      const { data: methods } = await db.from("payment_methods").select("*");
 
-    async function handleAddAccount() {
-      const db = getSupabase();
-      const label = document.getElementById("accLabel").value;
-      const title = document.getElementById("accTitle").value;
-      const number = document.getElementById("accNumber").value;
-      await db.from("payment_methods").insert([{ label, account_title: title, account_number: number }]);
-      loadAccounts(db);
-    }
+      if (!methods || methods.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">کوئی اکاؤنٹ نہیں ملا۔</td></tr>`;
+        return;
+      }
 
-    async function deleteAccount(id) {
-      const db = getSupabase();
-      await db.from("payment_methods").delete().eq("id", id);
-      loadAccounts(db);
-    }
-
-    async function loadDeposits(db) {
-      const tbody = document.getElementById("depositsTable");
-      const { data } = await db.from("investments").select("*, profiles(full_name, email)").eq("status", "pending");
-      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5">کوئی پینڈنگ ڈپازٹ نہیں ہے۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(d => `
+      tbody.innerHTML = methods.map(m => `
         <tr>
-          <td>${d.profiles?.full_name || d.profiles?.email || d.investor_id}</td>
-          <td>Rs ${d.amount}</td>
-          <td><strong style="color:#facc15;">${d.trx_id || 'N/A'}</strong></td>
-          <td><a href="${d.slip_url}" target="_blank" style="color:#38bdf8; font-weight:bold;">🖼️ View Slip</a></td>
-          <td>
-            <button class="btn btn-approve" onclick="updateDep('${d.id}', 'approved')">Approve</button>
-            <button class="btn btn-reject" onclick="updateDep('${d.id}', 'rejected')">Reject</button>
-          </td>
+          <td><strong>${m.label}</strong></td>
+          <td>${m.account_title}</td>
+          <td>${m.account_number}</td>
+          <td><button class="btn-delete" onclick="deleteAccount('${m.id}')">Delete</button></td>
         </tr>
       `).join("");
     }
 
-    async function updateDep(id, status) {
+    async function addPaymentAccount() {
       const db = getSupabase();
-      await db.from("investments").update({ status }).eq("id", id);
-      loadDeposits(db);
+      const label = document.getElementById("accMethod").value;
+      const account_title = document.getElementById("accTitle").value.trim();
+      const account_number = document.getElementById("accNumber").value.trim();
+
+      if (!account_title || !account_number) return alert("تمام خانے پر کریں۔");
+
+      await db.from("payment_methods").insert([{ label, account_title, account_number }]);
+      document.getElementById("accTitle").value = "";
+      document.getElementById("accNumber").value = "";
+      loadPaymentAccounts(db);
     }
 
-    async function loadWithdrawals(db) {
-      const tbody = document.getElementById("withdrawalsTable");
-      const { data } = await db.from("withdrawal_requests").select("*, profiles(full_name, email)").eq("status", "pending");
-      if (!data || data.length === 0) { tbody.innerHTML = `<tr><td colspan="5">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>`; return; }
-      tbody.innerHTML = data.map(w => `<tr><td>${w.profiles?.full_name || w.profiles?.email || w.investor_id}</td><td>${w.payment_method}</td><td>${w.account_title} (${w.account_number})</td><td>Rs ${w.amount}</td><td><button class="btn btn-approve" onclick="updateW('${w.id}', 'approved')">Approve</button><button class="btn btn-reject" onclick="updateW('${w.id}', 'rejected')">Reject</button></td></tr>`).join("");
-    }
-
-    async function updateW(id, status) {
+    async function deleteAccount(id) {
+      if (!confirm("ڈیلیٹ کرنے کی تصدیق کریں؟")) return;
       const db = getSupabase();
-      await db.from("withdrawal_requests").update({ status }).eq("id", id);
-      loadWithdrawals(db);
+      await db.from("payment_methods").delete().eq("id", id);
+      loadPaymentAccounts(db);
     }
 
-    window.addEventListener("DOMContentLoaded", initAdmin);
+    // 7. Support Settings
+    async function loadWhatsAppSetting(db) {
+      const { data } = await db.from("app_settings").select("value").eq("key", "whatsapp").single();
+      if (data) document.getElementById("waNumberInput").value = data.value;
+    }
+
+    async function updateWhatsAppNumber() {
+      const db = getSupabase();
+      const val = document.getElementById("waNumberInput").value.trim();
+      await db.from("app_settings").upsert({ key: "whatsapp", value: val });
+      alert("واٹس ایپ سپورٹ معلومات اپ ڈیٹ ہو گئی ہیں!");
+    }
+
+    window.addEventListener("DOMContentLoaded", checkAdminAuth);
   </script>
 </body>
 </html>
