@@ -6,127 +6,106 @@
 <title>My Dashboard — RozgarBike</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  .card-compact { padding: 12px; margin-bottom: 12px; border-radius: 8px; background: #fff; border: 1px solid var(--line, #e2e8f0); }
+  .btn-sm { padding: 8px 12px; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; border: none; }
+  .input-sm { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
+</style>
 </head>
 <body>
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;cursor:pointer;" onclick="handleLogout()">Log out</button>
+      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:4px 10px;font-size:12px;cursor:pointer;" onclick="handleLogout()">Log out</button>
     </div>
     <div class="nav">
       <a href="index.html">Bikes</a>
       <a href="dashboard.html" class="active">My Dashboard</a>
-      <!-- Admin link strictly visible only to saimpk5227@gmail.com -->
       <a href="admin.html" id="adminLink" style="display:none;">Admin</a>
     </div>
   </div>
 
-  <div class="wrap">
-    <div id="welcomeName" class="disp" style="font-size:20px;color:var(--petrol);margin-bottom:16px;">Loading...</div>
+  <div class="wrap" style="max-width:480px; margin:0 auto; padding: 12px;">
+    <div id="welcomeName" style="font-size:18px; font-weight:700; color:var(--petrol, #0f172a); margin-bottom:12px;">Loading...</div>
 
-    <!-- WALLET & WITHDRAWAL SECTION -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div class="muted">Available for Withdrawal</div>
-      <div id="walletBalance" class="mono" style="font-size:28px;font-weight:700;margin:6px 0 14px;color:var(--ink);">Rs 0</div>
-      
-      <button class="btn btn-dark" style="width:100%;margin-bottom:12px;" onclick="toggleSection('withdrawForm')">Request Withdrawal</button>
-      
-      <!-- Withdrawal Input Form -->
-      <div id="withdrawForm" style="display:none;border-top:1px solid var(--line);padding-top:12px;margin-top:12px;">
-        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Withdrawal Details:</div>
-        <select id="wMethod" style="margin-bottom:8px;width:100%;">
+    <!-- 1. REFERRAL PROGRAM (TOP) -->
+    <div class="disp" style="font-size:13px; font-weight:700; margin-bottom:4px;">🎁 REFERRAL PROGRAM</div>
+    <div class="card-compact">
+      <div style="font-size:12px; margin-bottom:6px;">Name: <strong id="myNameInline">---</strong></div>
+      <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <input id="refLinkInput" readonly class="input-sm" style="margin-bottom:0; font-size:11px;" />
+        <button class="btn btn-primary" style="padding:0 12px; font-size:12px; white-space:nowrap;" onclick="navigator.clipboard.writeText(document.getElementById('refLinkInput').value); alert('Referral Link Copied!');">Copy</button>
+      </div>
+      <div style="font-weight:700; font-size:12px; margin-bottom:4px;">👥 My Referrals:</div>
+      <div id="referredUsersList" style="max-height:80px; overflow-y:auto; font-size:11px;" class="muted">Loading...</div>
+    </div>
+
+    <!-- 2. WITHDRAWAL SECTION (MIDDLE) -->
+    <div class="disp" style="font-size:13px; font-weight:700; margin-bottom:4px;">💰 WITHDRAWAL</div>
+    <div class="card-compact">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span class="muted" style="font-size:12px;">Approved Balance:</span>
+        <span id="walletBalance" class="mono" style="font-size:18px; font-weight:700; color:var(--ink, #000);">Rs 0</span>
+      </div>
+      <button class="btn-sm btn-dark" onclick="toggleSection('withdrawForm')">Request Withdrawal</button>
+
+      <!-- Hidden Form Inside -->
+      <div id="withdrawForm" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+        <div style="font-size:11px; color:#d97706; font-weight:700; margin-bottom:6px;">⚠️ Min: Rs 100 | Max: Rs 10,000 (Limit: 1 per day)</div>
+        <select id="wMethod" class="input-sm">
           <option value="JazzCash">JazzCash</option>
           <option value="SadaPay">SadaPay</option>
           <option value="Meezan Bank">Meezan Bank</option>
-          <option value="Easypaisa">Easypaisa</option>
         </select>
-        <input id="wAccountTitle" placeholder="Account Title Name" style="margin-bottom:8px;width:100%;" />
-        <input id="wAccountNumber" placeholder="Account Number / IBAN" style="margin-bottom:8px;width:100%;" />
-        <input id="wAmount" type="number" placeholder="Amount (e.g. 1000)" style="margin-bottom:12px;width:100%;" />
-        <button class="btn btn-primary" style="width:100%;" onclick="submitWithdrawal()">Submit Request</button>
+        <input id="wAccountTitle" class="input-sm" placeholder="Account Title Name" />
+        <input id="wAccountNumber" class="input-sm" placeholder="Account Number / IBAN" />
+        <input id="wAmount" type="number" class="input-sm" placeholder="Amount (100 - 10000)" />
+        <button class="btn-sm btn-primary" onclick="submitWithdrawal()">Submit Request</button>
       </div>
     </div>
 
-    <!-- DEPOSIT & SLIP UPLOAD SECTION -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">DEPOSIT / FUND BIKE</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div style="background:#eef6f5;padding:12px;border-radius:8px;margin-bottom:14px;border:1px solid #c2e2de;">
-        <div style="font-weight:700;font-size:13px;color:var(--petrol);margin-bottom:6px;">Official Payment Accounts:</div>
-        <div style="font-size:12px;line-height:1.7;">
-          <strong>JazzCash:</strong> 03245380453 (Muhammad Safdar)<br/>
-          <strong>SadaPay:</strong> 03245380453 (Muhammad Safdar)<br/>
-          <strong>Meezan Bank:</strong> 00300113025971 (Naveed Ahmed)
+    <!-- 3. DEPOSIT SECTION (BOTTOM) -->
+    <div class="disp" style="font-size:13px; font-weight:700; margin-bottom:4px;">📥 DEPOSIT / FUND BIKE</div>
+    <div class="card-compact">
+      <button class="btn-sm btn-primary" onclick="toggleSection('depositForm')">Make a Deposit / Add Slip</button>
+
+      <!-- Hidden Form Inside -->
+      <div id="depositForm" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:8px; border-radius:6px; font-size:11px; margin-bottom:8px; line-height:1.4;">
+          <strong>Official Accounts:</strong><br/>
+          • JazzCash: 03245380453 (Muhammad Safdar)<br/>
+          • SadaPay: 03245380453 (Muhammad Safdar)<br/>
+          • Meezan Bank: 00300113025971 (Naveed Ahmed)
         </div>
-      </div>
-
-      <div class="muted" style="margin-bottom:6px;">1. Select Bike Campaign</div>
-      <select id="campaignSelect" style="margin-bottom:12px;width:100%;"></select>
-
-      <div class="muted" style="margin-bottom:6px;">2. Investment Amount (PKR)</div>
-      <input id="depAmount" type="number" placeholder="Enter Amount (e.g. 1000)" style="margin-bottom:12px;width:100%;" />
-
-      <div class="muted" style="margin-bottom:6px;">3. Transaction ID / TRX ID</div>
-      <input id="trxIdInput" placeholder="Enter Transaction ID (e.g. 87654321)" style="margin-bottom:12px;width:100%;" />
-
-      <div class="muted" style="margin-bottom:6px;">4. Payment Proof / Receipt Slip</div>
-      <input id="slipInput" type="file" accept="image/*" style="margin-bottom:16px;width:100%;" />
-
-      <button class="btn btn-primary" style="width:100%;" onclick="submitDeposit()">Submit Deposit Proof</button>
-    </div>
-
-    <!-- REFERRAL PROGRAM -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">🎁 REFERRAL PROGRAM</div>
-    <div class="card" style="margin-bottom:24px;">
-      <div class="muted" style="margin-bottom:10px;">Your name: <strong style="color:var(--ink);" id="myNameInline"></strong></div>
-
-      <div id="progressBox" style="margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
-          <span class="muted">Milestone Progress</span>
-          <span id="refCount" class="mono">0 / 10</span>
-        </div>
-        <div class="progress-track"><div id="progressBar" class="progress-fill" style="width:0%;"></div></div>
-      </div>
-
-      <div class="muted" style="margin-bottom:6px;font-weight:700;font-size:12px;">Aap ka referral link:</div>
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <input id="refLinkInput" readonly style="flex:1;font-size:12px;" />
-        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap;" onclick="navigator.clipboard.writeText(document.getElementById('refLinkInput').value); alert('Copied!');">Copy</button>
-      </div>
-
-      <div style="font-weight:700;font-size:13px;margin-bottom:10px;border-top:1px solid var(--line);padding-top:12px;">
-        👥 Aap ke link se join hone wale log:
-      </div>
-      <div id="referredUsersList" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;">
-        <p class="muted" style="font-size:12px;">Loading...</p>
+        <select id="campaignSelect" class="input-sm"></select>
+        <input id="depAmount" type="number" class="input-sm" placeholder="Amount (PKR)" />
+        <input id="trxIdInput" class="input-sm" placeholder="Transaction ID (TRX ID)" />
+        <input id="slipInput" type="file" accept="image/*" class="input-sm" />
+        <button class="btn-sm btn-primary" onclick="submitDeposit()">Submit Deposit Proof</button>
       </div>
     </div>
 
-    <!-- INVESTMENTS HISTORY -->
-    <div class="disp" style="font-size:16px;margin-bottom:8px;">MY INVESTMENTS</div>
-    <div id="investmentsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+    <!-- MY INVESTMENTS LIST -->
+    <div class="disp" style="font-size:13px; font-weight:700; margin-bottom:4px;">📋 MY INVESTMENTS</div>
+    <div id="investmentsList" style="font-size:12px;"></div>
   </div>
 
   <script src="assets/config.js"></script>
   <script>
     let currentUserId = null;
+    let availableBalance = 0;
     const ADMIN_EMAIL = "saimpk5227@gmail.com";
 
-    function pkr(val) {
-      return "Rs " + Number(val || 0).toLocaleString("en-PK");
-    }
-
+    function pkr(val) { return "Rs " + Number(val || 0).toLocaleString("en-PK"); }
+    
     function toggleSection(id) {
       const el = document.getElementById(id);
       el.style.display = el.style.display === "none" ? "block" : "none";
     }
 
     async function handleLogout() {
-      try {
-        if (window.supabaseClient) await supabaseClient.auth.signOut();
-      } catch (e) {}
-      localStorage.clear();
-      sessionStorage.clear();
+      try { if (window.supabaseClient) await supabaseClient.auth.signOut(); } catch (e) {}
+      localStorage.clear(); sessionStorage.clear();
       window.location.href = "index.html";
     }
 
@@ -135,101 +114,136 @@
         if (!window.supabaseClient) return;
 
         const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session) {
-          window.location.href = "index.html";
-          return;
-        }
+        if (!session) { window.location.href = "index.html"; return; }
 
         currentUserId = session.user.id;
         const userEmail = session.user.email;
 
-        // Profile Load
+        // Profile
         const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", currentUserId).maybeSingle();
         const fullName = profile?.full_name || session.user.user_metadata?.full_name || "Investor";
         
         document.getElementById("welcomeName").textContent = "Welcome, " + fullName;
         document.getElementById("myNameInline").textContent = fullName;
         
-        // Strictly allow Admin access only if the logged-in email is saimpk5227@gmail.com
+        // Admin Restriction
         if (userEmail === ADMIN_EMAIL) {
           document.getElementById("adminLink").style.display = "inline-block";
-        } else {
-          document.getElementById("adminLink").style.display = "none";
         }
 
         const refCode = profile?.referral_code || currentUserId.substring(0, 8);
         const base = window.location.href.replace("dashboard.html", "");
         document.getElementById("refLinkInput").value = base + "index.html?ref=" + refCode;
 
-        // Wallet Balance
-        const { data: txns } = await supabaseClient.from("wallet_transactions").select("amount").eq("investor_id", currentUserId);
-        const totalWallet = (txns || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
-        document.getElementById("walletBalance").textContent = pkr(totalWallet);
+        // Wallet Balance - Only Approved Transactions
+        const { data: txns } = await supabaseClient
+          .from("wallet_transactions")
+          .select("amount")
+          .eq("investor_id", currentUserId)
+          .eq("status", "approved");
+
+        availableBalance = (txns || []).reduce((sum, t) => sum + Number(t.amount || 0), 0);
+        document.getElementById("walletBalance").textContent = pkr(availableBalance);
 
         // Campaigns
         const { data: campaigns } = await supabaseClient.from("campaigns").select("*");
         const sel = document.getElementById("campaignSelect");
         if (campaigns && campaigns.length) {
-          sel.innerHTML = campaigns.map(c => `<option value="${c.id}">${c.name} — Target ${pkr(c.target)}</option>`).join("");
-        } else {
-          sel.innerHTML = `<option value="">No campaigns found</option>`;
+          sel.innerHTML = campaigns.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
         }
 
-        // Referred Users
-        const { data: joined } = await supabaseClient.from("profiles").select("full_name, created_at").eq("referred_by", currentUserId);
+        // Referrals
+        const { data: joined } = await supabaseClient.from("profiles").select("full_name").eq("referred_by", currentUserId);
         const listEl = document.getElementById("referredUsersList");
         if (joined && joined.length) {
-          listEl.innerHTML = joined.map((u, i) => `
-            <div class="card" style="padding:8px 10px;display:flex;justify-content:space-between;font-size:12px;">
-              <span><strong>#${i + 1}</strong> ${u.full_name || "Investor"}</span>
-              <span class="muted">${u.created_at ? new Date(u.created_at).toLocaleDateString() : ""}</span>
-            </div>
-          `).join("");
+          listEl.innerHTML = joined.map(u => `<div>• ${u.full_name || "User"}</div>`).join("");
         } else {
-          listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;">Abhi tak koi join nahi hua.</p>`;
+          listEl.innerHTML = `<div>No referrals yet.</div>`;
         }
 
-        // Investments List
+        // Investments
         const { data: myInv } = await supabaseClient.from("investments").select("*, campaigns(*)").eq("investor_id", currentUserId);
         const invList = document.getElementById("investmentsList");
         if (myInv && myInv.length) {
           invList.innerHTML = myInv.map(inv => `
-            <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="card-compact" style="display:flex; justify-content:space-between; margin-bottom:6px;">
               <div>
-                <div style="font-weight:700;font-size:14px;">${inv.campaigns?.name || "Bike Campaign"}</div>
-                <div class="muted" style="margin-top:2px;">Amount: ${pkr(inv.amount)}</div>
-                <div class="mono" style="color:var(--success);margin-top:4px;font-size:12.5px;">Status: ${inv.status || "approved"}</div>
+                <strong>${inv.campaigns?.name || "Bike"}</strong> - ${pkr(inv.amount)}
+                <div style="font-size:10px; color:${inv.status === 'approved' ? 'green' : 'orange'}">Status: ${inv.status || "pending"}</div>
               </div>
             </div>
           `).join("");
         } else {
-          invList.innerHTML = `<p class="muted" style="text-align:center;padding:20px;">No investments found.</p>`;
+          invList.innerHTML = `<div class="muted" style="text-align:center;">No investments yet.</div>`;
         }
 
-      } catch (err) {
-        console.error("Dashboard error:", err);
-      }
+      } catch (err) { console.error(err); }
     }
 
-    // SUBMIT DEPOSIT PROOF
+    // WITHDRAWAL WITH LIMITS
+    async function submitWithdrawal() {
+      const method = document.getElementById("wMethod").value;
+      const accountTitle = document.getElementById("wAccountTitle").value;
+      const accountNumber = document.getElementById("wAccountNumber").value;
+      const amount = Number(document.getElementById("wAmount").value);
+
+      if (!accountTitle || !accountNumber || !amount) {
+        alert("Please fill all details!"); return;
+      }
+
+      // Rule 1: Min 100, Max 10000
+      if (amount < 100 || amount > 10000) {
+        alert("Withdrawal amount must be between Rs 100 and Rs 10,000!");
+        return;
+      }
+
+      // Rule 2: Balance check
+      if (amount > availableBalance) {
+        alert("Insufficient approved wallet balance!");
+        return;
+      }
+
+      // Rule 3: 1 request per day limit check
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayRequests } = await supabaseClient
+        .from("withdrawal_requests")
+        .select("created_at")
+        .eq("investor_id", currentUserId)
+        .gte("created_at", today + "T00:00:00.000Z");
+
+      if (todayRequests && todayRequests.length > 0) {
+        alert("Aap din me sirf 1 bar withdrawal request bhej sakte hain! Kal dobara try karein.");
+        return;
+      }
+
+      const { error } = await supabaseClient.from("withdrawal_requests").insert([{
+        investor_id: currentUserId,
+        amount: amount,
+        payment_method: method,
+        account_title: accountTitle,
+        account_number: accountNumber,
+        status: "pending"
+      }]);
+
+      if (error) { alert("Failed: " + error.message); } 
+      else { alert("Withdrawal request submitted!"); window.location.reload(); }
+    }
+
+    // DEPOSIT SUBMISSION
     async function submitDeposit() {
       const campaignId = document.getElementById("campaignSelect").value;
       const amount = document.getElementById("depAmount").value;
       const trxId = document.getElementById("trxIdInput").value;
       const fileInput = document.getElementById("slipInput");
 
-      if (!amount || !trxId) {
-        alert("Please enter Amount and Transaction ID!");
-        return;
-      }
+      if (!amount || !trxId) { alert("Enter Amount & Transaction ID!"); return; }
 
       let slipUrl = null;
-
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const filePath = `slips/${Date.now()}_${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage.from("payment_slips").upload(filePath, file);
-        if (!uploadError && uploadData) {
+        const { data: uploadData } = await supabaseClient.storage.from("payment_slips").upload(filePath, file);
+        if (uploadData) {
           const { data: publicUrl } = supabaseClient.storage.from("payment_slips").getPublicUrl(filePath);
           slipUrl = publicUrl.publicUrl;
         }
@@ -244,41 +258,8 @@
         status: "pending"
       }]);
 
-      if (error) {
-        alert("Deposit submission failed: " + error.message);
-      } else {
-        alert("Deposit submitted successfully! Admin will verify and approve.");
-        window.location.reload();
-      }
-    }
-
-    // SUBMIT WITHDRAWAL REQUEST
-    async function submitWithdrawal() {
-      const method = document.getElementById("wMethod").value;
-      const accountTitle = document.getElementById("wAccountTitle").value;
-      const accountNumber = document.getElementById("wAccountNumber").value;
-      const amount = document.getElementById("wAmount").value;
-
-      if (!accountTitle || !accountNumber || !amount) {
-        alert("Please fill all withdrawal details!");
-        return;
-      }
-
-      const { error } = await supabaseClient.from("withdrawal_requests").insert([{
-        investor_id: currentUserId,
-        amount: Number(amount),
-        payment_method: method,
-        account_title: accountTitle,
-        account_number: accountNumber,
-        status: "pending"
-      }]);
-
-      if (error) {
-        alert("Withdrawal request failed: " + error.message);
-      } else {
-        alert("Withdrawal request submitted successfully!");
-        window.location.reload();
-      }
+      if (error) { alert("Failed: " + error.message); } 
+      else { alert("Deposit proof submitted!"); window.location.reload(); }
     }
 
     window.addEventListener("DOMContentLoaded", loadDashboardDirectly);
