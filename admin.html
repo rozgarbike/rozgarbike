@@ -264,22 +264,23 @@ async function initAdmin() {
   }
 
   try {
-    await loadWhatsAppLink(db);
-    await loadUsersMap(db);
+    await loadWhatsAppLink();
+    await loadUsersMap();
     await Promise.allSettled([
-      loadDeposits(db),
-      loadWithdrawals(db),
-      loadAccounts(db),
-      loadCampaigns(db)
+      loadDeposits(),
+      loadWithdrawals(),
+      loadAccounts(),
+      loadCampaigns()
     ]);
   } catch(e) {
     console.error("Admin init error:", e);
   }
 }
 
-// 0. WHATSAPP LINK MANAGEMENT
-async function loadWhatsAppLink(db) {
-  const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").single();
+// WHATSAPP LINK
+async function loadWhatsAppLink() {
+  const db = getSupabase();
+  const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").maybeSingle();
   if (data && data.value) {
     document.getElementById("whatsappInput").value = data.value;
   }
@@ -289,22 +290,17 @@ async function saveWhatsAppLink() {
   const db = getSupabase();
   const link = document.getElementById("whatsappInput").value.trim();
 
-  if(!link) {
-    alert("برائے مہربانی WhatsApp لنک یا نمبر درج کریں۔");
-    return;
-  }
+  if(!link) return alert("برائے مہربانی WhatsApp لنک درج کریں۔");
 
   const { error } = await db.from("settings").upsert({ key: "whatsapp_link", value: link }, { onConflict: "key" });
 
-  if(error) {
-    alert("WhatsApp لنک سیو کرنے میں مسئلہ آیا: " + error.message);
-  } else {
-    alert("WhatsApp لنک کامیابی سے سیو ہو گیا ہے!");
-  }
+  if(error) alert("مسئلہ: " + error.message);
+  else alert("WhatsApp لنک محفوظ ہو گیا!");
 }
 
-// 1. ALL USERS FETCH FOR DROPDOWN (Enhanced Fallback)
-async function loadUsersMap(db) {
+// USER MAP
+async function loadUsersMap() {
+  const db = getSupabase();
   const select = document.getElementById("bonusUserSelect");
   select.innerHTML = `<option value="">-- Loading Investors... --</option>`;
 
@@ -314,7 +310,7 @@ async function loadUsersMap(db) {
     select.innerHTML = `<option value="">-- Select Investor --</option>`;
     profiles.forEach(p => {
       const uId = p.id || p.user_id;
-      const name = p.full_name || p.name || p.email || ("User " + uId.substring(0, 6));
+      const name = p.full_name || p.name || p.email || ("User " + String(uId).substring(0, 6));
       userMap[uId] = name;
       select.innerHTML += `<option value="${uId}">${name}</option>`;
     });
@@ -327,7 +323,7 @@ async function loadUsersMap(db) {
     invs.forEach(i => {
       const uId = i.investor_id || i.user_id;
       if (uId && !userMap[uId]) {
-        const name = i.user_name || i.email || ("Investor (" + uId.substring(0, 6) + ")");
+        const name = i.user_name || i.email || ("Investor (" + String(uId).substring(0, 6) + ")");
         userMap[uId] = name;
         select.innerHTML += `<option value="${uId}">${name}</option>`;
       }
@@ -337,25 +333,15 @@ async function loadUsersMap(db) {
   }
 }
 
-// 2. AUTO BONUS DISTRIBUTION FORMULA
+// AUTO BONUS
 async function distributeAutoBonus() {
   const db = getSupabase();
-  if(!confirm("تمام approved انوسٹرز کو فارمولا کے مطابق بونس بھیجیں؟")) return;
+  if(!confirm("تمام approved انوسٹرز کو بونس بھیجیں؟")) return;
 
-  const { data: investments, error } = await db
-    .from("investments")
-    .select("*")
-    .eq("status", "approved");
+  const { data: investments, error } = await db.from("investments").select("*").eq("status", "approved");
 
-  if(error) {
-    alert("Error fetching investments: " + error.message);
-    return;
-  }
-
-  if(!investments || investments.length === 0) {
-    alert("کوئی Approved انوسٹمنٹ موجود نہیں ہے۔");
-    return;
-  }
+  if(error) return alert("Error: " + error.message);
+  if(!investments || investments.length === 0) return alert("کوئی Approved انوسٹمنٹ نہیں ہے۔");
 
   let count = 0;
   for(let inv of investments) {
@@ -371,7 +357,6 @@ async function distributeAutoBonus() {
 
       const { error: txErr } = await db.from("wallet_transactions").insert([{
         investor_id: uId,
-        user_id: uId,
         amount: bonus,
         type: "bonus",
         status: "approved",
@@ -382,28 +367,21 @@ async function distributeAutoBonus() {
     }
   }
 
-  alert(`کامیابی! کل ${count} انوسٹرز کو بونس منتقل کر دیا گیا ہے۔`);
+  alert(`کل ${count} انوسٹرز کو بونس مل گیا ہے۔`);
 }
 
-// 3. MANUAL BONUS SENDER
+// MANUAL BONUS
 async function sendManualBonus() {
   const db = getSupabase();
   const userId = document.getElementById("bonusUserSelect").value;
   const amount = document.getElementById("bonusAmount").value;
   const note = document.getElementById("bonusNote").value || "Special Bonus";
 
-  if(!userId) {
-    alert("برائے مہربانی انوسٹر (Investor) منتخب کریں۔");
-    return;
-  }
-  if(!amount || Number(amount) <= 0) {
-    alert("برائے مہربانی درست بونس رقم درج کریں۔");
-    return;
-  }
+  if(!userId) return alert("انوسٹر منتخب کریں۔");
+  if(!amount || Number(amount) <= 0) return alert("درست رقم درج کریں۔");
 
   const { error } = await db.from("wallet_transactions").insert([{
     investor_id: userId,
-    user_id: userId,
     amount: Number(amount),
     type: "bonus",
     status: "approved",
@@ -411,16 +389,17 @@ async function sendManualBonus() {
   }]);
 
   if(error) {
-    alert("بونس بھیجنے میں مسئلہ آیا: " + error.message);
+    alert("بونس میں مسئلہ: " + error.message);
   } else {
-    alert("بونس کامیابی کے ساتھ بھیج دیا گیا ہے!");
+    alert("بونس کامیابی سے بھیج دیا گیا!");
     document.getElementById("bonusAmount").value = "";
     document.getElementById("bonusNote").value = "";
   }
 }
 
-// 4. PENDING DEPOSIT REQUESTS
-async function loadDeposits(db) {
+// DEPOSITS
+async function loadDeposits() {
+  const db = getSupabase();
   const tbody = document.getElementById("depositTableBody");
   
   const { data, error } = await db
@@ -435,7 +414,7 @@ async function loadDeposits(db) {
   }
 
   if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ موجود نہیں ہے۔</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ڈیپازٹ نہیں ہے۔</td></tr>`;
     return;
   }
 
@@ -467,17 +446,18 @@ async function updateDepositStatus(id, status) {
   const db = getSupabase();
   if(!confirm(`کیا آپ اس ڈیپازٹ کو ${status} کرنا چاہتے ہیں؟`)) return;
 
-  const { error } = await db.from("investments").update({ status }).eq("id", id);
+  const { error } = await db.from("investments").update({ status: status }).eq("id", id);
   if(error) {
     alert("Error: " + error.message);
   } else {
-    alert(`ڈیپازٹ ${status} ہو گیا ہے!`);
-    loadDeposits(db);
+    alert(`ڈیپازٹ ${status} ہو گیا!`);
+    loadDeposits();
   }
 }
 
-// 5. PENDING WITHDRAWAL REQUESTS
-async function loadWithdrawals(db) {
+// WITHDRAWALS
+async function loadWithdrawals() {
+  const db = getSupabase();
   const tbody = document.getElementById("withdrawTableBody");
   
   const { data, error } = await db
@@ -492,7 +472,7 @@ async function loadWithdrawals(db) {
   }
 
   if(!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال موجود نہیں ہے۔</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9ca3af">کوئی پینڈنگ ودڈرال نہیں ہے۔</td></tr>`;
     return;
   }
 
@@ -520,16 +500,18 @@ async function updateWithdrawStatus(id, status) {
   const db = getSupabase();
   if(!confirm(`کیا آپ اس ودڈرال کو ${status} کرنا چاہتے ہیں؟`)) return;
 
-  const { error } = await db.from("withdrawals").update({ status }).eq("id", id);
-  if(error) alert("Error: " + error.message);
-  else {
-    alert(`ودڈرال ${status} ہو گیا ہے!`);
-    loadWithdrawals(db);
+  const { error } = await db.from("withdrawals").update({ status: status }).eq("id", id);
+  if(error) {
+    alert("Error: " + error.message);
+  } else {
+    alert(`ودڈرال ${status} ہو گیا!`);
+    loadWithdrawals();
   }
 }
 
-// 6. PAYMENT ACCOUNTS & CAMPAIGNS MANAGEMENT
-async function loadAccounts(db) {
+// ACCOUNTS
+async function loadAccounts() {
+  const db = getSupabase();
   const tbody = document.getElementById("paymentAccountsBody");
   const { data } = await db.from("payment_methods").select("*");
 
@@ -563,18 +545,21 @@ async function addPaymentAccount() {
     document.getElementById("accLabel").value = "";
     document.getElementById("accTitle").value = "";
     document.getElementById("accNum").value = "";
-    loadAccounts(db);
+    loadAccounts();
   }
 }
 
 async function deleteAccount(id) {
   const db = getSupabase();
   if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
-  await db.from("payment_methods").delete().eq("id", id);
-  loadAccounts(db);
+  const { error } = await db.from("payment_methods").delete().eq("id", id);
+  if(error) alert("Error: " + error.message);
+  else loadAccounts();
 }
 
-async function loadCampaigns(db) {
+// CAMPAIGNS
+async function loadCampaigns() {
+  const db = getSupabase();
   const tbody = document.getElementById("campaignsTableBody");
   const { data } = await db.from("campaigns").select("*");
 
@@ -605,19 +590,24 @@ async function addCampaign() {
     alert("Campaign added!");
     document.getElementById("campTitle").value = "";
     document.getElementById("campTarget").value = "";
-    loadCampaigns(db);
+    loadCampaigns();
   }
 }
 
 async function deleteCampaign(id) {
   const db = getSupabase();
-  if(!confirm("ڈیلیٹ کرنا چاہتے ہیں؟")) return;
-  await db.from("campaigns").delete().eq("id", id);
-  loadCampaigns(db);
+  if(!confirm("کیا آپ واقعی اس کمپین کو ڈیلیٹ کرنا چاہتے ہیں؟")) return;
+  
+  const { error } = await db.from("campaigns").delete().eq("id", id);
+  if(error) {
+    alert("ڈیلیٹ کرنے میں مسئلہ: " + error.message);
+  } else {
+    alert("کمپین کامیابی سے ڈیلیٹ ہو گئی!");
+    loadCampaigns();
+  }
 }
 
 window.addEventListener("DOMContentLoaded", initAdmin);
 </script>
 </body>
-  </html>
-  
+</html>
