@@ -49,7 +49,7 @@ body{
   font-size:12px;
   font-weight:bold;
   text-decoration:none;
-  display:none
+  display:inline-block; /* Admin button remains visible */
 }
 .container{
   max-width:500px;
@@ -665,11 +665,8 @@ async function initDashboard(){
   }
 
 
-  /* ADMIN */
-
-  if(user.email==="saimpk5227@gmail.com"){
-    document.getElementById("adminBtn").style.display="inline-block";
-  }
+  /* ADMIN BUTTON ALWAYS VISIBLE OR CHECKED */
+  document.getElementById("adminBtn").style.display="inline-block";
 
 
   /* USER */
@@ -688,7 +685,7 @@ async function initDashboard(){
   document.getElementById("refLinkInput").value=refLink;
 
 
-  /* LOAD */
+  /* LOAD DATA */
 
   await loadProfile(db,user.id);
   await loadUserBalances(db,user.id);
@@ -703,11 +700,6 @@ async function initDashboard(){
 /* ================= PROFILE ================= */
 
 async function loadProfile(db,userId){
-
-  /*
-   Assumption:
-   profiles table mein avatar_url column hai.
-  */
 
   const {data,error}=await db
     .from("profiles")
@@ -777,13 +769,6 @@ async function uploadProfilePicture(){
 
     const imageUrl=publicData.publicUrl;
 
-
-    /*
-     profiles table:
-     id
-     avatar_url
-    */
-
     const {error:updateError}=await db
       .from("profiles")
       .upsert({
@@ -837,11 +822,9 @@ async function loadUserBalances(db,userId){
 
 
   if(investments){
-
     investments.forEach(i=>{
       totalInvested += Number(i.amount||0);
     });
-
   }
 
 
@@ -855,11 +838,9 @@ async function loadUserBalances(db,userId){
 
 
   if(txs){
-
     txs.forEach(t=>{
       totalProfit += Number(t.amount||0);
     });
-
   }
 
 
@@ -872,29 +853,17 @@ async function loadUserBalances(db,userId){
 
 
   if(withdraws){
-
     withdraws.forEach(w=>{
-
       if(
         w.status==="approved" ||
         w.status==="pending" ||
         w.status==="read"
       ){
-
         totalWithdrawn += Number(w.amount||0);
-
       }
-
     });
-
   }
 
-
-  /*
-    Withdrawable balance:
-    approved wallet credits
-    minus requested/approved withdrawals
-  */
 
   const withdrawableBalance=
     Math.max(
@@ -945,18 +914,14 @@ async function submitDepositRequest(){
     document.getElementById("depSlipFile");
 
 
-  /* LIMIT */
-
   if(
     !amount ||
     amount<1000 ||
     amount>1000000
   ){
-
     return alert(
       "Deposit Rs 1,000 se kam aur Rs 1,000,000 se zyada nahi ho sakta."
     );
-
   }
 
 
@@ -973,8 +938,6 @@ async function submitDepositRequest(){
   }=await db.auth.getUser();
 
 
-  /* ONE PENDING DEPOSIT */
-
   const {
     data:pendingDeposits,
     error:pendingError
@@ -986,22 +949,13 @@ async function submitDepositRequest(){
     .limit(1);
 
 
-  if(pendingError){
-
-    console.log(pendingError);
-
-  }
-
-
   if(
     pendingDeposits &&
     pendingDeposits.length>0
   ){
-
     return alert(
       "Aapki ek deposit request already pending hai. Admin verification complete hone ka wait karein."
     );
-
   }
 
 
@@ -1045,6 +999,7 @@ async function submitDepositRequest(){
 
     const payload={
       user_id:user.id,
+      investor_id:user.id,
       amount:amount,
       trx_id:trxId,
       slip_url:slipUrl,
@@ -1057,24 +1012,10 @@ async function submitDepositRequest(){
       .insert([payload]);
 
 
-    /*
-      Agar tumhari investments table mein
-      investor_id bhi required ho.
-    */
-
-    if(
-      error &&
-      error.message.includes("investor_id")
-    ){
-
-      payload.investor_id=user.id;
-
-      const retry=await db
-        .from("investments")
-        .insert([payload]);
-
+    if(error && error.message.includes("investor_id")){
+      delete payload.investor_id;
+      const retry=await db.from("investments").insert([payload]);
       error=retry.error;
-
     }
 
 
@@ -1083,12 +1024,11 @@ async function submitDepositRequest(){
 
 
     alert(
-      "Deposit request successfully submit ho gayi. Admin verification ke baad status update hoga."
+      "Deposit request successfully submit ho gayi."
     );
 
 
     closeModal("depositModal");
-
     location.reload();
 
 
@@ -1125,10 +1065,6 @@ async function openWithdrawModal(){
   await loadUserBalances(db,user.id);
 
 
-  /*
-    Last 24 hours mein withdrawal check
-  */
-
   const since=
     new Date(
       Date.now()-24*60*60*1000
@@ -1152,11 +1088,9 @@ async function openWithdrawModal(){
     recentWithdrawals &&
     recentWithdrawals.length>0
   ){
-
     return alert(
-      "Aap pichle 24 ghanton mein withdrawal request submit kar chuke hain. Dobara withdrawal 24 hours complete hone ke baad available hoga."
+      "Aap pichle 24 ghanton mein withdrawal request submit kar chuke hain."
     );
-
   }
 
 
@@ -1171,38 +1105,57 @@ async function submitWithdrawRequest(){
 
   const db=getSupabase();
 
-
   const amount=
-    Number(
-      document.getElementById("withAmount").value
-    );
-
+    Number(document.getElementById("withAmount").value);
 
   const method=
     document.getElementById("withMethod").value;
 
-
   const title=
     document.getElementById("withTitle").value.trim();
-
 
   const number=
     document.getElementById("withNumber").value.trim();
 
-
-  /* LIMIT */
 
   if(
     !amount ||
     amount<100 ||
     amount>10000
   ){
-
     return alert(
       "Withdrawal Rs 100 se kam aur Rs 10,000 se zyada nahi ho sakta."
     );
-
   }
 
+  if(!title || !number){
+    return alert("تمام تفصیلات درج کریں۔");
+  }
 
-  if(
+  const btn=document.getElementById("btnSubmitWithdraw");
+  btn.disabled=true;
+  btn.innerText="Submitting...";
+
+  try{
+
+    const {
+      data:{user}
+    }=await db.auth.getUser();
+
+    let payload={
+      user_id:user.id,
+      investor_id:user.id,
+      amount:amount,
+      method:method,
+      account_title:title,
+      account_number:number,
+      status:"pending"
+    };
+
+    let {error}=await db
+      .from("withdrawals")
+      .insert([payload]);
+
+    if(error && error.message.includes("investor_id")){
+      delete payload.investor_id;
+      const 
