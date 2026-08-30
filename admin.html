@@ -111,6 +111,14 @@ th{ background:#111827; color:#9ca3af }
 
 <div class="container">
 
+  <!-- MANAGE WHATSAPP NUMBER & CHANNEL LINK -->
+  <div class="card">
+    <div class="card-title">💬 Manage WhatsApp Number / Channel Link</div>
+    <label style="font-size:12px;color:#9ca3af">WhatsApp Number or Channel Link:</label>
+    <input id="whatsappInput" class="input-box" placeholder="e.g. https://whatsapp.com/channel/... or https://wa.me/923001234567">
+    <button onclick="saveWhatsAppLink()" class="btn-act btn-primary" style="width:100%;padding:10px">💾 Save WhatsApp Link</button>
+  </div>
+
   <!-- BONUS FORMULA & AUTOMATIC DISTRIBUTE -->
   <div class="card">
     <div class="card-title">⚡ Bonus Formula & Auto Distribution</div>
@@ -256,6 +264,7 @@ async function initAdmin() {
   }
 
   try {
+    await loadWhatsAppLink(db);
     await loadUsersMap(db);
     await Promise.allSettled([
       loadDeposits(db),
@@ -268,12 +277,37 @@ async function initAdmin() {
   }
 }
 
+// 0. WHATSAPP LINK MANAGEMENT
+async function loadWhatsAppLink(db) {
+  const { data } = await db.from("settings").select("value").eq("key", "whatsapp_link").single();
+  if (data && data.value) {
+    document.getElementById("whatsappInput").value = data.value;
+  }
+}
+
+async function saveWhatsAppLink() {
+  const db = getSupabase();
+  const link = document.getElementById("whatsappInput").value.trim();
+
+  if(!link) {
+    alert("برائے مہربانی WhatsApp لنک یا نمبر درج کریں۔");
+    return;
+  }
+
+  const { error } = await db.from("settings").upsert({ key: "whatsapp_link", value: link }, { onConflict: "key" });
+
+  if(error) {
+    alert("WhatsApp لنک سیو کرنے میں مسئلہ آیا: " + error.message);
+  } else {
+    alert("WhatsApp لنک کامیابی سے سیو ہو گیا ہے!");
+  }
+}
+
 // 1. ALL USERS FETCH FOR DROPDOWN (Enhanced Fallback)
 async function loadUsersMap(db) {
   const select = document.getElementById("bonusUserSelect");
   select.innerHTML = `<option value="">-- Loading Investors... --</option>`;
 
-  // Method 1: Fetch from Profiles
   let { data: profiles } = await db.from("profiles").select("*");
   
   if (profiles && profiles.length > 0) {
@@ -287,7 +321,6 @@ async function loadUsersMap(db) {
     return;
   }
 
-  // Method 2: Fallback to Investments table
   let { data: invs } = await db.from("investments").select("*");
   if (invs && invs.length > 0) {
     select.innerHTML = `<option value="">-- Select Investor --</option>`;
@@ -586,4 +619,5 @@ async function deleteCampaign(id) {
 window.addEventListener("DOMContentLoaded", initAdmin);
 </script>
 </body>
-</html>
+  </html>
+  
