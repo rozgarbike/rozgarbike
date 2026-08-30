@@ -344,7 +344,7 @@ function closeWithdrawModal() {
   document.getElementById("withdrawModal").classList.remove("active");
 }
 
-// SUBMIT DEPOSIT (WITH FILE UPLOAD TO SUPABASE STORAGE)
+// SUBMIT DEPOSIT (USING 'slips' BUCKET)
 async function submitDeposit() {
   const db = getSupabase();
   const amount = document.getElementById("depAmount").value;
@@ -356,23 +356,22 @@ async function submitDeposit() {
 
   let uploadedSlipUrl = null;
 
-  // Image Upload Logic to Supabase Storage
+  // Image Upload Logic to Supabase Storage ('slips' Bucket)
   if (fileInput.files.length > 0) {
     const file = fileInput.files[0];
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `slips/${fileName}`;
 
     const { data: uploadData, error: uploadError } = await db.storage
-      .from('deposit_slips')
-      .upload(filePath, file);
+      .from('slips')
+      .upload(fileName, file);
 
     if (uploadError) {
       alert("تصویر اپلوڈ کرنے میں مسئلہ آیا: " + uploadError.message);
       return;
     }
 
-    const { data: urlData } = db.storage.from('deposit_slips').getPublicUrl(filePath);
+    const { data: urlData } = db.storage.from('slips').getPublicUrl(fileName);
     uploadedSlipUrl = urlData.publicUrl;
   }
 
@@ -423,7 +422,7 @@ async function submitWithdraw() {
   if(error) {
     alert("ودڈرال درخواست میں مسئلہ آیا: " + error.message);
   } else {
-    alert("ودڈرال درخواست بھیج دی گئی ہے!");
+    alert("ودڈرال درخواست کامیابی سے بھیج دی گئی ہے!");
     closeWithdrawModal();
     document.getElementById("witAmount").value = "";
     document.getElementById("witTitle").value = "";
@@ -432,7 +431,7 @@ async function submitWithdraw() {
   }
 }
 
-// LOAD TRANSACTIONS
+// LOAD TRANSACTIONS & BALANCE
 async function loadUserData() {
   const db = getSupabase();
   const tbody = document.getElementById("txHistoryBody");
@@ -441,8 +440,26 @@ async function loadUserData() {
   const { data: wits } = await db.from("withdrawals").select("*").eq("investor_id", currentUserId);
 
   let allTx = [];
-  if(invs) invs.forEach(i => allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at }));
-  if(wits) wits.forEach(w => allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at }));
+  let totalApprovedDeposit = 0;
+  let totalApprovedWithdraw = 0;
+
+  if(invs) {
+    invs.forEach(i => {
+      allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
+      if(i.status === 'approved') totalApprovedDeposit += Number(i.amount);
+    });
+  }
+
+  if(wits) {
+    wits.forEach(w => {
+      allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
+      if(w.status === 'approved') totalApprovedWithdraw += Number(w.amount);
+    });
+  }
+
+  // Update Balance
+  const netBalance = totalApprovedDeposit - totalApprovedWithdraw;
+  document.getElementById("userBalance").innerText = `Rs ${netBalance.toLocaleString()}`;
 
   if(allTx.length === 0) {
     tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af">کوئی ٹرانزیکشن موجود نہیں ہے۔</td></tr>`;
