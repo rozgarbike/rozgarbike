@@ -1,110 +1,101 @@
 <!doctype html>
-<html lang="en">
+<html lang="ur">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Admin Dashboard — RozgarBike</title>
+<title>RozgarBike — Admin Control Panel</title>
 <link rel="stylesheet" href="assets/style.css" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  body { font-family: sans-serif; background: #f4f6f8; margin: 0; padding: 0; }
-  .admin-wrap { max-width: 600px; margin: 0 auto; padding: 16px; font-size: 14px; }
-  .card-admin { background: #fff; padding: 16px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .title-section { font-weight: 700; font-size: 14px; color: #1e293b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px; }
-  .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; }
-  .btn-submit { width: 100%; padding: 10px; background: #1e293b; color: #fff; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 13px; }
-  .item-box { border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; margin-bottom: 10px; background: #fff; display: flex; flex-direction: column; gap: 8px; }
-  .item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 4px;}
-  .item-body { font-size: 13px; color: #475569; line-height: 1.5; }
-  .item-actions { display: flex; gap: 8px; margin-top: 8px; }
-  .btn-sm { padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; border: none; font-weight: 600; flex: 1; text-align: center;}
-  .btn-approve { background: #16a34a; color: #fff; }
-  .btn-reject { background: #ef4444; color: #fff; }
-  .btn-delete { background: #fee2e2; color: #991b1b; padding: 4px 8px; font-size: 11px;}
-  .slip-link { color: #2563eb; text-decoration: underline; font-weight: 600; cursor: pointer; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 0; }
+  .admin-wrap { max-width: 900px; margin: 0 auto; padding: 20px; font-size: 14px; }
+  .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 20px; }
+  .card { background: #1e293b; padding: 18px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
+  .section-title { font-size: 16px; font-weight: bold; color: #38bdf8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .table-responsive { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid #334155; white-space: nowrap; }
+  th { background: #0f172a; color: #94a3b8; font-weight: 600; }
   
-  .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); padding-top: 60px; }
-  .modal-content { margin: auto; display: block; max-width: 90%; max-height: 80%; border-radius: 8px;}
-  .close { position: absolute; top: 15px; right: 25px; color: #f1f1f1; font-size: 35px; font-weight: bold; cursor: pointer; }
+  .btn { padding: 6px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.2s; }
+  .btn-approve { background: #16a34a; color: #fff; }
+  .btn-reject { background: #dc2626; color: #fff; margin-left: 4px; }
+  .btn-primary { background: #0284c7; color: #fff; width: 100%; padding: 10px; margin-top: 10px; }
+
+  .input-field { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: #fff; box-sizing: border-box; }
+  .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+  .badge-approved { background: #052e16; color: #4ade80; }
+  .badge-pending { background: #451a03; color: #fde047; }
+  .badge-rejected { background: #450a0a; color: #f87171; }
+  a.slip-link { color: #38bdf8; text-decoration: underline; font-weight: bold; }
 </style>
 </head>
 <body>
 
-  <div id="imageModal" class="modal">
-    <span class="close" onclick="closeModal()">&times;</span>
-    <img class="modal-content" id="modalImg">
-  </div>
-
-  <div class="header">
-    <div class="header-row" style="padding:12px 16px; background:#0f172a; color:#fff; display:flex; justify-content:space-between; align-items:center;">
-      <div class="brand" style="font-weight:700;"><span class="brand-badge">🚲</span> RozgarBike Admin</div>
-      <button onclick="handleLogout()" style="background:transparent; color:#fff; border:1px solid rgba(255,255,255,0.4); padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">Log out</button>
-    </div>
-  </div>
-
   <div class="admin-wrap">
-
-    <div class="title-section">MASS PROFIT DISTRIBUTION</div>
-    <div class="card-admin" style="border: 2px solid #2563eb; background: #eff6ff;">
-      <div style="font-size:13px; color:#1e3a8a; font-weight:bold; margin-bottom:8px;">
-        فارمولا: ہر 1000 پر 50 روپے (5% Profit)
-      </div>
-      <div style="font-size:12px; color:#3b82f6; margin-bottom:12px;">
-        تمام انویسٹرز کے منظور شدہ انویسٹمنٹ پر 5% پرافٹ (1000 = 50، 2000 = 100، 3000 = 150)۔
-      </div>
-      <button class="btn-submit" style="background:#2563eb; font-size:14px; padding:12px;" onclick="distributeAutoProfit()">
-        Distribute Profit to ALL Investors (1000 = 50)
-      </button>
-    </div>
-
-    <div class="title-section">MANUAL BALANCE & PROFIT CONTROL</div>
-    <div class="card-admin">
-      <div style="font-size:12px; color:#1e293b; font-weight:bold; margin-bottom:8px;">کسی ایک انویسٹر کو مینوئل پرافٹ دینا:</div>
-      <select id="bonusInvestorSelect" class="input-field">
-        <option value="">Loading investors...</option>
-      </select>
-      <input id="bonusAmount" type="number" class="input-field" placeholder="Amount / Profit (e.g. 500)" />
-      <input id="bonusNote" class="input-field" placeholder="Reason (e.g. Bonus)" />
-      <button class="btn-submit" style="background:#16a34a;" onclick="giveManualBalance()">Send Amount / Profit</button>
-    </div>
-
-    <div class="title-section">MANAGE CAMPAIGNS</div>
-    <div class="card-admin">
-      <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Add New Campaign</div>
-      <input id="cmpName" class="input-field" placeholder="Campaign Name" />
-      <input id="cmpTarget" type="number" class="input-field" placeholder="Target Amount" />
-      <button class="btn-submit" style="margin-bottom:16px;" onclick="addCampaign()">Create Campaign</button>
-
-      <div style="font-weight:700; font-size:13px; margin-bottom:8px; border-top:1px solid #e2e8f0; padding-top:12px;">Active Campaigns:</div>
-      <div id="campaignsList" style="font-size:12px;">Loading campaigns...</div>
-    </div>
     
-    <div class="title-section">PAYMENT METHODS</div>
-    <div class="card-admin">
-      <div style="font-weight:700; font-size:13px; margin-bottom:8px;">Add Payment Account</div>
-      <input id="pmLabel" class="input-field" placeholder="Label (JazzCash / EasyPaisa)" />
-      <input id="pmTitle" class="input-field" placeholder="Account Title" />
-      <input id="pmNumber" class="input-field" placeholder="Account Number" />
-      <button class="btn-submit" style="margin-bottom:16px;" onclick="addPaymentMethod()">Add Account</button>
-
-      <div style="font-weight:700; font-size:13px; margin-bottom:8px; border-top:1px solid #e2e8f0; padding-top:12px;">Existing Accounts:</div>
-      <div id="paymentMethodsList">Loading accounts...</div>
+    <div class="header">
+      <h2 style="margin:0; font-size:20px; color:#f8fafc;">🛠️ RozgarBike Admin Panel</h2>
+      <button onclick="handleLogout()" class="btn btn-reject">Logout</button>
     </div>
 
-    <div class="title-section">PENDING DEPOSITS</div>
-    <div class="card-admin">
-      <div id="pendingDepositsList">Loading pending deposits...</div>
+    <!-- 1. GIVE PROFIT / DAILY RETURN TO USER -->
+    <div class="card">
+      <div class="section-title">🎁 Give Daily Profit / Bonus to User</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size:11px; color:#94a3b8;">Investor User ID:</label>
+          <input id="profitUserId" class="input-field" placeholder="Paste User UUID Here..." />
+        </div>
+        <div>
+          <label style="font-size:11px; color:#94a3b8;">Profit Amount (PKR):</label>
+          <input id="profitAmount" type="number" class="input-field" placeholder="e.g. 400" />
+        </div>
+      </div>
+      <input id="profitNote" class="input-field" placeholder="Description / Note (e.g. Daily Profit Honda Campaign)" />
+      <button class="btn btn-primary" onclick="handleAddProfit()">Add Profit to Balance</button>
     </div>
 
-    <div class="title-section">PENDING WITHDRAWALS</div>
-    <div class="card-admin">
-      <button onclick="rejectAllPendingWithdrawals()" style="background:#dc2626; color:#fff; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:12px; font-size:13px;">Reject / Reset All Pending Withdrawals</button>
-      <div id="withdrawalRequestsList">Loading withdrawal requests...</div>
+    <!-- 2. PENDING DEPOSITS -->
+    <div class="card">
+      <div class="section-title">📥 Pending Investment Deposits</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Amount</th>
+              <th>Slip Image</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="depositsTable">
+            <tr><td colspan="5">Loading deposits...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="title-section">ALL INVESTORS LIST</div>
-    <div class="card-admin">
-      <div id="investorPayoutsList">Loading investor list...</div>
+    <!-- 3. PENDING WITHDRAWALS -->
+    <div class="card">
+      <div class="section-title">📤 Pending Withdrawal Requests</div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Method</th>
+              <th>Account Details</th>
+              <th>Amount</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawalsTable">
+            <tr><td colspan="5">Loading withdrawals...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
   </div>
@@ -112,335 +103,138 @@
   <script src="assets/config.js"></script>
   <script>
     function pkr(val) { return "Rs " + Number(val || 0).toLocaleString("en-PK"); }
-    
-    function openModal(imgUrl) {
-      document.getElementById('modalImg').src = imgUrl;
-      document.getElementById('imageModal').style.display = "block";
-    }
-    function closeModal() {
-      document.getElementById('imageModal').style.display = "none";
-    }
-
-    async function handleLogout() {
-      if (window.supabaseClient) await supabaseClient.auth.signOut();
-      window.location.href = "index.html";
-    }
 
     function getSupabase() {
       return window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase : null);
     }
 
-    async function loadAdminData() {
+    async function handleLogout() {
       const db = getSupabase();
-      if (!db) {
-        console.error("Supabase client not initialized.");
-        return;
-      }
-      loadInvestorsDropdown(db);
-      loadCampaigns(db);
-      loadPaymentMethods(db);
-      loadPendingDeposits(db);
-      loadWithdrawalRequests(db);
-      loadInvestorList(db);
+      if (db) await db.auth.signOut();
+      window.location.href = "index.html";
     }
 
-    async function distributeAutoProfit() {
+    async function initAdmin() {
       const db = getSupabase();
-      if (!confirm("تمام انویسٹرز کو 5% پرافٹ منتقل کریں؟")) return;
+      if (!db) return alert("Database connection error.");
+
+      loadPendingDeposits(db);
+      loadPendingWithdrawals(db);
+    }
+
+    // 1. ADD PROFIT TO USER WALLET
+    async function handleAddProfit() {
+      const db = getSupabase();
+      const userId = document.getElementById("profitUserId").value.trim();
+      const amount = document.getElementById("profitAmount").value;
+      const note = document.getElementById("profitNote").value.trim() || "Daily Profit";
+
+      if (!userId || !amount || Number(amount) <= 0) {
+        return alert("براہ کرم یوزر ID اور صحیح پرافٹ رقم درج کریں۔");
+      }
 
       try {
-        const { data: investments, error: invErr } = await db
-          .from("investments")
-          .select("investor_id, amount")
-          .eq("status", "approved");
+        const { error } = await db.from("wallet_transactions").insert([{
+          investor_id: userId,
+          amount: Number(amount),
+          description: note,
+          status: "approved"
+        }]);
 
-        if (invErr || !investments || investments.length === 0) {
-          alert("کوئی منظور شدہ انویسٹمنٹ نہیں ملی۔");
-          return;
-        }
-
-        const totalPerInvestor = {};
-        investments.forEach(item => {
-          const invId = item.investor_id;
-          const amt = Number(item.amount || 0);
-          totalPerInvestor[invId] = (totalPerInvestor[invId] || 0) + amt;
-        });
-
-        const profitTransactions = [];
-        for (const [investorId, totalAmt] of Object.entries(totalPerInvestor)) {
-          const profit = (totalAmt / 1000) * 50;
-          if (profit > 0) {
-            profitTransactions.push({
-              investor_id: investorId,
-              amount: profit,
-              type: 'profit',
-              status: 'approved'
-            });
-          }
-        }
-
-        if (profitTransactions.length === 0) {
-          alert("کوئی اہل انویسٹر نہیں ملا۔");
-          return;
-        }
-
-        const { error: insertErr } = await db
-          .from("wallet_transactions")
-          .insert(profitTransactions);
-
-        if (insertErr) {
-          alert("پرافٹ ٹرانسفر میں خرابی: " + insertErr.message);
+        if (error) {
+          alert("پرافٹ ایڈ کرنے میں ایرر: " + error.message);
         } else {
-          alert(`کامیابی! کل ${profitTransactions.length} انویسٹرز کو پرافٹ بھیج دیا گیا ہے۔`);
+          alert("پرافٹ کامیا بی سے یوزر والٹ میں شامل کر دیا گیا!");
+          document.getElementById("profitUserId").value = "";
+          document.getElementById("profitAmount").value = "";
+          document.getElementById("profitNote").value = "";
         }
       } catch (e) {
         alert("ایرر: " + e.message);
       }
     }
 
-    async function loadInvestorsDropdown(db) {
-      const select = document.getElementById("bonusInvestorSelect");
-      try {
-        const { data, error } = await db.from("profiles").select("*");
-        if (error || !data || data.length === 0) {
-          select.innerHTML = `<option value="">No investors found</option>`;
-          return;
-        }
-        select.innerHTML = `<option value="">Select Investor...</option>` + 
-          data.map(i => `<option value="${i.id}">${i.full_name || i.email || 'Investor ID: ' + i.id.substring(0,6)}</option>`).join("");
-      } catch (e) {
-        select.innerHTML = `<option value="">Error loading investors</option>`;
-      }
-    }
-
-    async function giveManualBalance() {
-      const db = getSupabase();
-      const investorId = document.getElementById("bonusInvestorSelect").value;
-      const amount = document.getElementById("bonusAmount").value;
-
-      if (!investorId || !amount || Number(amount) <= 0) {
-        alert("انویسٹر اور رقم کی تصدیق کریں۔");
-        return;
-      }
-
-      const { error } = await db.from("wallet_transactions").insert([{
-        investor_id: investorId,
-        amount: Number(amount),
-        type: 'manual_bonus',
-        status: 'approved'
-      }]);
-
-      if (error) alert("Error: " + error.message);
-      else {
-        alert("رقم بھیج دی گئی ہے۔");
-        document.getElementById("bonusAmount").value = "";
-      }
-    }
-
-    async function loadCampaigns(db) {
-      const el = document.getElementById("campaignsList");
-      try {
-        const { data } = await db.from("campaigns").select("*").order("created_at", { ascending: false });
-        if (!data || data.length === 0) {
-          el.innerHTML = `<div style="color:#64748b;">No active campaigns.</div>`;
-          return;
-        }
-        el.innerHTML = data.map(c => `
-          <div class="item-box" style="flex-direction:row; justify-content:space-between; align-items:center;">
-            <div><strong>${c.name}</strong><br/>Target: ${pkr(c.target)}</div>
-            <button class="btn-sm btn-delete" style="flex:none;" onclick="deleteCampaign('${c.id}')">Delete</button>
-          </div>
-        `).join("");
-      } catch(e) { el.innerHTML = `<div style="color:#64748b;">No campaigns found.</div>`; }
-    }
-
-    async function addCampaign() {
-      const db = getSupabase();
-      const name = document.getElementById("cmpName").value;
-      const target = document.getElementById("cmpTarget").value;
-      if (!name || !target) return alert("Fill all fields!");
-      await db.from("campaigns").insert([{ name, target: Number(target), status: "active" }]);
-      document.getElementById("cmpName").value = "";
-      document.getElementById("cmpTarget").value = "";
-      loadCampaigns(db);
-    }
-
-    async function deleteCampaign(id) {
-      const db = getSupabase();
-      if (confirm("Delete campaign?")) {
-        await db.from("campaigns").delete().eq("id", id);
-        loadCampaigns(db);
-      }
-    }
-
-    async function loadPaymentMethods(db) {
-      const el = document.getElementById("paymentMethodsList");
-      try {
-        const { data } = await db.from("payment_methods").select("*");
-        if (!data || data.length === 0) {
-          el.innerHTML = `<div style="color:#64748b;">No payment accounts.</div>`;
-          return;
-        }
-        el.innerHTML = data.map(i => `
-          <div class="item-box" style="flex-direction:row; justify-content:space-between; align-items:center;">
-            <div><strong>${i.label}</strong> (${i.account_title})<br/>${i.account_number}</div>
-            <button class="btn-sm btn-delete" style="flex:none;" onclick="deletePaymentMethod('${i.id}')">Delete</button>
-          </div>
-        `).join("");
-      } catch(e) { el.innerHTML = `<div style="color:#64748b;">No accounts found.</div>`; }
-    }
-
-    async function addPaymentMethod() {
-      const db = getSupabase();
-      const label = document.getElementById("pmLabel").value;
-      const title = document.getElementById("pmTitle").value;
-      const number = document.getElementById("pmNumber").value;
-      if (!label || !title || !number) return alert("Fill all fields!");
-      await db.from("payment_methods").insert([{ label, account_title: title, account_number: number, is_active: true }]);
-      document.getElementById("pmLabel").value = "";
-      document.getElementById("pmTitle").value = "";
-      document.getElementById("pmNumber").value = "";
-      loadPaymentMethods(db);
-    }
-
-    async function deletePaymentMethod(id) {
-      const db = getSupabase();
-      if(confirm("Delete account?")) {
-        await db.from("payment_methods").delete().eq("id", id);
-        loadPaymentMethods(db);
-      }
-    }
-
+    // 2. LOAD & MANAGE DEPOSITS
     async function loadPendingDeposits(db) {
-      const el = document.getElementById("pendingDepositsList");
+      const tbody = document.getElementById("depositsTable");
       try {
-        const { data, error } = await db
-          .from("investments")
-          .select("*, profiles(full_name)")
-          .eq("status", "pending")
-          .order("created_at", { ascending: false });
+        const { data } = await db.from("investments").select("*").eq("status", "pending").order("created_at", { ascending: false });
         
-        if (error || !data || data.length === 0) {
-          el.innerHTML = `<div style="color:#64748b;">No pending deposits.</div>`;
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">کوئی نیا ڈپازٹ نہیں ہے۔</td></tr>`;
           return;
         }
 
-        el.innerHTML = data.map(i => {
-          const investorName = i.profiles?.full_name || "Investor";
-          const shortId = i.investor_id ? i.investor_id.substring(0, 6) : "N/A";
-          const slipHtml = i.slip_url 
-            ? `<span class="slip-link" onclick="openModal('${i.slip_url}')">View Payment Slip (رسید دیکھیں)</span>`
-            : `<span style="color:#ef4444;">No Slip Uploaded</span>`;
-
-          return `
-            <div class="item-box">
-              <div class="item-header">
-                <div><strong>${investorName}</strong><br/><span style="color:#64748b; font-size:11px;">ID: ${shortId}</span></div>
-                <div><strong style="color:#16a34a;">${pkr(i.amount)}</strong></div>
-              </div>
-              <div class="item-body">${slipHtml}</div>
-              <div class="item-actions">
-                <button class="btn-sm btn-approve" onclick="approveDeposit('${i.id}', '${i.investor_id}', ${i.amount})">Approve</button>
-                <button class="btn-sm btn-reject" onclick="rejectDeposit('${i.id}')">Reject</button>
-              </div>
-            </div>
-          `;
-        }).join("");
-      } catch(e) { el.innerHTML = `<div style="color:#64748b;">Error loading deposits.</div>`; }
-    }
-
-    async function approveDeposit(id, investorId, amount) {
-      const db = getSupabase();
-      if(!confirm("Approve deposit?")) return;
-      await db.from("investments").update({ status: "approved" }).eq("id", id);
-      await db.from("wallet_transactions").insert([{ investor_id: investorId, amount, type: 'deposit', status: 'approved' }]);
-      alert("Approved!");
-      loadPendingDeposits(db);
-    }
-
-    async function rejectDeposit(id) {
-      const db = getSupabase();
-      if(!confirm("Reject deposit?")) return;
-      await db.from("investments").update({ status: "rejected" }).eq("id", id);
-      loadPendingDeposits(db);
-    }
-
-    async function loadWithdrawalRequests(db) {
-      const el = document.getElementById("withdrawalRequestsList");
-      try {
-        const { data, error } = await db
-          .from("withdrawal_requests")
-          .select("*, profiles(full_name)")
-          .eq("status", "pending")
-          .order("created_at", { ascending: false });
-
-        if (error || !data || data.length === 0) {
-          el.innerHTML = `<div style="color:#64748b;">No pending withdrawal requests.</div>`;
-          return;
-        }
-
-        el.innerHTML = data.map(w => {
-          const investorName = w.profiles?.full_name || "Investor";
-          const shortId = w.investor_id ? w.investor_id.substring(0, 6) : "N/A";
-
-          return `
-            <div class="item-box">
-              <div class="item-header">
-                <div><strong>${investorName}</strong><br/><span style="color:#64748b; font-size:11px;">ID: ${shortId}</span></div>
-                <div><strong style="color:#dc2626;">${pkr(w.amount)}</strong></div>
-              </div>
-              <div class="item-body">
-                ${w.payment_method} | ${w.account_title} (${w.account_number})
-              </div>
-              <div class="item-actions">
-                <button class="btn-sm btn-approve" onclick="approveWithdrawal('${w.id}')">Mark Paid</button>
-                <button class="btn-sm btn-reject" onclick="rejectWithdrawal('${w.id}')">Reject</button>
-              </div>
-            </div>
-          `;
-        }).join("");
-      } catch(e) { el.innerHTML = `<div style="color:#64748b;">Error loading withdrawals.</div>`; }
-    }
-
-    async function approveWithdrawal(id) {
-      const db = getSupabase();
-      if(!confirm("Mark paid?")) return;
-      await db.from("withdrawal_requests").update({ status: "approved" }).eq("id", id);
-      loadWithdrawalRequests(db);
-    }
-
-    async function rejectWithdrawal(id) {
-      const db = getSupabase();
-      if(!confirm("Reject withdrawal?")) return;
-      await db.from("withdrawal_requests").update({ status: "rejected" }).eq("id", id);
-      loadWithdrawalRequests(db);
-    }
-
-    async function rejectAllPendingWithdrawals() {
-      const db = getSupabase();
-      if (!confirm("تمام کینسل کریں؟")) return;
-      await db.from("withdrawal_requests").update({ status: "rejected" }).eq("status", "pending");
-      loadWithdrawalRequests(db);
-    }
-
-    async function loadInvestorList(db) {
-      const el = document.getElementById("investorPayoutsList");
-      try {
-        const { data, error } = await db.from("profiles").select("*").order("created_at", { ascending: false });
-        if (error || !data || data.length === 0) {
-          el.innerHTML = `<div style="color:#64748b;">No investors found.</div>`;
-          return;
-        }
-        el.innerHTML = data.map(p => `
-          <div class="item-box" style="margin-bottom:6px; padding:10px; flex-direction:row; justify-content:space-between;">
-            <strong>${p.full_name || 'No Name'}</strong>
-            <span style="color:#64748b; font-size:12px;">ID: ${p.id ? p.id.substring(0,6) : 'N/A'}</span>
-          </div>
+        tbody.innerHTML = data.map(d => `
+          <tr>
+            <td style="font-size:11px; font-family:monospace;">${d.investor_id}</td>
+            <td><strong>${pkr(d.amount)}</strong></td>
+            <td>${d.slip_url ? `<a href="${d.slip_url}" target="_blank" class="slip-link">View Slip 🖼️</a>` : 'No Slip'}</td>
+            <td style="font-size:11px; color:#94a3b8;">${new Date(d.created_at).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-approve" onclick="updateDepositStatus('${d.id}', 'approved')">Approve</button>
+              <button class="btn btn-reject" onclick="updateDepositStatus('${d.id}', 'rejected')">Reject</button>
+            </td>
+          </tr>
         `).join("");
-      } catch(e) { el.innerHTML = `<div style="color:#64748b;">Error loading investors.</div>`; }
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5">Error loading deposits.</td></tr>`;
+      }
     }
 
-    window.addEventListener("DOMContentLoaded", loadAdminData);
+    async function updateDepositStatus(id, newStatus) {
+      const db = getSupabase();
+      if (!confirm(`کیا آپ اس ڈپازٹ کو ${newStatus} کرنا چاہتے ہیں؟`)) return;
+
+      const { error } = await db.from("investments").update({ status: newStatus }).eq("id", id);
+      if (error) alert("ایرر: " + error.message);
+      else {
+        alert("ڈپازٹ کا سٹیٹس اپڈیٹ ہو گیا!");
+        loadPendingDeposits(db);
+      }
+    }
+
+    // 3. LOAD & MANAGE WITHDRAWALS
+    async function loadPendingWithdrawals(db) {
+      const tbody = document.getElementById("withdrawalsTable");
+      try {
+        const { data } = await db.from("withdrawal_requests").select("*").eq("status", "pending").order("created_at", { ascending: false });
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">کوئی ودڈرال درخواست نہیں ہے۔</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data.map(w => `
+          <tr>
+            <td style="font-size:11px; font-family:monospace;">${w.investor_id}</td>
+            <td><span class="badge badge-pending">${w.payment_method}</span></td>
+            <td><strong>${w.account_title}</strong><br/><span style="font-size:11px; color:#94a3b8;">${w.account_number}</span></td>
+            <td><strong>${pkr(w.amount)}</strong></td>
+            <td>
+              <button class="btn btn-approve" onclick="updateWithdrawStatus('${w.id}', 'approved')">Approve</button>
+              <button class="btn btn-reject" onclick="updateWithdrawStatus('${w.id}', 'rejected')">Reject</button>
+            </td>
+          </tr>
+        `).join("");
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5">Error loading withdrawals.</td></tr>`;
+      }
+    }
+
+    async function updateWithdrawStatus(id, newStatus) {
+      const db = getSupabase();
+      if (!confirm(`کیا آپ اس ودڈرال کو ${newStatus} کرنا چاہتے ہیں؟`)) return;
+
+      const { error } = await db.from("withdrawal_requests").update({ status: newStatus }).eq("id", id);
+      if (error) alert("ایرر: " + error.message);
+      else {
+        alert("ودڈرال کا سٹیٹس اپڈیٹ ہو گیا!");
+        loadPendingWithdrawals(db);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", initAdmin);
   </script>
 </body>
 </html>
