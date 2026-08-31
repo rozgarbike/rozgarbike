@@ -470,35 +470,31 @@ function switchTab(tabName) {
       if (btn) btn.className = "btn btn-outline tab-btn";
     }
   });
-  if (tabName === 'investments') loadAdminInvestments();
-  if (tabName === 'distribute') loadAdminInvestments();
+  if (tabName === 'investments' && typeof loadAdminInvestments === 'function') loadAdminInvestments();
+  if (tabName === 'distribute' && typeof loadAdminInvestments === 'function') loadAdminInvestments();
   if (tabName === 'manualBonus') loadInvestorsDropdown();
-  if (tabName === 'campaigns') loadAdminCampaigns();
-  if (tabName === 'withdrawals') loadAdminWithdrawals();
-  if (tabName === 'paymentMethods') loadAdminPaymentMethods();
-  if (tabName === 'users') loadAdminUsers();
-  if (tabName === 'settings') loadAdminSettings();
+  if (tabName === 'campaigns' && typeof loadAdminCampaigns === 'function') loadAdminCampaigns();
+  if (tabName === 'withdrawals' && typeof loadAdminWithdrawals === 'function') loadAdminWithdrawals();
+  if (tabName === 'paymentMethods' && typeof loadAdminPaymentMethods === 'function') loadAdminPaymentMethods();
+  if (tabName === 'users' && typeof loadAdminUsers === 'function') loadAdminUsers();
+  if (tabName === 'settings' && typeof loadAdminSettings === 'function') loadAdminSettings();
 }
 
 async function loadInvestorsDropdown() {
   const selectEl = document.getElementById("bonusInvestorSelect");
   if (!selectEl) return;
   selectEl.innerHTML = '<option value="">Loading investors list...</option>';
-
   const { data: users, error } = await supabaseClient.from("profiles").select("id, full_name").order("full_name");
-
   if (error || !users || users.length === 0) {
     selectEl.innerHTML = '<option value="">No investors found</option>';
     return;
   }
-
   let optionsHtml = '<option value="">-- Select Investor (Name & ID) --</option>';
   for (const u of users) {
     const shortId = u.id ? u.id.slice(0, 6) : ""; 
     const fullName = u.full_name || "Unknown User";
     optionsHtml += `<option value="${u.id}">${fullName} (ID: ${shortId})</option>`;
   }
-  
   selectEl.innerHTML = optionsHtml;
 }
 
@@ -506,60 +502,28 @@ async function sendManualBonusToInvestor() {
   const investorId = document.getElementById("bonusInvestorSelect").value;
   const amount = Number(document.getElementById("bonusAmountInput").value);
   const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
-
   if (!investorId) return toast("Please select an investor from the list");
   if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
-
   const { error } = await supabaseClient.from("wallet_transactions").insert([{
     investor_id: investorId,
     amount: amount,
     description: reason
   }]);
-
   if (error) return toast("Error: " + error.message);
-
   toast("Bonus successfully sent to investor!");
-  
   document.getElementById("bonusAmountInput").value = "";
   document.getElementById("bonusReasonInput").value = "";
   document.getElementById("bonusInvestorSelect").value = "";
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const adminProfile = await requireSession(true);
-    if (!adminProfile || adminProfile.role !== "admin") {
-      alert("Access denied. Admins only.");
-      window.location.href = "dashboard.html";
-      return;
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof loadAdminInvestments === 'function') {
     loadAdminInvestments();
-  } catch (err) {
-    console.error("Session error:", err);
   }
-
-  const logoutEl = document.getElementById("logoutBtn");
-  if (logoutEl) logoutEl.addEventListener("click", () => { if (typeof logout === 'function') logout(); });
-
-  const createCampEl = document.getElementById("createCampBtn");
-  if (createCampEl) createCampEl.addEventListener("click", createCampaign);
-
-  const addPnEl = document.getElementById("addPnBtn");
-  if (addPnEl) addPnEl.addEventListener("click", addPaymentMethod);
-
-  const previewDistEl = document.getElementById("previewDistBtn");
-  if (previewDistEl) previewDistEl.addEventListener("click", previewDistribution);
-
-  const confirmDistEl = document.getElementById("confirmDistBtn");
-  if (confirmDistEl) confirmDistEl.addEventListener("click", confirmAndDistribute);
-
-  const saveWaEl = document.getElementById("saveWaBtn");
-  if (saveWaEl) saveWaEl.addEventListener("click", saveWhatsAppLink);
-
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const tabName = e.currentTarget.getAttribute('data-tab');
-      switchTab(tabName);
+      if (tabName) switchTab(tabName);
     });
   });
 });
