@@ -78,6 +78,11 @@ body{
   display:block;
 }
 
+select option {
+  background:#1f2937;
+  color:#fff;
+}
+
 .btn-act{
   padding:12px 14px;
   border:0;
@@ -130,7 +135,7 @@ th{ background:#111827; color:#9ca3af }
 
   <!-- ADD MANUAL INVESTOR / USER & MANAGE LIST -->
   <div class="card">
-    <div class="card-title">👤 Add & Manage Investors</div>
+    <div class="card-title">👤 Add & Manage Investors (Old & New)</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <input id="newInvestorName" class="input-box" placeholder="Investor Full Name">
       <input id="newInvestorEmail" class="input-box" placeholder="Phone or Email">
@@ -254,9 +259,9 @@ th{ background:#111827; color:#9ca3af }
     </div>
   </div>
 
-  <!-- CAMPAIGNS MANAGEMENT -->
+  <!-- CAMPAIGNS MANAGEMENT (NEW & OLD) -->
   <div class="card">
-    <div class="card-title">🚀 Manage Campaigns</div>
+    <div class="card-title">🚀 Manage Campaigns (Old & New)</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <input id="campTitle" class="input-box" placeholder="Campaign Name">
       <input id="campTarget" type="number" class="input-box" placeholder="Target Amount (PKR)">
@@ -294,6 +299,7 @@ function getSupabase() {
 
 let userMap = {};
 
+// DEFAULT & LOCAL STORAGE INVESTORS
 let defaultInvestors = JSON.parse(localStorage.getItem('admin_investors')) || [
   { id: "inv_101", name: "Ali Khan (03001234567)" },
   { id: "inv_102", name: "Muhammad Usman (03129876543)" }
@@ -309,7 +315,7 @@ let defaultCampaigns = JSON.parse(localStorage.getItem('admin_campaigns')) || [
   { id: "camp_2", title: "Rozgar Bike Campaign Phase 2", target: 1000000 }
 ];
 
-// RENDER INVESTORS LIST IMMEDIATELY
+// RENDER INVESTORS LIST TO DROPDOWN & TABLE
 function renderInvestorsUI(list) {
   const select = document.getElementById("bonusUserSelect");
   const tbody = document.getElementById("investorsTableBody");
@@ -335,7 +341,6 @@ function renderInvestorsUI(list) {
 }
 
 async function loadUsersMap() {
-  // Always load local investors first for instant response
   renderInvestorsUI(defaultInvestors);
 
   try {
@@ -440,7 +445,6 @@ function distributeAutoBonus() {
   alert("✅ تمام انوسٹرز کو بونس کامیابی سے تقسیم کر دیا گیا ہے!");
 }
 
-// GUARANTEED WORKING BONUS SENDER
 function sendManualBonus() {
   const selectElem = document.getElementById("bonusUserSelect");
   const userId = selectElem.value;
@@ -460,7 +464,6 @@ function sendManualBonus() {
 
   const selectedName = selectElem.options[selectElem.selectedIndex].text;
 
-  // Save Locally Immediately
   let localBonuses = JSON.parse(localStorage.getItem("admin_given_bonuses")) || [];
   localBonuses.push({
     userId: userId,
@@ -471,7 +474,6 @@ function sendManualBonus() {
   });
   localStorage.setItem("admin_given_bonuses", JSON.stringify(localBonuses));
 
-  // Try DB in background
   try {
     const db = getSupabase();
     if (db) {
@@ -603,4 +605,5 @@ async function loadAccounts() {
         let dbAccs = data.map(a => ({ id: a.id, label: a.label || a.method, account_title: a.account_title, account_number: a.account_number }));
         let combined = [...dbAccs, ...defaultAccounts];
         let seen = new Set();
-        let list 
+        let list = [];
+        c
