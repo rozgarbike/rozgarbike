@@ -26,6 +26,7 @@
     <!-- TABS -->
     <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;">
       <button class="btn btn-primary" id="tabBtnInv" onclick="switchTab('investments')">Verify Slips</button>
+      <button class="btn btn-outline" id="tabBtnDist" onclick="switchTab('distribute')">Distribute Returns</button>
       <button class="btn btn-outline" id="tabBtnCamp" onclick="switchTab('campaigns')">Campaigns</button>
       <button class="btn btn-outline" id="tabBtnWith" onclick="switchTab('withdrawals')">Withdrawals</button>
       <button class="btn btn-outline" id="tabBtnPay" onclick="switchTab('paymentMethods')">Payment Methods</button>
@@ -40,6 +41,25 @@
         <div class="muted" style="margin-bottom:10px;">Review user payment receipts & approve or decline.</div>
         <div id="adminInvestmentsList" style="display:flex;flex-direction:column;gap:12px;">
           <p class="muted" style="font-size:12px;">Loading pending slips...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1.5 DISTRIBUTE RETURNS / BONUS TO INVESTORS -->
+    <div id="tabDistribute" class="admin-tab-content" style="display:none;">
+      <div class="disp" style="font-size:16px;margin-bottom:8px;">DISTRIBUTE RETURNS TO INVESTORS</div>
+      <div class="card" style="margin-bottom:24px;">
+        <div class="muted" style="margin-bottom:8px;">Enter profit rate per Rs 1,000 investment (e.g., enter 50 for Rs 50 per 1,000, 100 for Rs 100 per 2,000, etc.).</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="profitRateInput" type="number" placeholder="50" style="flex:1;" value="50" />
+          <button class="btn btn-primary" style="white-space:nowrap;" onclick="previewDistribution()">Calculate Preview</button>
+        </div>
+        <div class="muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;">Yeh system sab active investors ki total approved investment ke hisab se amount calculate kar ke un ke wallet mein add kar dega.</div>
+        
+        <div id="distributionPreviewContainer" style="margin-bottom:14px;display:none;">
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Preview Calculation List (Aap ke likhe rate ke mutabiq):</div>
+          <div id="distributionList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--line);padding:8px;border-radius:8px;"></div>
+          <button class="btn btn-primary" style="width:100%;background:var(--success);" onclick="confirmAndDistribute()">Confirm & Distribute to All Investors</button>
         </div>
       </div>
     </div>
@@ -125,6 +145,7 @@
   <script src="assets/app.js"></script>
   <script>
     let profile = null;
+    let calculatedDistributionData = [];
 
     async function initAdmin() {
       profile = await requireSession(true);
@@ -138,7 +159,7 @@
     }
 
     function switchTab(tabName) {
-      const tabs = ['investments', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
+      const tabs = ['investments', 'distribute', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
       tabs.forEach(t => {
         const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
         const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
@@ -174,7 +195,6 @@
       }
 
       listEl.innerHTML = invs.map(i => {
-        const dateStr = i.created_at ? new Date(i.created_at).toLocaleString() : "";
         const slipLink = i.receipt_url ? `<a href="${i.receipt_url}" target="_blank" style="color:var(--petrol);font-weight:700;">View Screenshot Slip ↗</a>` : "No slip uploaded";
         return `
           <div class="card" style="background:#fafafa;padding:12px;border:1px solid var(--line);">
@@ -206,6 +226,64 @@
       if (error) return toast(error.message);
       toast("Investment declined");
       loadAdminInvestments();
+    }
+
+    // --- 1.5 DISTRIBUTE RETURNS TO INVESTORS ---
+    async function previewDistribution() {
+      const ratePer1000 = Number(document.getElementById("profitRateInput").value);
+      if (!ratePer1000 || ratePer1000 <= 0) return toast("Enter a valid rate per 1000");
+
+      toast("Calculating distribution preview...");
+      const { data: profilesData } = await supabaseClient.from("profiles").select("id, full_name");
+      if (!profilesData || !profilesData.length) {
+        return toast("No investors found");
+      }
+
+      calculatedDistributionData = [];
+      const listEl = document.getElementById("distributionList");
+      listEl.innerHTML = "";
+
+      for (const p of profilesData) {
+        const { data: invs } = await supabaseClient.from("investments").select("amount").eq("investor_id", p.id).eq("status", "approved");
+        const totalInvested = (invs || []).reduce((s, i) => s + Number(i.amount), 0);
+        if (totalInvested > 0) {
+          // Formula: (Total Invested / 1000) * ratePer1000
+          const share = Math.round((totalInvested / 1000) * ratePer1000);
+          calculatedDistributionData.push({ investor_id: p.id, full_name: p.full_name, total_invested: totalInvested, share: share });
+
+          const div = document.createElement("div");
+          div.style.cssText = "display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #eee;";
+          div.innerHTML = `<span><strong>${p.full_name || "Investor"}</strong> (Inv: ${pkr(totalInvested)})</span> <span class="mono" style="color:var(--success);font-weight:700;">+${pkr(share)}</span>`;
+          listEl.appendChild(div);
+        }
+      }
+
+      if (!calculatedDistributionData.length) {
+        listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;">Koi bhi active approved investment wala investor nahi mila.</p>`;
+        document.getElementById("distributionPreviewContainer").style.display = "block";
+        return;
+      }
+
+      document.getElementById("distributionPreviewContainer").style.display = "block";
+      toast("Preview ready!");
+    }
+
+    async function confirmAndDistribute() {
+      if (!calculatedDistributionData.length) return toast("No distribution data to process");
+      if (!confirm("Kya aap sabhi investors ko yeh return/bonus amount distribute karna chahte hain?")) return;
+
+      let successCount = 0;
+      for (const item of calculatedDistributionData) {
+        const { error } = await supabaseClient.from("wallet_transactions").insert([{
+          investor_id: item.investor_id,
+          amount: item.share,
+          description: `Admin Return Distribution (${pkr(item.share)})`
+        }]);
+        if (!error) successCount++;
+      }
+
+      toast(`Successfully distributed returns to ${successCount} investors!`);
+      document.getElementById("distributionPreviewContainer").style.display = "none";
     }
 
     // --- 2. CAMPAIGNS ---
@@ -300,88 +378,4 @@
       const account_number = document.getElementById("pmNumber").value.trim();
       if (!label || !account_title || !account_number) return toast("Fill in all payment method fields");
 
-      const { error } = await supabaseClient.from("payment_methods").insert([{ label, account_title, account_number, active: true }]);
-      if (error) return toast(error.message);
-      toast("Payment method added");
-      document.getElementById("pmLabel").value = "";
-      document.getElementById("pmTitle").value = "";
-      document.getElementById("pmNumber").value = "";
-      loadAdminPaymentMethods();
-    }
-
-    async function loadAdminPaymentMethods() {
-      const listEl = document.getElementById("adminPaymentMethodsList");
-      const { data } = await supabaseClient.from("payment_methods").select("*");
-      if (!data || !data.length) {
-        listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">No payment methods found.</p>`;
-        return;
-      }
-      listEl.innerHTML = data.map(m => `
-        <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:13px;">
-          <div>
-            <strong>${m.label}</strong>
-            <div class="muted" style="font-size:11px;">${m.account_title} — <span class="mono">${m.account_number}</span></div>
-          </div>
-          <button class="btn btn-outline" style="color:var(--rust);border-color:var(--rust);padding:4px 10px;font-size:11px;" onclick="deletePaymentMethod('${m.id}')">Delete</button>
-        </div>
-      `).join("");
-    }
-
-    async function deletePaymentMethod(id) {
-      const { error } = await supabaseClient.from("payment_methods").delete().eq("id", id);
-      if (error) return toast(error.message);
-      toast("Payment method deleted");
-      loadAdminPaymentMethods();
-    }
-
-    // --- 5. INVESTORS & REFERRAL LINES MONITOR ---
-    async function loadAdminUsers() {
-      const listEl = document.getElementById("adminUsersList");
-      const { data: users } = await supabaseClient.from("profiles").select("*").order("created_at", { ascending: false });
-
-      if (!users || !users.length) {
-        listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">No investors registered yet.</p>`;
-        return;
-      }
-
-      listEl.innerHTML = "";
-      for (const u of users) {
-        const shortId = u.id ? u.id.slice(0, 8) : "";
-        const { count: refCount } = await supabaseClient.from("referrals").select("*", { count: 'exact', head: true }).eq("referrer_id", u.id).eq("bonus_paid", true);
-        const { data: invs } = await supabaseClient.from("investments").select("amount").eq("investor_id", u.id).eq("status", "approved");
-        const totalInvested = (invs || []).reduce((s, i) => s + Number(i.amount), 0);
-
-        const div = document.createElement("div");
-        div.className = "card";
-        div.style.cssText = "padding:10px 12px;font-size:13px;";
-        div.innerHTML = `
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-            <strong>${u.full_name || "Investor"} <span class="muted" style="font-size:11px;">(ID: ${shortId})</span></strong>
-            <span class="mono" style="font-weight:700;color:var(--success);">${pkr(totalInvested)} Invested</span>
-          </div>
-          <div class="muted" style="font-size:11px;margin-bottom:4px;">Email/Phone: ${u.email || u.phone || "N/A"} | Role: ${u.role}</div>
-          <div style="font-size:11px;font-weight:700;color:var(--mustard-deep);">Referral Line Progress: ${refCount || 0} completed referrals</div>
-        `;
-        listEl.appendChild(div);
-      }
-    }
-
-    // --- 6. WHATSAPP SETTINGS ---
-    async function loadAdminSettings() {
-      const { data } = await supabaseClient.from("settings").select("*").eq("key", "whatsapp_link").single();
-      if (data) {
-        document.getElementById("waLinkInput").value = data.value || "";
-      }
-    }
-
-    async function saveWhatsAppLink() {
-      const val = document.getElementById("waLinkInput").value.trim();
-      const { error } = await supabaseClient.from("settings").upsert({ key: "whatsapp_link", value: val });
-      if (error) return toast(error.message);
-      toast("WhatsApp link updated successfully");
-    }
-
-    initAdmin();
-  </script>
-</body>
-</html>
+      const { error } = await supabaseClient.from(
