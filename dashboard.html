@@ -530,23 +530,43 @@ async function submitWithdraw() {
   }
 }
 
-          // LOAD TRANSACTIONS & CALCULATE BALANCE / SEPARATE TOTALS
+              // LOAD TRANSACTIONS & CALCULATE BALANCE
     async function loadUserData() {
       const db = getSupabase();
       const tbody = document.getElementById("txHistoryBody");
       
       const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
       const { data: wits } = await db.from("withdrawal_requests").select("*").eq("investor_id", currentUserId);
-      
-      // Safe fetch for wallet transactions (checking both investor_id and user_id)
-      let walletTxs = [];
-      const res1 = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
-      if (res1.data && res1.data.length > 0) {
-        walletTxs = res1.data;
-      } else {
-        const res2 = await db.from("wallet_transactions").select("*").eq("user_id", currentUserId);
-        if (res2.data) walletTxs = res2.data;
+      const { data: walletTxs } = await db.from("wallet_transactions").select("*");
+
+      let allTx = [];
+      let totalApprovedDeposit = 0;
+      let totalApprovedWithdraw = 0;
+      let totalWalletEarnings = 0;
+
+      if (invs) {
+        invs.forEach(i => {
+          allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
+          if (i.status === 'approved') totalApprovedDeposit += Number(i.amount);
+        });
       }
+
+      if (wits) {
+        wits.forEach(w => {
+          allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
+          if (w.status === 'approved' || w.status === 'paid') totalApprovedWithdraw += Number(w.amount);
+        });
+      }
+
+      if (walletTxs) {
+        walletTxs.forEach(t => {
+          allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
+          totalWalletEarnings += Number(t.amount);
+        });
+      }
+
+      userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
+      if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
       
       let totalApprovedDeposit = 0;
       let totalApprovedWithdraw = 0;
