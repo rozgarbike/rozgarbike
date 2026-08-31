@@ -134,20 +134,21 @@
   <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
-    let profile = null;
+    let adminProfile = null;
     let calculatedDistributionData = [];
 
     async function initAdmin() {
-      profile = await requireSession(true);
-      if (!profile) return;
-      if (profile.role !== "admin") {
+      adminProfile = await requireSession(true);
+      if (!adminProfile) return;
+      if (adminProfile.role !== "admin") {
         alert("Access denied. Admins only.");
         window.location.href = "dashboard.html";
         return;
       }
-      await loadAdminInvestments();
+      loadAdminInvestments();
     }
 
+    // --- GLOBAL SCOPE BINDINGS FOR ALL BUTTONS & TABS ---
     window.switchTab = function(tabName) {
       const tabs = ['investments', 'distribute', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
       tabs.forEach(t => {
@@ -183,7 +184,7 @@
         .order("created_at", { ascending: false });
 
       if (error) {
-        listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;color:var(--rust);">Error loading slips.</p>`;
+        listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;color:var(--rust);">Error: ${error.message}</p>`;
         return;
       }
 
@@ -377,5 +378,4 @@
 
     // --- 4. PAYMENT METHODS ---
     window.addPaymentMethod = async function() {
-      const label = document.getElementById("pmLabel").value.trim();
-      const account_title = document.getElementById("pmTitle").value.trim(
+      const label = document.getElementById("pmLabel").value.t
