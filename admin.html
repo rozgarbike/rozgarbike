@@ -39,9 +39,7 @@
       <div class="disp" style="font-size:16px;margin-bottom:8px;">PENDING INVESTMENT SLIPS</div>
       <div class="card" style="margin-bottom:24px;">
         <div class="muted" style="margin-bottom:10px;">Review user payment receipts & approve or decline.</div>
-        <div id="adminInvestmentsList" style="display:flex;flex-direction:column;gap:12px;">
-          <p class="muted" style="font-size:12px;">Loading pending slips...</p>
-        </div>
+        <div id="adminInvestmentsList" style="display:flex;flex-direction:column;gap:12px;"></div>
       </div>
     </div>
 
@@ -49,7 +47,7 @@
     <div id="tabDistribute" class="admin-tab-content" style="display:none;">
       <div class="disp" style="font-size:16px;margin-bottom:8px;">DISTRIBUTE RETURNS TO INVESTORS</div>
       <div class="card" style="margin-bottom:24px;">
-        <div class="muted" style="margin-bottom:8px;">Enter profit rate per Rs 1,000 investment (e.g., enter 50 for Rs 50 per 1,000, 100 for Rs 100 per 2,000, etc.).</div>
+        <div class="muted" style="margin-bottom:8px;">Enter profit rate per Rs 1,000 investment (e.g., 50 for Rs 50 per 1,000, 100 for Rs 100, etc.).</div>
         <div style="display:flex;gap:8px;margin-bottom:12px;">
           <input id="profitRateInput" type="number" placeholder="50" style="flex:1;" value="50" />
           <button class="btn btn-primary" style="white-space:nowrap;" onclick="previewDistribution()">Calculate Preview</button>
@@ -57,7 +55,7 @@
         <div class="muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;">Yeh system sab active investors ki total approved investment ke hisab se amount calculate kar ke un ke wallet mein add kar dega.</div>
         
         <div id="distributionPreviewContainer" style="margin-bottom:14px;display:none;">
-          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Preview Calculation List (Aap ke likhe rate ke mutabiq):</div>
+          <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Preview Calculation List:</div>
           <div id="distributionList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--line);padding:8px;border-radius:8px;"></div>
           <button class="btn btn-primary" style="width:100%;background:var(--success);" onclick="confirmAndDistribute()">Confirm & Distribute to All Investors</button>
         </div>
@@ -79,9 +77,7 @@
 
       <div class="disp" style="font-size:16px;margin-bottom:8px;">MANAGE EXISTING CAMPAIGNS</div>
       <div class="card" style="margin-bottom:24px;">
-        <div id="adminCampaignsList" style="display:flex;flex-direction:column;gap:10px;">
-          <p class="muted" style="font-size:12px;">Loading campaigns...</p>
-        </div>
+        <div id="adminCampaignsList" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
 
@@ -89,9 +85,7 @@
     <div id="tabWithdrawals" class="admin-tab-content" style="display:none;">
       <div class="disp" style="font-size:16px;margin-bottom:8px;">WITHDRAWAL REQUESTS</div>
       <div class="card" style="margin-bottom:24px;">
-        <div id="adminWithdrawalsList" style="display:flex;flex-direction:column;gap:10px;">
-          <p class="muted" style="font-size:12px;">Loading withdrawal requests...</p>
-        </div>
+        <div id="adminWithdrawalsList" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
 
@@ -110,9 +104,7 @@
 
       <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE PAYMENT METHODS</div>
       <div class="card" style="margin-bottom:24px;">
-        <div id="adminPaymentMethodsList" style="display:flex;flex-direction:column;gap:10px;">
-          <p class="muted" style="font-size:12px;">Loading payment methods...</p>
-        </div>
+        <div id="adminPaymentMethodsList" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
     </div>
 
@@ -121,9 +113,7 @@
       <div class="disp" style="font-size:16px;margin-bottom:8px;">INVESTORS & REFERRAL LINES</div>
       <div class="card" style="margin-bottom:24px;">
         <div class="muted" style="margin-bottom:10px;">Track user IDs, total investments, and their referral tree lines.</div>
-        <div id="adminUsersList" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;">
-          <p class="muted" style="font-size:12px;">Loading investors...</p>
-        </div>
+        <div id="adminUsersList" style="display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;"></div>
       </div>
     </div>
 
@@ -247,7 +237,6 @@
         const { data: invs } = await supabaseClient.from("investments").select("amount").eq("investor_id", p.id).eq("status", "approved");
         const totalInvested = (invs || []).reduce((s, i) => s + Number(i.amount), 0);
         if (totalInvested > 0) {
-          // Formula: (Total Invested / 1000) * ratePer1000
           const share = Math.round((totalInvested / 1000) * ratePer1000);
           calculatedDistributionData.push({ investor_id: p.id, full_name: p.full_name, total_invested: totalInvested, share: share });
 
@@ -378,4 +367,15 @@
       const account_number = document.getElementById("pmNumber").value.trim();
       if (!label || !account_title || !account_number) return toast("Fill in all payment method fields");
 
-      const { error } = await supabaseClient.from(
+      const { error } = await supabaseClient.from("payment_methods").insert([{ label, account_title, account_number, active: true }]);
+      if (error) return toast(error.message);
+      toast("Payment method added");
+      document.getElementById("pmLabel").value = "";
+      document.getElementById("pmTitle").value = "";
+      document.getElementById("pmNumber").value = "";
+      loadAdminPaymentMethods();
+    }
+
+    async function loadAdminPaymentMethods() {
+      const listEl = document.getElementById("adminPaymentMethodsList");
+      const { data } = await supabaseClient.from("payment_method
