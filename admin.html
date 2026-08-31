@@ -11,7 +11,7 @@
   <div class="header">
     <div class="header-row">
       <div class="brand"><span class="brand-badge">🚲</span> RozgarBike Admin</div>
-      <button class="btn btn-outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;" onclick="logout()">Log out</button>
+      <button class="btn btn-outline" id="logoutBtn" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.4);padding:6px 12px;font-size:12px;">Log out</button>
     </div>
     <div class="nav">
       <a href="index.html">Bikes</a>
@@ -25,13 +25,13 @@
 
     <!-- TABS -->
     <div style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;">
-      <button class="btn btn-primary" id="tabBtnInv" onclick="switchTab('investments')">Verify Slips</button>
-      <button class="btn btn-outline" id="tabBtnDist" onclick="switchTab('distribute')">Distribute Returns</button>
-      <button class="btn btn-outline" id="tabBtnCamp" onclick="switchTab('campaigns')">Campaigns</button>
-      <button class="btn btn-outline" id="tabBtnWith" onclick="switchTab('withdrawals')">Withdrawals</button>
-      <button class="btn btn-outline" id="tabBtnPay" onclick="switchTab('paymentMethods')">Payment Methods</button>
-      <button class="btn btn-outline" id="tabBtnUsers" onclick="switchTab('users')">Investors & Referrals</button>
-      <button class="btn btn-outline" id="tabBtnSettings" onclick="switchTab('settings')">WhatsApp Settings</button>
+      <button class="btn btn-primary tab-btn" data-tab="investments" id="tabBtnInv">Verify Slips</button>
+      <button class="btn btn-outline tab-btn" data-tab="distribute" id="tabBtnDist">Distribute Returns</button>
+      <button class="btn btn-outline tab-btn" data-tab="campaigns" id="tabBtnCamp">Campaigns</button>
+      <button class="btn btn-outline tab-btn" data-tab="withdrawals" id="tabBtnWith">Withdrawals</button>
+      <button class="btn btn-outline tab-btn" data-tab="paymentMethods" id="tabBtnPay">Payment Methods</button>
+      <button class="btn btn-outline tab-btn" data-tab="users" id="tabBtnUsers">Investors & Referrals</button>
+      <button class="btn btn-outline tab-btn" data-tab="settings" id="tabBtnSettings">WhatsApp Settings</button>
     </div>
 
     <!-- 1. INVESTMENTS / SLIP VERIFICATION -->
@@ -50,14 +50,14 @@
         <div class="muted" style="margin-bottom:8px;">Enter profit rate per Rs 1,000 investment (e.g., 50 for Rs 50 per 1,000, 100 for Rs 100, etc.).</div>
         <div style="display:flex;gap:8px;margin-bottom:12px;">
           <input id="profitRateInput" type="number" placeholder="50" style="flex:1;" value="50" />
-          <button class="btn btn-primary" style="white-space:nowrap;" onclick="previewDistribution()">Calculate Preview</button>
+          <button class="btn btn-primary" id="previewDistBtn" style="white-space:nowrap;">Calculate Preview</button>
         </div>
         <div class="muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;">Yeh system sab active investors ki total approved investment ke hisab se amount calculate kar ke un ke wallet mein add kar dega.</div>
         
         <div id="distributionPreviewContainer" style="margin-bottom:14px;display:none;">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Preview Calculation List:</div>
           <div id="distributionList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--line);padding:8px;border-radius:8px;"></div>
-          <button class="btn btn-primary" style="width:100%;background:var(--success);" onclick="confirmAndDistribute()">Confirm & Distribute to All Investors</button>
+          <button class="btn btn-primary" id="confirmDistBtn" style="width:100%;background:var(--success);">Confirm & Distribute to All Investors</button>
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@
         <div style="margin-bottom:10px;" class="muted">Target Amount (Rs)</div>
         <input id="newCampTarget" type="number" placeholder="70000" style="margin-bottom:12px;" />
 
-        <button class="btn btn-primary" style="width:100%;" onclick="createCampaign()">Create Campaign</button>
+        <button class="btn btn-primary" id="createCampBtn" style="width:100%;">Create Campaign</button>
       </div>
 
       <div class="disp" style="font-size:16px;margin-bottom:8px;">MANAGE EXISTING CAMPAIGNS</div>
@@ -99,7 +99,7 @@
         <input id="pmTitle" placeholder="Muhammad Ali" style="margin-bottom:10px;" />
         <div class="muted" style="margin-bottom:6px;">Account Number</div>
         <input id="pmNumber" placeholder="03001234567" style="margin-bottom:14px;" />
-        <button class="btn btn-primary" style="width:100%;" onclick="addPaymentMethod()">Add Method</button>
+        <button class="btn btn-primary" id="addPmBtn" style="width:100%;">Add Method</button>
       </div>
 
       <div class="disp" style="font-size:16px;margin-bottom:8px;">ACTIVE PAYMENT METHODS</div>
@@ -123,7 +123,7 @@
       <div class="card" style="margin-bottom:24px;">
         <div class="muted" style="margin-bottom:6px;">Support / Group WhatsApp Link</div>
         <input id="waLinkInput" placeholder="https://whatsapp.com/..." style="margin-bottom:12px;" />
-        <button class="btn btn-primary" style="width:100%;" onclick="saveWhatsAppLink()">Save WhatsApp Link</button>
+        <button class="btn btn-primary" id="saveWaBtn" style="width:100%;">Save WhatsApp Link</button>
       </div>
     </div>
 
@@ -137,7 +137,7 @@
     let adminProfile = null;
     let calculatedDistributionData = [];
 
-    async function initAdmin() {
+    document.addEventListener("DOMContentLoaded", async () => {
       adminProfile = await requireSession(true);
       if (!adminProfile) return;
       if (adminProfile.role !== "admin") {
@@ -146,19 +146,35 @@
         return;
       }
       loadAdminInvestments();
-    }
 
-    window.switchTab = function(tabName) {
+      // Attach Event Listeners securely
+      document.getElementById("logoutBtn").addEventListener("click", logout);
+      document.getElementById("createCampBtn").addEventListener("click", createCampaign);
+      document.getElementById("addPmBtn").addEventListener("click", addPaymentMethod);
+      document.getElementById("previewDistBtn").addEventListener("click", previewDistribution);
+      document.getElementById("confirmDistBtn").addEventListener("click", confirmAndDistribute);
+      document.getElementById("saveWaBtn").addEventListener("click", saveWhatsAppLink);
+
+      // Tab switching listeners
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          const tabName = e.target.getAttribute("data-tab");
+          switchTab(tabName);
+        });
+      });
+    });
+
+    function switchTab(tabName) {
       const tabs = ['investments', 'distribute', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
       tabs.forEach(t => {
         const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
         const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
         if (t === tabName) {
           if (el) el.style.display = "block";
-          if (btn) btn.className = "btn btn-primary";
+          if (btn) btn.className = "btn btn-primary tab-btn";
         } else {
           if (el) el.style.display = "none";
-          if (btn) btn.className = "btn btn-outline";
+          if (btn) btn.className = "btn btn-outline tab-btn";
         }
       });
 
@@ -168,7 +184,7 @@
       if (tabName === 'paymentMethods') loadAdminPaymentMethods();
       if (tabName === 'users') loadAdminUsers();
       if (tabName === 'settings') loadAdminSettings();
-    };
+    }
 
     // --- 1. INVESTMENTS SLIP VERIFICATION ---
     async function loadAdminInvestments() {
@@ -204,30 +220,38 @@
             <div class="muted" style="font-size:12px;margin-bottom:4px;">Trx ID: <span class="mono" style="color:var(--ink);">${i.transaction_id || "N/A"}</span></div>
             <div style="font-size:12px;margin-bottom:8px;">${slipLink}</div>
             <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary" style="flex:1;padding:8px;font-size:12px;" onclick="approveInvestment('${i.id}')">Approve</button>
-              <button class="btn btn-outline" style="flex:1;padding:8px;font-size:12px;color:var(--rust);border-color:var(--rust);" onclick="declineInvestment('${i.id}')">Decline</button>
+              <button class="btn btn-primary approve-btn" data-id="${i.id}" style="flex:1;padding:8px;font-size:12px;">Approve</button>
+              <button class="btn btn-outline decline-btn" data-id="${i.id}" style="flex:1;padding:8px;font-size:12px;color:var(--rust);border-color:var(--rust);">Decline</button>
             </div>
           </div>
         `;
       }).join("");
+
+      // Attach dynamic listeners for approve/decline buttons inside list
+      document.querySelectorAll(".approve-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => approveInvestment(e.target.getAttribute("data-id")));
+      });
+      document.querySelectorAll(".decline-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => declineInvestment(e.target.getAttribute("data-id")));
+      });
     }
 
-    window.approveInvestment = async function(invId) {
+    async function approveInvestment(invId) {
       const { error } = await supabaseClient.rpc("approve_investment", { p_investment_id: invId });
       if (error) return toast(error.message);
       toast("Investment approved successfully");
       loadAdminInvestments();
-    };
+    }
 
-    window.declineInvestment = async function(invId) {
+    async function declineInvestment(invId) {
       const { error } = await supabaseClient.from("investments").update({ status: "declined" }).eq("id", invId);
       if (error) return toast(error.message);
       toast("Investment declined");
       loadAdminInvestments();
-    };
+    }
 
     // --- 1.5 DISTRIBUTE RETURNS TO INVESTORS ---
-    window.previewDistribution = async function() {
+    async function previewDistribution() {
       const ratePer1000 = Number(document.getElementById("profitRateInput").value);
       if (!ratePer1000 || ratePer1000 <= 0) return toast("Enter a valid rate per 1000");
 
@@ -264,9 +288,9 @@
 
       document.getElementById("distributionPreviewContainer").style.display = "block";
       toast("Preview ready!");
-    };
+    }
 
-    window.confirmAndDistribute = async function() {
+    async function confirmAndDistribute() {
       if (!calculatedDistributionData.length) return toast("No distribution data to process");
       if (!confirm("Kya aap sabhi investors ko yeh return/bonus amount distribute karna chahte hain?")) return;
 
@@ -282,10 +306,10 @@
 
       toast(`Successfully distributed returns to ${successCount} investors!`);
       document.getElementById("distributionPreviewContainer").style.display = "none";
-    };
+    }
 
     // --- 2. CAMPAIGNS ---
-    window.createCampaign = async function() {
+    async function createCampaign() {
       const name = document.getElementById("newCampName").value.trim();
       const target = Number(document.getElementById("newCampTarget").value);
       if (!name || !target) return toast("Enter valid campaign name and target");
@@ -296,7 +320,7 @@
       document.getElementById("newCampName").value = "";
       document.getElementById("newCampTarget").value = "";
       loadAdminCampaigns();
-    };
+    }
 
     async function loadAdminCampaigns() {
       const listEl = document.getElementById("adminCampaignsList");
@@ -314,18 +338,22 @@
             <strong>${c.name}</strong>
             <div class="muted" style="font-size:11px;">Target: ${pkr(c.target)} | Received: ${pkr(c.total_received || 0)} | Status: ${c.status}</div>
           </div>
-          <button class="btn btn-outline" style="color:var(--rust);border-color:var(--rust);padding:4px 10px;font-size:11px;" onclick="deleteCampaign('${c.id}')">Delete</button>
+          <button class="btn btn-outline del-camp-btn" data-id="${c.id}" style="color:var(--rust);border-color:var(--rust);padding:4px 10px;font-size:11px;">Delete</button>
         </div>
       `).join("");
+
+      document.querySelectorAll(".del-camp-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => deleteCampaign(e.target.getAttribute("data-id")));
+      });
     }
 
-    window.deleteCampaign = async function(id) {
+    async function deleteCampaign(id) {
       if (!confirm("Are you sure you want to delete this campaign?")) return;
       const { error } = await supabaseClient.from("campaigns").delete().eq("id", id);
       if (error) return toast(error.message);
       toast("Campaign deleted");
       loadAdminCampaigns();
-    };
+    }
 
     // --- 3. WITHDRAWALS ---
     async function loadAdminWithdrawals() {
@@ -350,32 +378,4 @@
             <span class="mono" style="font-weight:700;color:var(--ink);">${pkr(w.amount)}</span>
           </div>
           <div class="muted" style="font-size:12px;margin-bottom:4px;">Method: ${w.method} — Account: <span class="mono" style="color:var(--ink);">${w.account_number}</span></div>
-          <div class="muted" style="font-size:12px;margin-bottom:8px;">Status: <strong style="text-transform:uppercase;color:${w.status === 'paid' ? 'var(--success)' : (w.status === 'pending' ? 'var(--mustard-deep)' : 'var(--rust)')}">${w.status}</strong></div>
-          ${w.status === 'pending' ? `
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-primary" style="flex:1;padding:6px;font-size:12px;" onclick="markWithdrawalPaid('${w.id}')">Mark Paid</button>
-              <button class="btn btn-outline" style="flex:1;padding:6px;font-size:12px;color:var(--rust);border-color:var(--rust);" onclick="rejectWithdrawal('${w.id}')">Reject</button>
-            </div>
-          ` : ''}
-        </div>
-      `).join("");
-    }
-
-    window.markWithdrawalPaid = async function(id) {
-      const { error } = await supabaseClient.from("withdrawal_requests").update({ status: "paid" }).eq("id", id);
-      if (error) return toast(error.message);
-      toast("Marked as paid");
-      loadAdminWithdrawals();
-    };
-
-    window.rejectWithdrawal = async function(id) {
-      const { error } = await supabaseClient.from("withdrawal_requests").update({ status: "rejected" }).eq("id", id);
-      if (error) return toast(error.message);
-      toast("Withdrawal rejected");
-      loadAdminWithdrawals();
-    };
-
-    // --- 4. PAYMENT METHODS ---
-    window.addPaymentMethod = async function() {
-      const label = document.getElementById("pmLabel").value.trim();
-      const account_title = docume
+          <div class="muted" style="font-size:12px;margin-bottom:8px;">Status: <strong style="text-transform:uppercase;color:${w.status === 'paid' ? 'var(--success)' : (w.status === 'pending' ? 'var(--mustard-deep)' : 'var(--ru
