@@ -173,6 +173,7 @@
     // --- 1. INVESTMENTS SLIP VERIFICATION ---
     async function loadAdminInvestments() {
       const listEl = document.getElementById("adminInvestmentsList");
+      if (!listEl) return;
       listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading pending slips...</p>`;
       
       const { data: invs } = await supabaseClient
@@ -206,22 +207,22 @@
       }).join("");
     }
 
-    async function approveInvestment(invId) {
+    window.approveInvestment = async function(invId) {
       const { error } = await supabaseClient.rpc("approve_investment", { p_investment_id: invId });
       if (error) return toast(error.message);
       toast("Investment approved successfully");
       loadAdminInvestments();
-    }
+    };
 
-    async function declineInvestment(invId) {
+    window.declineInvestment = async function(invId) {
       const { error } = await supabaseClient.from("investments").update({ status: "declined" }).eq("id", invId);
       if (error) return toast(error.message);
       toast("Investment declined");
       loadAdminInvestments();
-    }
+    };
 
     // --- 1.5 DISTRIBUTE RETURNS TO INVESTORS ---
-    async function previewDistribution() {
+    window.previewDistribution = async function() {
       const ratePer1000 = Number(document.getElementById("profitRateInput").value);
       if (!ratePer1000 || ratePer1000 <= 0) return toast("Enter a valid rate per 1000");
 
@@ -233,6 +234,7 @@
 
       calculatedDistributionData = [];
       const listEl = document.getElementById("distributionList");
+      if (!listEl) return;
       listEl.innerHTML = "";
 
       for (const p of profilesData) {
@@ -257,9 +259,9 @@
 
       document.getElementById("distributionPreviewContainer").style.display = "block";
       toast("Preview ready!");
-    }
+    };
 
-    async function confirmAndDistribute() {
+    window.confirmAndDistribute = async function() {
       if (!calculatedDistributionData.length) return toast("No distribution data to process");
       if (!confirm("Kya aap sabhi investors ko yeh return/bonus amount distribute karna chahte hain?")) return;
 
@@ -275,10 +277,10 @@
 
       toast(`Successfully distributed returns to ${successCount} investors!`);
       document.getElementById("distributionPreviewContainer").style.display = "none";
-    }
+    };
 
     // --- 2. CAMPAIGNS ---
-    async function createCampaign() {
+    window.createCampaign = async function() {
       const name = document.getElementById("newCampName").value.trim();
       const target = Number(document.getElementById("newCampTarget").value);
       if (!name || !target) return toast("Enter valid campaign name and target");
@@ -289,10 +291,11 @@
       document.getElementById("newCampName").value = "";
       document.getElementById("newCampTarget").value = "";
       loadAdminCampaigns();
-    }
+    };
 
     async function loadAdminCampaigns() {
       const listEl = document.getElementById("adminCampaignsList");
+      if (!listEl) return;
       listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading campaigns...</p>`;
       
       const { data } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
@@ -311,17 +314,18 @@
       `).join("");
     }
 
-    async function deleteCampaign(id) {
+    window.deleteCampaign = async function(id) {
       if (!confirm("Are you sure you want to delete this campaign?")) return;
       const { error } = await supabaseClient.from("campaigns").delete().eq("id", id);
       if (error) return toast(error.message);
       toast("Campaign deleted");
       loadAdminCampaigns();
-    }
+    };
 
     // --- 3. WITHDRAWALS ---
     async function loadAdminWithdrawals() {
       const listEl = document.getElementById("adminWithdrawalsList");
+      if (!listEl) return;
       listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading withdrawals...</p>`;
 
       const { data } = await supabaseClient
@@ -352,27 +356,25 @@
       `).join("");
     }
 
-    async function markWithdrawalPaid(id) {
+    window.markWithdrawalPaid = async function(id) {
       const { error } = await supabaseClient.from("withdrawal_requests").update({ status: "paid" }).eq("id", id);
       if (error) return toast(error.message);
       toast("Marked as paid");
       loadAdminWithdrawals();
-    }
+    };
 
-    async function rejectWithdrawal(id) {
+    window.rejectWithdrawal = async function(id) {
       const { error } = await supabaseClient.from("withdrawal_requests").update({ status: "rejected" }).eq("id", id);
       if (error) return toast(error.message);
       toast("Withdrawal rejected");
       loadAdminWithdrawals();
-    }
+    };
 
     // --- 4. PAYMENT METHODS ---
-    async function addPaymentMethod() {
+    window.addPaymentMethod = async function() {
       const label = document.getElementById("pmLabel").value.trim();
       const account_title = document.getElementById("pmTitle").value.trim();
       const account_number = document.getElementById("pmNumber").value.trim();
       if (!label || !account_title || !account_number) return toast("Fill in all payment method fields");
 
-      const { error } = await supabaseClient.from("payment_methods").insert([{ label, account_title, account_number, active: true }]);
-      if (error) return toast(error.message);
-      toast("Payment meth
+      con
