@@ -538,7 +538,8 @@ async function submitWithdraw() {
         
         const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
         const { data: wits } = await db.from("withdrawal_requests").select("*").eq("investor_id", currentUserId);
-        const { data: walletTxs } = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
+       const { data: walletTxs } = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
+        
         
 
         let allTx = [];
