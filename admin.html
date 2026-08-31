@@ -498,35 +498,75 @@ async function loadInvestorsDropdown() {
   selectEl.innerHTML = optionsHtml;
 }
 
-async function sendManualBonusToInvestor() {
-  const investorId = document.getElementById("bonusInvestorSelect").value;
-  const amount = Number(document.getElementById("bonusAmountInput").value);
-  const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
-  if (!investorId) return toast("Please select an investor from the list");
-  if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
+window.switchTab = function(tabName) {
+  const tabs = ['investments', 'distribute', 'manualBonus', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
+  tabs.forEach(t => {
+    const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
+    if (el) el.style.display = (t === tabName) ? "block" : "none";
+    if (btn) btn.className = (t === tabName) ? "btn btn-primary tab-btn" : "btn btn-outline tab-btn";
+  });
+  if (tabName === 'investments' && typeof loadAdminInvestments === 'function') loadAdminInvestments();
+  if (tabName === 'distribute' && typeof loadAdminInvestments === 'function') loadAdminInvestments();
+  if (tabName === 'manualBonus' && typeof loadInvestorsDropdown === 'function') loadInvestorsDropdown();
+  if (tabName === 'campaigns' && typeof loadAdminCampaigns === 'function') loadAdminCampaigns();
+  if (tabName === 'withdrawals' && typeof loadAdminWithdrawals === 'function') loadAdminWithdrawals();
+  if (tabName === 'paymentMethods' && typeof loadAdminPaymentMethods === 'function') loadAdminPaymentMethods();
+  if (tabName === 'users' && typeof loadAdminUsers === 'function') loadAdminUsers();
+  if (tabName === 'settings' && typeof loadAdminSettings === 'function') loadAdminSettings();
+};
+
+window.loadInvestorsDropdown = async function() {
+  const selectEl = document.getElementById("bonusInvestorSelect");
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">Loading investors list...</option>';
+  try {
+    const { data: users, error } = await supabaseClient.from("profiles").select("id, full_name").order("full_name");
+    if (error || !users || users.length === 0) {
+      selectEl.innerHTML = '<option value="">No investors found</option>';
+      return;
+    }
+    let optionsHtml = '<option value="">-- Select Investor (Name & ID) --</option>';
+    for (const u of users) {
+      const shortId = u.id ? u.id.slice(0, 6) : ""; 
+      const fullName = u.full_name || "Unknown User";
+      optionsHtml += `<option value="${u.id}">${fullName} (ID: ${shortId})</option>`;
+    }
+    selectEl.innerHTML = optionsHtml;
+  } catch (err) {
+    selectEl.innerHTML = '<option value="">Error loading list</option>';
+  }
+};
+
+window.sendManualBonusToInvestor = async function() {
+  const investorId = document.getElementById("bonusInvestorSelect")?.value;
+  const amount = Number(document.getElementById("bonusAmountInput")?.value);
+  const reason = document.getElementById("bonusReasonInput")?.value.trim() || "Admin Extra Bonus";
+  if (!investorId) return alert("Please select an investor from the list");
+  if (!amount || amount <= 0) return alert("Enter a valid bonus amount");
   const { error } = await supabaseClient.from("wallet_transactions").insert([{
     investor_id: investorId,
     amount: amount,
     description: reason
   }]);
-  if (error) return toast("Error: " + error.message);
-  toast("Bonus successfully sent to investor!");
+  if (error) return alert("Error: " + error.message);
+  alert("Bonus successfully sent to investor!");
   document.getElementById("bonusAmountInput").value = "";
   document.getElementById("bonusReasonInput").value = "";
   document.getElementById("bonusInvestorSelect").value = "";
-}
+};
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (typeof loadAdminInvestments === 'function') {
-    loadAdminInvestments();
-  }
+// Har button par zabardasti click lagane ka function
+setTimeout(() => {
+  if (typeof loadAdminInvestments === 'function') loadAdminInvestments();
   document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const tabName = e.currentTarget.getAttribute('data-tab');
-      if (tabName) switchTab(tabName);
-    });
+    btn.onclick = function() {
+      const tabName = this.getAttribute('data-tab');
+      if (tabName) window.switchTab(tabName);
+    };
   });
-});
+}, 1000);
+    
     
     
       
