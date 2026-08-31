@@ -530,100 +530,73 @@ async function submitWithdraw() {
   }
 }
 
-              // LOAD TRANSACTIONS & CALCULATE BALANCE
+                  // LOAD TRANSACTIONS & CALCULATE BALANCE
     async function loadUserData() {
-      const db = getSupabase();
-      const tbody = document.getElementById("txHistoryBody");
-      
-      const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
-      const { data: wits } = await db.from("withdrawal_requests").select("*").eq("investor_id", currentUserId);
-      const { data: walletTxs } = await db.from("wallet_transactions").select("*");
+      try {
+        const db = getSupabase();
+        const tbody = document.getElementById("txHistoryBody");
+        
+        const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
+        const { data: wits } = await db.from("withdrawal_requests").select("*").eq("investor_id", currentUserId);
+        const { data: walletTxs } = await db.from("wallet_transactions").select("*");
 
-      let allTx = [];
-      let totalApprovedDeposit = 0;
-      let totalApprovedWithdraw = 0;
-      let totalWalletEarnings = 0;
+        let allTx = [];
+        let totalApprovedDeposit = 0;
+        let totalApprovedWithdraw = 0;
+        let totalWalletEarnings = 0;
 
-      if (invs) {
-        invs.forEach(i => {
-          allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
-          if (i.status === 'approved') totalApprovedDeposit += Number(i.amount);
-        });
+        if (invs) {
+          invs.forEach(i => {
+            allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
+            if (i.status === 'approved') totalApprovedDeposit += Number(i.amount);
+          });
+        }
+
+        if (wits) {
+          wits.forEach(w => {
+            allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
+            if (w.status === 'approved' || w.status === 'paid') totalApprovedWithdraw += Number(w.amount);
+          });
+        }
+
+        if (walletTxs) {
+          walletTxs.forEach(t => {
+            // Yeh check karega ke IDs match hon taake error na aye
+            if (t.investor_id === currentUserId || t.user_id === currentUserId) {
+              allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
+              totalWalletEarnings += Number(t.amount);
+            }
+          });
+        }
+
+        let userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
+        if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
+
+        // Display On Interface
+        document.getElementById("withdrawableBalance").innerText = 'Rs ' + userWithdrawableBalance.toLocaleString();
+        document.getElementById("totalInvestment").innerText = 'Rs ' + totalApprovedDeposit.toLocaleString();
+        document.getElementById("totalWithdrawal").innerText = 'Rs ' + totalApprovedWithdraw.toLocaleString();
+
+        if (allTx.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">کوئی ٹرانزیکشن موجود نہیں ہے۔</td></tr>';
+          return;
+        }
+
+        allTx.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        tbody.innerHTML = allTx.map(t => `
+          <tr>
+            <td><b>${t.type}</b></td>
+            <td>Rs ${Number(t.amount).toLocaleString()}</td>
+            <td><span style="color:${t.status === 'approved' ? '#10b981' : (t.status === 'rejected' ? '#ef4444' : '#f59e0b')}">${t.status}</span></td>
+            <td>${new Date(t.date).toLocaleDateString()}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.log("Error loading data: ", err);
       }
-
-      if (wits) {
-        wits.forEach(w => {
-          allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
-          if (w.status === 'approved' || w.status === 'paid') totalApprovedWithdraw += Number(w.amount);
-        });
-      }
-
-      if (walletTxs) {
-        walletTxs.forEach(t => {
-          allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
-          totalWalletEarnings += Number(t.amount);
-        });
-      }
-
-      userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
-      if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
-      
-      let totalApprovedDeposit = 0;
-      let totalApprovedWithdraw = 0;
-      let totalWalletEarnings = 0;
-
-      // 1. Investments Calculation
-      if (invs) {
-        invs.forEach(i => {
-          allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
-          if (i.status === 'approved') totalApprovedDeposit += Number(i.amount);
-        });
-      }
-
-      // 2. Withdrawals Calculation
-      if (wits) {
-        wits.forEach(w => {
-          allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
-          if (w.status === 'approved' || w.status === 'paid') totalApprovedWithdraw += Number(w.amount);
-        });
-      }
-
-      // 3. Wallet Transactions / Returns / Bonuses Calculation
-      if (walletTxs) {
-        walletTxs.forEach(t => {
-          allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
-          totalWalletEarnings += Number(t.amount);
-        });
-      }
-
-      // Withdrawable balance = Total Returns/Bonuses - Approved Withdrawals
-      userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
-      if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
-      
-  if(userWithdrawableBalance < 0) userWithdrawableBalance = 0; // Safeguard
-
-  // Display On Interface
-  document.getElementById("withdrawableBalance").innerText = `Rs ${userWithdrawableBalance.toLocaleString()}`;
-  document.getElementById("totalInvestment").innerText = `Rs ${totalApprovedDeposit.toLocaleString()}`;
-  document.getElementById("totalWithdrawal").innerText = `Rs ${totalApprovedWithdraw.toLocaleString()}`;
-
-  if(allTx.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9ca3af">کوئی ٹرانزیکشن موجود نہیں ہے۔</td></tr>`;
-    return;
-  }
-
-  // Sort by date descending
-  allTx.sort((a,b) => new Date(b.date) - new Date(a.date));
-
-  tbody.innerHTML = allTx.map(t => `
-    <tr>
-      <td><b>${t.type}</b></td>
-      <td>Rs ${Number(t.amount).toLocaleString()}</td>
-      <td><span style="color:${t.status === 'approved' ? '#10b981' : (t.status === 'rejected' ? '#ef4444' : '#f59e0b')}">${t.status}</span></td>
-      <td>${new Date(t.date).toLocaleDateString()}</td>
-    </tr>
-  `).join("");
-}
+    }
+  
 
 window.addEventListener("DOMContentLoaded", initDashboard);
 </script>
