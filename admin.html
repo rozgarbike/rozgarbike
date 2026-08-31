@@ -63,23 +63,24 @@
       </div>
     </div>
 
-    <!-- 1.6 MANUAL EXTRA BONUS TO SPECIFIC INVESTOR -->
+        <!-- 1.6 MANUAL EXTRA BONUS TO SPECIFIC INVESTOR -->
     <div id="tabManualBonus" class="admin-tab-content" style="display:none;">
-      <div class="disp" style="font-size:16px;margin-bottom:8px;">GIVE EXTRA BONUS TO SPECIFIC INVESTOR</div>
+      <div class="disp" style="font-size:16px;margin-bottom:8px;">👉 GIVE EXTRA BONUS TO INVESTOR</div>
+      
       <div class="card" style="margin-bottom:24px;">
-        <div class="muted" style="margin-bottom:6px;">Select Investor (Name, ID & Active Investment)</div>
-        <select id="bonusInvestorSelect" style="margin-bottom:12px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);"></select>
+        <div class="muted" style="margin-bottom:6px;">Select Investor (Name & ID)</div>
+        <select id="bonusInvestorSelect" style="margin-bottom:12px;width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;"></select>
 
         <div class="muted" style="margin-bottom:6px;">Bonus Amount (Rs)</div>
-        <input id="bonusAmountInput" type="number" placeholder="e.g. 500" style="margin-bottom:12px;" />
+        <input id="bonusAmountInput" type="number" placeholder="e.g. 500" style="margin-bottom:12px;width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
 
         <div class="muted" style="margin-bottom:6px;">Reason / Description</div>
-        <input id="bonusReasonInput" type="text" placeholder="e.g. Special Performance Reward" style="margin-bottom:14px;" />
+        <input id="bonusReasonInput" type="text" placeholder="e.g. Special Performance Reward" style="margin-bottom:14px;width:100%;padding:8px;border-radius:4px;border:1px solid #ccc;">
 
-        <button class="btn btn-primary" id="sendManualBonusBtn" style="width:100%;background:var(--mustard-deep);">Send Bonus to Investor Account</button>
+        <button onclick="sendManualBonusToInvestor()" class="btn btn-primary" style="width:100%;background:var(--mustard-deep);border:none;padding:10px;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;">Send Bonus</button>
       </div>
     </div>
-
+    
     <!-- 2. CAMPAIGNS MANAGEMENT -->
     <div id="tabCampaigns" class="admin-tab-content" style="display:none;">
       <div class="disp" style="font-size:16px;margin-bottom:8px;">ADD NEW BIKE CAMPAIGN</div>
@@ -308,25 +309,21 @@
   if (!investorId) return toast("Please select an investor from the list");
   if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
 
-  // Direct wallet_transactions table mein insert kare ga taake dashboard par foran balance update ho
   const { error } = await supabaseClient.from("wallet_transactions").insert([{
     investor_id: investorId,
     amount: amount,
     description: reason
   }]);
 
-  if (error) {
-    console.error("Bonus Error:", error);
-    return toast("Error: " + error.message);
-  }
+  if (error) return toast("Error: " + error.message);
 
   toast("Bonus successfully sent to investor!");
   
-  // Form clear kar de ga
   document.getElementById("bonusAmountInput").value = "";
   document.getElementById("bonusReasonInput").value = "";
   document.getElementById("bonusInvestorSelect").value = "";
   }
+    
     
     
 
@@ -397,7 +394,6 @@
   if (!selectEl) return;
   selectEl.innerHTML = '<option value="">Loading investors list...</option>';
 
-  // Sirf Name aur ID fetch kare ga (koi extra column nahi jo error de)
   const { data: users, error } = await supabaseClient.from("profiles").select("id, full_name").order("full_name");
 
   if (error || !users || users.length === 0) {
@@ -407,13 +403,13 @@
 
   let optionsHtml = '<option value="">-- Select Investor (Name & ID) --</option>';
   for (const u of users) {
-    const shortId = u.id ? u.id.slice(0, 6) : ""; // ID ke pehle 6 huroof
+    const shortId = u.id ? u.id.slice(0, 6) : ""; 
     const fullName = u.full_name || "Unknown User";
     optionsHtml += `<option value="${u.id}">${fullName} (ID: ${shortId})</option>`;
   }
   
   selectEl.innerHTML = optionsHtml;
-          }
+    }
       
 
       let optionsHtml = `<option value="">-- Choose Investor (Name | ID | Active Inv) --</option>`;
