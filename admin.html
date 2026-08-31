@@ -53,7 +53,7 @@
           <input id="profitRateInput" type="number" placeholder="50" style="flex:1;" value="50" />
           <button class="btn btn-primary" id="previewDistBtn" style="white-space:nowrap;">Calculate Preview</button>
         </div>
-        <div class="muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;">Yeh system sab active investors ki total approved investment ke hisab se amount calculate kar ke un ke wallet mein add kar dega.</div>
+        <div class="muted" style="font-size:12px;margin-bottom:14px;line-height:1.4;">Yeh system sab active investors ki total approved investment ke hisab se amount calculate kar ke un ke wallet mein add kar dega taake withdraw ho sake.</div>
         
         <div id="distributionPreviewContainer" style="margin-bottom:14px;display:none;">
           <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Preview Calculation List:</div>
@@ -337,20 +337,22 @@
             const { data: prof } = await supabaseClient.from("profiles").select("wallet_balance").eq("id", item.investor_id).single();
             if (prof) {
               const currentBal = Number(prof.wallet_balance || 0);
-              await supabaseClient.from("profiles").update({ wallet_balance: currentBal + Number(item.share) }).eq("id", item.investor_id);
+              const newBalance = currentBal + Number(item.share);
+              // Update wallet balance so it becomes available for withdrawal
+              await supabaseClient.from("profiles").update({ wallet_balance: newBalance }).eq("id", item.investor_id);
             }
           } catch(e) {}
         }
       }
 
-      toast(`Successfully distributed returns to ${successCount} investors and updated wallets!`);
+      toast(`Successfully distributed returns to ${successCount} investors & added to withdrawal balance!`);
       document.getElementById("distributionPreviewContainer").style.display = "none";
     }
 
     async function loadInvestorsDropdown() {
       const selectEl = document.getElementById("bonusInvestorSelect");
       if (!selectEl) return;
-      selectEl.innerHTML = `<option value="">Loading investors with names and IDs...</option>`;
+      selectEl.innerHTML = `<option value="">Loading investors with names, IDs & investments...</option>`;
 
       const { data: users } = await supabaseClient.from("profiles").select("id, full_name, role").order("full_name", { ascending: true });
       if (!users || !users.length) {
@@ -358,7 +360,7 @@
         return;
       }
 
-      let optionsHtml = `<option value="">-- Choose Investor --</option>`;
+      let optionsHtml = `<option value="">-- Choose Investor (Name | ID | Active Inv) --</option>`;
       for (const u of users) {
         const shortId = u.id ? u.id.slice(0, 8) : "";
         const { data: invs } = await supabaseClient.from("investments").select("amount").eq("investor_id", u.id).eq("status", "approved");
@@ -372,13 +374,8 @@
     async function sendManualBonusToInvestor() {
       const investorId = document.getElementById("bonusInvestorSelect").value;
       const amount = Number(document.getElementById("bonusAmountInput").value);
-      const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
-
-      if (!investorId) return toast("Please select an investor");
-      if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
-
-      const { error } = await supa
-  <script src="assets/config.js"></script>
+      const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Ex
+          <script src="assets/config.js"></script>
   <script src="assets/app.js"></script>
   <script>
     let adminProfile = null;
@@ -761,4 +758,3 @@
     }
   </script>
   
-    
