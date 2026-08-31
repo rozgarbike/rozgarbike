@@ -501,26 +501,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     function switchTab(tabName) {
-      const tabs = ['investments', 'distribute', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
-      tabs.forEach(t => {
-        const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
-        const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
-        if (t === tabName) {
-          if (el) el.style.display = "block";
-          if (btn) btn.className = "btn btn-primary tab-btn";
-        } else {
-          if (el) el.style.display = "none";
-          if (btn) btn.className = "btn btn-outline tab-btn";
-        }
-      });
-
-      if (tabName === 'investments') loadAdminInvestments();
-      if (tabName === 'campaigns') loadAdminCampaigns();
-      if (tabName === 'withdrawals') loadAdminWithdrawals();
-      if (tabName === 'paymentMethods') loadAdminPaymentMethods();
-      if (tabName === 'users') loadAdminUsers();
-      if (tabName === 'settings') loadAdminSettings();
+  const tabs = ['investments', 'distribute', 'manualBonus', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
+  tabs.forEach(t => {
+    const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
+    if (t === tabName) {
+      if (el) el.style.display = "block";
+      if (btn) btn.className = "btn btn-primary tab-btn";
+    } else {
+      if (el) el.style.display = "none";
+      if (btn) btn.className = "btn btn-outline tab-btn";
     }
+  });
+  if (tabName === 'investments') loadAdminInvestments();
+  if (tabName === 'distribute') loadAdminInvestments();
+  if (tabName === 'manualBonus') loadInvestorsDropdown();
+  if (tabName === 'campaigns') loadAdminCampaigns();
+  if (tabName === 'withdrawals') loadAdminWithdrawals();
+  if (tabName === 'paymentMethods') loadAdminPaymentMethods();
+  if (tabName === 'users') loadAdminUsers();
+  if (tabName === 'settings') loadAdminSettings();
+    }
+    
 
     async function loadAdminInvestments() {
       const listEl = document.getElementById("adminInvestmentsList");
