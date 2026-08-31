@@ -530,17 +530,24 @@ async function submitWithdraw() {
   }
 }
 
-      // LOAD TRANSACTIONS & CALCULATE BALANCE / SEPARATE TOTALS
+          // LOAD TRANSACTIONS & CALCULATE BALANCE / SEPARATE TOTALS
     async function loadUserData() {
       const db = getSupabase();
       const tbody = document.getElementById("txHistoryBody");
       
       const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
       const { data: wits } = await db.from("withdrawal_requests").select("*").eq("investor_id", currentUserId);
-      const { data: walletTxs } = await db.from("wallet_transactions").select("*");
       
-
-      let allTx = [];
+      // Safe fetch for wallet transactions (checking both investor_id and user_id)
+      let walletTxs = [];
+      const res1 = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
+      if (res1.data && res1.data.length > 0) {
+        walletTxs = res1.data;
+      } else {
+        const res2 = await db.from("wallet_transactions").select("*").eq("user_id", currentUserId);
+        if (res2.data) walletTxs = res2.data;
+      }
+      
       let totalApprovedDeposit = 0;
       let totalApprovedWithdraw = 0;
       let totalWalletEarnings = 0;
