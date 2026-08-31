@@ -537,39 +537,21 @@ async function loadUserData() {
 
   const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
   const { data: wits } = await db.from("withdrawals").select("*").eq("investor_id", currentUserId);
-  const { data: earnings } = await db.from("earnings").select("*").eq("user_id", currentUserId);
+      // 3. Wallet Transactions / Distribution / Bonus Calculation
+    const { data: walletTxs } = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
+    
+    let totalWalletEarnings = 0;
+    if (walletTxs) {
+      walletTxs.forEach(t => {
+        allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
+        totalWalletEarnings += Number(t.amount);
+      });
+    }
 
-  let allTx = [];
-  let totalApprovedDeposit = 0;
-  let totalApprovedWithdraw = 0;
-  let totalEarningsAndBonus = 0;
-
-  // 1. Investments Calculation
-  if(invs) {
-    invs.forEach(i => {
-      allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
-      if(i.status === 'approved') totalApprovedDeposit += Number(i.amount);
-    });
-  }
-
-  // 2. Withdrawals Calculation
-  if(wits) {
-    wits.forEach(w => {
-      allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
-      if(w.status === 'approved') totalApprovedWithdraw += Number(w.amount);
-    });
-  }
-
-  // 3. Earnings / Daily Profit / Bonus Calculation (From earnings table or user_earnings)
-  if(earnings) {
-    earnings.forEach(e => {
-      allTx.push({ type: e.type || 'Bonus/Profit', amount: e.amount, status: 'approved', date: e.created_at });
-      totalEarningsAndBonus += Number(e.amount);
-    });
-  }
-
-  // Withdrawable balance = Daily Profits + Bonuses - Approved Withdrawals
-  userWithdrawableBalance = totalEarningsAndBonus - totalApprovedWithdraw;
+    // Withdrawable balance = Total Earnings/Bonus from Admin - Approved Withdrawals
+    userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
+    if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
+  
   if(userWithdrawableBalance < 0) userWithdrawableBalance = 0; // Safeguard
 
   // Display On Interface
