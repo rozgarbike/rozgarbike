@@ -148,17 +148,17 @@
       await loadAdminInvestments();
     }
 
-    function switchTab(tabName) {
+    window.switchTab = function(tabName) {
       const tabs = ['investments', 'distribute', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
       tabs.forEach(t => {
         const el = document.getElementById("tab" + t.charAt(0).toUpperCase() + t.slice(1));
         const btn = document.getElementById("tabBtn" + t.charAt(0).toUpperCase() + t.slice(1));
         if (t === tabName) {
           if (el) el.style.display = "block";
-          if (btn) { btn.className = "btn btn-primary"; }
+          if (btn) btn.className = "btn btn-primary";
         } else {
           if (el) el.style.display = "none";
-          if (btn) { btn.className = "btn btn-outline"; }
+          if (btn) btn.className = "btn btn-outline";
         }
       });
 
@@ -168,7 +168,7 @@
       if (tabName === 'paymentMethods') loadAdminPaymentMethods();
       if (tabName === 'users') loadAdminUsers();
       if (tabName === 'settings') loadAdminSettings();
-    }
+    };
 
     // --- 1. INVESTMENTS SLIP VERIFICATION ---
     async function loadAdminInvestments() {
@@ -176,11 +176,16 @@
       if (!listEl) return;
       listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading pending slips...</p>`;
       
-      const { data: invs } = await supabaseClient
+      const { data: invs, error } = await supabaseClient
         .from("investments")
         .select("*, campaigns(name), profiles(full_name)")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
+
+      if (error) {
+        listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;color:var(--rust);">Error loading slips.</p>`;
+        return;
+      }
 
       if (!invs || !invs.length) {
         listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">No pending investment slips found.</p>`;
@@ -373,8 +378,4 @@
     // --- 4. PAYMENT METHODS ---
     window.addPaymentMethod = async function() {
       const label = document.getElementById("pmLabel").value.trim();
-      const account_title = document.getElementById("pmTitle").value.trim();
-      const account_number = document.getElementById("pmNumber").value.trim();
-      if (!label || !account_title || !account_number) return toast("Fill in all payment method fields");
-
-      con
+      const account_title = document.getElementById("pmTitle").value.trim(
