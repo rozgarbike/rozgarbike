@@ -453,12 +453,13 @@
       const saveWaEl = document.getElementById("saveWaBtn");
       if (saveWaEl) saveWaEl.addEventListener("click", saveWhatsAppLink);
 
-      document.querySelectorAll(".tab-btn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-          const tabName = e.target.getAttribute("data-tab");
-          switchTab(tabName);
-        });
-      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const tabName = e.currentTarget.getAttribute('data-tab');
+    switchTab(tabName);
+  });
+});
+      
 
       // Then check admin session
       try {
