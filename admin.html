@@ -390,6 +390,7 @@
     }
 
     async function loadInvestorsDropdown() {
+  coasync function loadInvestorsDropdown() {
   const selectEl = document.getElementById("bonusInvestorSelect");
   if (!selectEl) return;
   selectEl.innerHTML = '<option value="">Loading investors list...</option>';
@@ -409,8 +410,8 @@
   }
   
   selectEl.innerHTML = optionsHtml;
-    }
-      
+}
+
 async function sendManualBonusToInvestor() {
   const investorId = document.getElementById("bonusInvestorSelect").value;
   const amount = Number(document.getElementById("bonusAmountInput").value);
@@ -433,37 +434,34 @@ async function sendManualBonusToInvestor() {
   document.getElementById("bonusReasonInput").value = "";
   document.getElementById("bonusInvestorSelect").value = "";
 }
-    
-    
-    let adminProfile = null;
-    let calculatedDistributionData = [];
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      // Bind event listeners FIRST so buttons are always responsive
-      const logoutEl = document.getElementById("logoutBtn");
-      if (logoutEl) logoutEl.addEventListener("click", () => { if (typeof logout === 'function') logout(); });
+document.addEventListener("DOMContentLoaded", async () => {
+  const logoutEl = document.getElementById("logoutBtn");
+  if (logoutEl) logoutEl.addEventListener("click", () => { if (typeof logout === 'function') logout(); });
 
-      const createCampEl = document.getElementById("createCampBtn");
-      if (createCampEl) createCampEl.addEventListener("click", createCampaign);
+  const createCampEl = document.getElementById("createCampBtn");
+  if (createCampEl) createCampEl.addEventListener("click", createCampaign);
 
-      const addPmEl = document.getElementById("addPmBtn");
-      if (addPmEl) addPmEl.addEventListener("click", addPaymentMethod);
+  const addPnEl = document.getElementById("addPnBtn");
+  if (addPnEl) addPnEl.addEventListener("click", addPaymentMethod);
 
-      const previewDistEl = document.getElementById("previewDistBtn");
-      if (previewDistEl) previewDistEl.addEventListener("click", previewDistribution);
+  const previewDistEl = document.getElementById("previewDistBtn");
+  if (previewDistEl) previewDistEl.addEventListener("click", previewDistribution);
 
-      const confirmDistEl = document.getElementById("confirmDistBtn");
-      if (confirmDistEl) confirmDistEl.addEventListener("click", confirmAndDistribute);
+  const confirmDistEl = document.getElementById("confirmDistBtn");
+  if (confirmDistEl) confirmDistEl.addEventListener("click", confirmAndDistribute);
 
-      const saveWaEl = document.getElementById("saveWaBtn");
-      if (saveWaEl) saveWaEl.addEventListener("click", saveWhatsAppLink);
+  const saveWaEl = document.getElementById("saveWaBtn");
+  if (saveWaEl) saveWaEl.addEventListener("click", saveWhatsAppLink);
 
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    const tabName = e.currentTarget.getAttribute('data-tab');
-    switchTab(tabName);
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const tabName = e.currentTarget.getAttribute('data-tab');
+      switchTab(tabName);
+    });
   });
 });
+    
       
 
       // Then check admin session
