@@ -412,24 +412,29 @@
     }
       
 
-      let optionsHtml = `<option value="">-- Choose Investor (Name | ID | Active Inv) --</option>`;
-      for (const u of users) {
-        const shortId = u.id ? u.id.slice(0, 8) : "";
-        const { data: invs } = await supabaseClient.from("investments").select("amount").eq("investor_id", u.id).eq("status", "approved");
-        const totalInvested = (invs || []).reduce((s, i) => s + Number(i.amount), 0);
-        
-        optionsHtml += `<option value="${u.id}">${u.full_name || "Investor"} | ID: ${shortId} | Inv: ${pkr(totalInvested)}</option>`;
-      }
-      selectEl.innerHTML = optionsHtml;
-    }
+     async function sendManualBonusToInvestor() {
+  const investorId = document.getElementById("bonusInvestorSelect").value;
+  const amount = Number(document.getElementById("bonusAmountInput").value);
+  const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
 
-    async function sendManualBonusToInvestor() {
-      const investorId = document.getElementById("bonusInvestorSelect").value;
-      const amount = Number(document.getElementById("bonusAmountInput").value);
-      const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Ex
-          <script src="assets/config.js"></script>
-  <script src="assets/app.js"></script>
-  <script>
+  if (!investorId) return toast("Please select an investor from the list");
+  if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
+
+  const { error } = await supabaseClient.from("wallet_transactions").insert([{
+    investor_id: investorId,
+    amount: amount,
+    description: reason
+  }]);
+
+  if (error) return toast("Error: " + error.message);
+
+  toast("Bonus successfully sent to investor!");
+  
+  document.getElementById("bonusAmountInput").value = "";
+  document.getElementById("bonusReasonInput").value = "";
+  document.getElementById("bonusInvestorSelect").value = "";
+     }
+    
     let adminProfile = null;
     let calculatedDistributionData = [];
 
