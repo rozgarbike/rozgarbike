@@ -300,31 +300,34 @@
       document.getElementById("distributionPreviewContainer").style.display = "none";
     }
 
-    async function sendManualBonusToInvestor() {
-      const investorId = document.getElementById("bonusInvestorSelect").value;
-      const amount = Number(document.getElementById("bonusAmountInput").value);
-      const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
+  async function sendManualBonusToInvestor() {
+  const investorId = document.getElementById("bonusInvestorSelect").value;
+  const amount = Number(document.getElementById("bonusAmountInput").value);
+  const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
 
-      if (!investorId) return toast("Please select an investor");
-      if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
+  if (!investorId) return toast("Please select an investor from the list");
+  if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
 
-      // Call Supabase Database Function (RPC) directly
-      const { error } = await supabaseClient.rpc("give_manual_bonus", { 
-        p_investor_id: investorId, 
-        p_amount: amount, 
-        p_reason: reason 
-      });
+  // Direct wallet_transactions table mein insert kare ga taake dashboard par foran balance update ho
+  const { error } = await supabaseClient.from("wallet_transactions").insert([{
+    investor_id: investorId,
+    amount: amount,
+    description: reason
+  }]);
 
-      if (error) {
-        console.error("RPC Error:", error);
-        return toast("Error: " + error.message);
-      }
+  if (error) {
+    console.error("Bonus Error:", error);
+    return toast("Error: " + error.message);
+  }
 
-      toast("Bonus successfully sent and updated in investor's account!");
-      document.getElementById("bonusAmountInput").value = "";
-      document.getElementById("bonusReasonInput").value = "";
-      document.getElementById("bonusInvestorSelect").value = "";
-    }
+  toast("Bonus successfully sent to investor!");
+  
+  // Form clear kar de ga
+  document.getElementById("bonusAmountInput").value = "";
+  document.getElementById("bonusReasonInput").value = "";
+  document.getElementById("bonusInvestorSelect").value = "";
+  }
+    
     
 
       toast("Calculating distribution preview...");
@@ -390,15 +393,28 @@
     }
 
     async function loadInvestorsDropdown() {
-      const selectEl = document.getElementById("bonusInvestorSelect");
-      if (!selectEl) return;
-      selectEl.innerHTML = `<option value="">Loading investors with names, IDs & investments...</option>`;
+  const selectEl = document.getElementById("bonusInvestorSelect");
+  if (!selectEl) return;
+  selectEl.innerHTML = '<option value="">Loading investors list...</option>';
 
-      const { data: users } = await supabaseClient.from("profiles").select("id, full_name, role").order("full_name", { ascending: true });
-      if (!users || !users.length) {
-        selectEl.innerHTML = `<option value="">No investors found</option>`;
-        return;
-      }
+  // Sirf Name aur ID fetch kare ga (koi extra column nahi jo error de)
+  const { data: users, error } = await supabaseClient.from("profiles").select("id, full_name").order("full_name");
+
+  if (error || !users || users.length === 0) {
+    selectEl.innerHTML = '<option value="">No investors found</option>';
+    return;
+  }
+
+  let optionsHtml = '<option value="">-- Select Investor (Name & ID) --</option>';
+  for (const u of users) {
+    const shortId = u.id ? u.id.slice(0, 6) : ""; // ID ke pehle 6 huroof
+    const fullName = u.full_name || "Unknown User";
+    optionsHtml += `<option value="${u.id}">${fullName} (ID: ${shortId})</option>`;
+  }
+  
+  selectEl.innerHTML = optionsHtml;
+          }
+      
 
       let optionsHtml = `<option value="">-- Choose Investor (Name | ID | Active Inv) --</option>`;
       for (const u of users) {
