@@ -147,7 +147,7 @@
       }
       loadAdminInvestments();
 
-      // Attach Event Listeners securely
+      // Secure Event Listeners for action buttons
       document.getElementById("logoutBtn").addEventListener("click", logout);
       document.getElementById("createCampBtn").addEventListener("click", createCampaign);
       document.getElementById("addPmBtn").addEventListener("click", addPaymentMethod);
@@ -227,7 +227,6 @@
         `;
       }).join("");
 
-      // Attach dynamic listeners for approve/decline buttons inside list
       document.querySelectorAll(".approve-btn").forEach(btn => {
         btn.addEventListener("click", (e) => approveInvestment(e.target.getAttribute("data-id")));
       });
@@ -314,7 +313,7 @@
       const target = Number(document.getElementById("newCampTarget").value);
       if (!name || !target) return toast("Enter valid campaign name and target");
 
-      const { error } = await supabaseClient.from("campaigns").insert([{ name, target, total_received: 0, status: "active" }]);
+      const { error } = await supabaseClient.from("campaigns").insert([{ name, target, raised: 0, status: "active" }]);
       if (error) return toast(error.message);
       toast("Campaign created successfully");
       document.getElementById("newCampName").value = "";
@@ -336,7 +335,7 @@
         <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:13px;">
           <div>
             <strong>${c.name}</strong>
-            <div class="muted" style="font-size:11px;">Target: ${pkr(c.target)} | Received: ${pkr(c.total_received || 0)} | Status: ${c.status}</div>
+            <div class="muted" style="font-size:11px;">Target: ${pkr(c.target)} | Raised: ${pkr(c.raised || c.total_received || 0)} | Status: ${c.status}</div>
           </div>
           <button class="btn btn-outline del-camp-btn" data-id="${c.id}" style="color:var(--rust);border-color:var(--rust);padding:4px 10px;font-size:11px;">Delete</button>
         </div>
@@ -378,4 +377,5 @@
             <span class="mono" style="font-weight:700;color:var(--ink);">${pkr(w.amount)}</span>
           </div>
           <div class="muted" style="font-size:12px;margin-bottom:4px;">Method: ${w.method} — Account: <span class="mono" style="color:var(--ink);">${w.account_number}</span></div>
-          <div class="muted" style="font-size:12px;margin-bottom:8px;">Status: <strong style="text-transform:uppercase;color:${w.status === 'paid' ? 'var(--success)' : (w.status === 'pending' ? 'var(--mustard-deep)' : 'var(--ru
+          <div class="muted" style="font-size:12px;margin-bottom:8px;">Status: <strong style="text-transform:uppercase;color:${w.status === 'paid' ? 'var(--success)' : (w.status === 'pending' ? 'var(--mustard-deep)' : 'var(--rust)')}">${w.status}</strong></div>
+          ${w.status === 'p
