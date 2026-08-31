@@ -411,8 +411,7 @@
   selectEl.innerHTML = optionsHtml;
     }
       
-
-     async function sendManualBonusToInvestor() {
+async function sendManualBonusToInvestor() {
   const investorId = document.getElementById("bonusInvestorSelect").value;
   const amount = Number(document.getElementById("bonusAmountInput").value);
   const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
@@ -433,7 +432,8 @@
   document.getElementById("bonusAmountInput").value = "";
   document.getElementById("bonusReasonInput").value = "";
   document.getElementById("bonusInvestorSelect").value = "";
-     }
+}
+    
     
     let adminProfile = null;
     let calculatedDistributionData = [];
