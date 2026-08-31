@@ -148,7 +148,6 @@
       loadAdminInvestments();
     }
 
-    // --- GLOBAL SCOPE BINDINGS FOR ALL BUTTONS & TABS ---
     window.switchTab = function(tabName) {
       const tabs = ['investments', 'distribute', 'campaigns', 'withdrawals', 'paymentMethods', 'users', 'settings'];
       tabs.forEach(t => {
@@ -291,7 +290,7 @@
       const target = Number(document.getElementById("newCampTarget").value);
       if (!name || !target) return toast("Enter valid campaign name and target");
 
-      const { error } = await supabaseClient.from("campaigns").insert([{ name, target, raised: 0, status: "active" }]);
+      const { error } = await supabaseClient.from("campaigns").insert([{ name, target, total_received: 0, status: "active" }]);
       if (error) return toast(error.message);
       toast("Campaign created successfully");
       document.getElementById("newCampName").value = "";
@@ -313,7 +312,7 @@
         <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:13px;">
           <div>
             <strong>${c.name}</strong>
-            <div class="muted" style="font-size:11px;">Target: ${pkr(c.target)} | Raised: ${pkr(c.raised)} | Status: ${c.status}</div>
+            <div class="muted" style="font-size:11px;">Target: ${pkr(c.target)} | Received: ${pkr(c.total_received || 0)} | Status: ${c.status}</div>
           </div>
           <button class="btn btn-outline" style="color:var(--rust);border-color:var(--rust);padding:4px 10px;font-size:11px;" onclick="deleteCampaign('${c.id}')">Delete</button>
         </div>
@@ -378,4 +377,5 @@
 
     // --- 4. PAYMENT METHODS ---
     window.addPaymentMethod = async function() {
-      const label = document.getElementById("pmLabel").value.t
+      const label = document.getElementById("pmLabel").value.trim();
+      const account_title = docume
