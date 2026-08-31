@@ -592,7 +592,8 @@
         const { error } = await supabaseClient.from("wallet_transactions").insert([{
           investor_id: item.investor_id,
           amount: item.share,
-          description: `Admin Return Distribution (${pkr(item.share)})`
+          description: 'Admin Return Distribution (Rs ' + item.share + ')'
+          
         }]);
         if (!error) successCount++;
       }
@@ -648,14 +649,15 @@
     }
 
     async function loadAdminWithdrawals() {
-      const listEl = document.getElementById("adminWithdrawalsList");
-      if (!listEl) return;
-      listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading withdrawals...</p>`;
+  const listEl = document.getElementById("adminWithdrawalsList");
+  if (!listEl) return;
+  listEl.innerHTML = '<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading withdrawals...</p>';
 
-      const { data } = await supabaseClient
-        .from("withdrawal_requests")
-        .select("*, profiles(full_name)")
-        .order("created_at", { ascending: false });
+  const { data } = await supabaseClient
+    .from("withdrawals")
+    .select("*, profiles(full_name)")
+    .order("created_at", { ascending: false });
+      
 
       if (!data || !data.length) {
         listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">No withdrawal requests found.</p>`;
@@ -687,19 +689,26 @@
       });
     }
 
-    async function markWithdrawalPaid(id) {
-      const { error } = await supabaseClient.from("withdrawal_requests").update({ status: "paid" }).eq("id", id);
-      if (error) return toast(error.message);
-      toast("Marked as paid");
-      loadAdminWithdrawals();
-    }
+  async function markWithdrawalPaid(id) {
+  const { error } = await supabaseClient
+    .from("withdrawals")
+    .update({ status: "paid" })
+    .eq("id", id);
+  if (error) return toast(error.message);
+  toast("Marked as paid");
+  loadAdminWithdrawals();
+  }
 
     async function rejectWithdrawal(id) {
-      const { error } = await supabaseClient.from("withdrawal_requests").update({ status: "rejected" }).eq("id", id);
-      if (error) return toast(error.message);
-      toast("Withdrawal rejected");
-      loadAdminWithdrawals();
+  const { error } = await supabaseClient
+    .from("withdrawals")
+    .update({ status: "rejected" })
+    .eq("id", id);
+  if (error) return toast(error.message);
+  toast("Withdrawal rejected");
+  loadAdminWithdrawals();
     }
+    
 
     async function addPaymentMethod() {
       const label = document.getElementById("pmLabel").value.trim();
