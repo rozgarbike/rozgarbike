@@ -283,9 +283,49 @@
       loadAdminInvestments();
     }
 
-    async function previewDistribution() {
+        async function confirmAndDistribute() {
       const ratePer1000 = Number(document.getElementById("profitRateInput").value);
       if (!ratePer1000 || ratePer1000 <= 0) return toast("Enter a valid rate per 1000");
+      if (!confirm("Kya aap sabhi investors ko yeh returns distribute karna chahte hain?")) return;
+
+      // Call Supabase Database Function (RPC) directly
+      const { error } = await supabaseClient.rpc("distribute_returns", { p_rate: ratePer1000 });
+      
+      if (error) {
+        console.error("RPC Error:", error);
+        return toast("Error: " + error.message);
+      }
+
+      toast("Successfully distributed returns to all investors via database!");
+      document.getElementById("distributionPreviewContainer").style.display = "none";
+    }
+
+    async function sendManualBonusToInvestor() {
+      const investorId = document.getElementById("bonusInvestorSelect").value;
+      const amount = Number(document.getElementById("bonusAmountInput").value);
+      const reason = document.getElementById("bonusReasonInput").value.trim() || "Admin Extra Bonus";
+
+      if (!investorId) return toast("Please select an investor");
+      if (!amount || amount <= 0) return toast("Enter a valid bonus amount");
+
+      // Call Supabase Database Function (RPC) directly
+      const { error } = await supabaseClient.rpc("give_manual_bonus", { 
+        p_investor_id: investorId, 
+        p_amount: amount, 
+        p_reason: reason 
+      });
+
+      if (error) {
+        console.error("RPC Error:", error);
+        return toast("Error: " + error.message);
+      }
+
+      toast("Bonus successfully sent and updated in investor's account!");
+      document.getElementById("bonusAmountInput").value = "";
+      document.getElementById("bonusReasonInput").value = "";
+      document.getElementById("bonusInvestorSelect").value = "";
+    }
+    
 
       toast("Calculating distribution preview...");
       const { data: profilesData } = await supabaseClient.from("profiles").select("id, full_name");
