@@ -173,6 +173,8 @@
     // --- 1. INVESTMENTS SLIP VERIFICATION ---
     async function loadAdminInvestments() {
       const listEl = document.getElementById("adminInvestmentsList");
+      listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading pending slips...</p>`;
+      
       const { data: invs } = await supabaseClient
         .from("investments")
         .select("*, campaigns(name), profiles(full_name)")
@@ -291,6 +293,8 @@
 
     async function loadAdminCampaigns() {
       const listEl = document.getElementById("adminCampaignsList");
+      listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading campaigns...</p>`;
+      
       const { data } = await supabaseClient.from("campaigns").select("*").order("created_at", { ascending: false });
       if (!data || !data.length) {
         listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">No campaigns found.</p>`;
@@ -318,6 +322,8 @@
     // --- 3. WITHDRAWALS ---
     async function loadAdminWithdrawals() {
       const listEl = document.getElementById("adminWithdrawalsList");
+      listEl.innerHTML = `<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading withdrawals...</p>`;
+
       const { data } = await supabaseClient
         .from("withdrawal_requests")
         .select("*, profiles(full_name)")
@@ -369,13 +375,4 @@
 
       const { error } = await supabaseClient.from("payment_methods").insert([{ label, account_title, account_number, active: true }]);
       if (error) return toast(error.message);
-      toast("Payment method added");
-      document.getElementById("pmLabel").value = "";
-      document.getElementById("pmTitle").value = "";
-      document.getElementById("pmNumber").value = "";
-      loadAdminPaymentMethods();
-    }
-
-    async function loadAdminPaymentMethods() {
-      const listEl = document.getElementById("adminPaymentMethodsList");
-      const { data } = await supabaseClient.from("payment_method
+      toast("Payment meth
