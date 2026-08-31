@@ -653,10 +653,11 @@
   if (!listEl) return;
   listEl.innerHTML = '<p class="muted" style="font-size:12px;text-align:center;padding:15px;">Loading withdrawals...</p>';
 
-  const { data } = await supabaseClient
+    const { data } = await supabaseClient
     .from("withdrawals")
-    .select("*, profiles(full_name)")
+    .select("*")
     .order("created_at", { ascending: false });
+      
       
 
       if (!data || !data.length) {
