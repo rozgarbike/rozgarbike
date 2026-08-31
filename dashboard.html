@@ -530,28 +530,48 @@ async function submitWithdraw() {
   }
 }
 
-// LOAD TRANSACTIONS & CALCULATE BALANCE / SEPARATE TOTALS
-async function loadUserData() {
-  const db = getSupabase();
-  const tbody = document.getElementById("txHistoryBody");
+      // LOAD TRANSACTIONS & CALCULATE BALANCE / SEPARATE TOTALS
+    async function loadUserData() {
+      const db = getSupabase();
+      const tbody = document.getElementById("txHistoryBody");
+      
+      const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
+      const { data: wits } = await db.from("withdrawal_requests").select("*").eq("investor_id", currentUserId);
+      const { data: walletTxs } = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
 
-  const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
-  const { data: wits } = await db.from("withdrawals").select("*").eq("investor_id", currentUserId);
-      // 3. Wallet Transactions / Distribution / Bonus Calculation
-    const { data: walletTxs } = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
-    
-    let totalWalletEarnings = 0;
-    if (walletTxs) {
-      walletTxs.forEach(t => {
-        allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
-        totalWalletEarnings += Number(t.amount);
-      });
-    }
+      let allTx = [];
+      let totalApprovedDeposit = 0;
+      let totalApprovedWithdraw = 0;
+      let totalWalletEarnings = 0;
 
-    // Withdrawable balance = Total Earnings/Bonus from Admin - Approved Withdrawals
-    userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
-    if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
-  
+      // 1. Investments Calculation
+      if (invs) {
+        invs.forEach(i => {
+          allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
+          if (i.status === 'approved') totalApprovedDeposit += Number(i.amount);
+        });
+      }
+
+      // 2. Withdrawals Calculation
+      if (wits) {
+        wits.forEach(w => {
+          allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
+          if (w.status === 'approved' || w.status === 'paid') totalApprovedWithdraw += Number(w.amount);
+        });
+      }
+
+      // 3. Wallet Transactions / Returns / Bonuses Calculation
+      if (walletTxs) {
+        walletTxs.forEach(t => {
+          allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
+          totalWalletEarnings += Number(t.amount);
+        });
+      }
+
+      // Withdrawable balance = Total Returns/Bonuses - Approved Withdrawals
+      userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
+      if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
+      
   if(userWithdrawableBalance < 0) userWithdrawableBalance = 0; // Safeguard
 
   // Display On Interface
