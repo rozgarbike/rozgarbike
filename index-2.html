@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RozgarBike — Fund a bike, change a livelihood</title>
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#123D3D" />
+<link rel="apple-touch-icon" href="assets/icon-192.png" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  /* Urdu Ad Banner Styling */
+  .ad-banner-container {
+    background: linear-gradient(135deg, #0f3932 0%, #164e43 100%);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 16px;
+    margin: 12px 0 18px 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    border: 1px solid #1e5e52;
+    text-align: center;
+    direction: rtl;
+    font-family: 'Noto Nastaliq Urdu', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  .ad-banner-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 4px;
+    line-height: 1.8;
+  }
+  .ad-banner-subtitle {
+    font-size: 13px;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+  .ad-banner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .ad-banner-box {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px 6px;
+  }
+  .ad-banner-amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    direction: ltr;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .ad-banner-profit {
+    background: #16a34a;
+    color: #ffffff;
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 15px;
+    font-size: 11.5px;
+    font-weight: 700;
+    margin-top: 5px;
+    direction: ltr;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .ad-banner-badge {
+    background: #eab308;
+    color: #000;
+    font-size: 10.5px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    display: inline-block;
+  }
+  .ad-banner-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+  .ad-feature-item {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 4px;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-row">
+      <div class="brand"><span class="brand-badge">🚲</span> RozgarBike</div>
+      <div id="authArea" style="font-size:13px;"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- APP DOWNLOAD BUTTON (PWA Install) -->
+    <button id="appDownloadBtn" class="app-download-btn" style="width:100%;margin-bottom:14px;display:flex;gap:8px;">
+      <span style="font-size:18px;">📲</span> App Download Karein
+    </button>
+
+    <!-- URDU AD BANNER -->
+    <div class="ad-banner-container">
+      <div class="ad-banner-title">کم سرمایہ کاری، زیادہ منافع</div>
+      <div class="ad-banner-subtitle">آج سرمایہ لگائیں، کل بہتر زندگی پائیں</div>
+      
+      <div class="ad-banner-grid">
+        <!-- Option 1: 1000 Investment -->
+        <div class="ad-banner-box">
+          <div class="ad-banner-amount">1,000 روپے</div>
+          <div class="ad-banner-profit">روزانہ منافع: 50 - 60 روپے</div>
+          <div class="ad-banner-badge">مدت: 90 دن</div>
+        </div>
+
+        <!-- Option 2: 5000 Investment -->
+        <div class="ad-banner-box">
+          <div class="ad-banner-amount">5,000 روپے</div>
+          <div class="ad-banner-profit">روزانہ منافع: 300 - 350 روپے</div>
+          <div class="ad-banner-badge">مستحکم اور بااعتماد</div>
+        </div>
+      </div>
+
+      <div class="ad-banner-features">
+        <div class="ad-feature-item">🛡️ 100% محفوظ</div>
+        <div class="ad-feature-item">📈 روزانہ کیش آؤٹ</div>
+        <div class="ad-feature-item">⏰ 90 دن کا پلان</div>
+      </div>
+    </div>
+
+    <div class="disp" style="font-size:26px;line-height:1.2;color:var(--petrol);margin-bottom:6px;">
+      Ghar baithay hissedar banein
+    </div>
+    <p class="muted" style="line-height:1.5;margin-bottom:6px;">
+      Paisa aap lagayein, mehnat rider kare — jo wo kamaye uska share aapko mile.
+    </p>
+
+    <div style="display:flex;gap:8px;margin:10px 0 18px;flex-wrap:wrap;">
+      <a id="whatsappChatBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:#25D366;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
+        <span style="font-size:15px;">💬</span> WhatsApp Chat
+      </a>
+      <a id="whatsappChannelBtn" href="#" target="_blank" style="display:none;align-items:center;gap:6px;background:var(--petrol);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;">
+        <span style="font-size:15px;">📢</span> Channel Follow Karein
+      </a>
+    </div>
+
+    <p class="muted" style="line-height:1.5;margin-bottom:18px;">
+      Fund a real delivery bike for a verified rider, starting at Rs 1,000. As the rider earns and repays,
+      your share comes back to your wallet automatically — proportional to what you put in, nothing guaranteed or fixed.
+    </p>
+
+    <div id="authBox" class="card" style="margin-bottom:20px; display:none;">
+      <div id="authTitle" class="disp" style="font-size:18px;margin-bottom:10px;">SIGN UP</div>
+      <input id="fullName" placeholder="Full name" style="margin-bottom:8px;" />
+      <input id="email" placeholder="Email" type="email" style="margin-bottom:8px;" />
+      <input id="password" placeholder="Password" type="password" style="margin-bottom:8px;" />
+      <button class="btn btn-primary" style="width:100%;" onclick="doSignUp()">Create account</button>
+      <div style="text-align:center;margin:10px 0;font-size:12px;" class="muted">— or —</div>
+      <button class="btn btn-outline" style="width:100%;" onclick="doSignIn()">Log in instead</button>
+      <div id="authMsg" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- CAMPAIGNS LIST FROM DATABASE -->
+    <div id="campaignsList" style="display:flex;flex-direction:column;gap:14px;"></div>
+  </div>
+
+  <div id="introOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.55);align-items:center;justify-content:center;z-index:30;padding:20px;">
+    <div class="card" style="max-width:380px;width:100%;text-align:center;">
+      <div class="disp" style="font-size:20px;margin-bottom:4px;">YE KAISE KAAM KARTA HAI</div>
+      <div class="muted" style="margin-bottom:18px;">3 simple steps</div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
+        <div style="font-size:28px;">🪙</div>
+        <div style="font-size:13px;">Aap ek bike fund karte hain, Rs 1,000 se shuru</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:14px;">
+        <div style="font-size:28px;">🏍️</div>
+        <div style="font-size:13px;">Rider us bike se delivery kaam kar ke kamata hai</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;text-align:left;margin-bottom:20px;">
+        <div style="font-size:28px;">💰</div>
+        <div style="font-size:13px;">Rider jitna wapis kare, aapko uska share milta hai — transparent, koi fix promise nahi</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="closeIntro()">Bikes Dekhein</button>
+    </div>
+  </div>
+
+  <div id="installGuideOverlay" style="display:none;position:fixed;inset:0;background:rgba(18,61,61,0.55);align-items:center;justify-content:center;z-index:35;padding:20px;">
+    <div class="card" style="max-width:380px;width:100%;">
+      <div class="disp" style="font-size:18px;margin-bottom:12px;">📲 App Install Karein</div>
+      <div style="font-size:13px;line-height:1.6;margin-bottom:14px;">
+        Apne browser ke top-right corner mein <b>3 dot menu (⋮)</b> pe tap karein, phir <b>"Add to Home screen"</b> ya <b>"Install app"</b> option dhoondh kar tap karein.
+      </div>
+      <button class="btn btn-primary" id="closeInstallGuide" style="width:100%;">Theek hai</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="assets/config.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+    let currentSession = null;
+    let deferredInstallPrompt = null;
+
+    // Register service worker (required for "Add to Home Screen" to work)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch((err) => console.error("SW registration failed:", err));
+      });
+    }
+
+    // PWA Install prompt handling
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+    });
+
+    window.addEventListener("appinstalled", () => {
+      deferredInstallPrompt = null;
+      toast("App install ho gayi! ✅");
+    });
+
+    document.getElementById("appDownloadBtn")?.addEventListener("click", async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        return;
+      }
+      // No native prompt available yet (or on this browser) — show manual steps.
+      document.getElementById("installGuideOverlay").style.display = "flex";
+    });
+
+    document.getElementById("closeInstallGuide")?.addEventListener("click", () => {
+      document.getElementById("installGuideOverlay").style.display = "none";
+    });
+
+    async function loadWhatsAppLinks() {
+      const { data } = await supabaseClient.from("site_settings").select("*");
+      const map = {};
+      (data || []).forEach(row => map[row.key] = row.value);
+      if (map["whatsapp_number"]) {
+        const btn = document.getElementById("whatsappChatBtn");
+        btn.href = `https://wa.me/${map["whatsapp_number"]}`;
+        btn.style.display = "inline-flex";
+      }
+      if (map["whatsapp_channel"]) {
+        const btn = document.getElementById("whatsappChannelBtn");
+        btn.href = map["whatsapp_channel"];
+        btn.style.display = "inline-flex";
+      }
+    }
+
+    if (!sessionStorage.getItem("introSeen")) {
+      window.addEventListener("load", () => {
+        setTimeout(() => { document.getElementById("introOverlay").style.display = "flex"; }, 600);
+      });
+    }
+    function closeIntro() {
+      document.getElementById("introOverlay").style.display = "none";
+      sessionStorage.setItem("introSeen", "1");
+      document.getElementById("campaignsList")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      currentSession = session;
+      renderAuthArea();
+      if (!session) {
+        document.getElementById("authBox").style.display = "block";
+        const refCode = getReferralCodeFromURL();
+        if (refCode) toast("Referral code applied: " + refCode);
+      }
+      await loadWhatsAppLinks();
+      await loadCampaigns();
+    }
+
+    function renderAuthArea() {
+      const el = document.getElementById("authArea");
+      if (currentSession) {
+        el.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <a href="dashboard.html" style="color:#fff;">My Dashboard</a>
+            <button onclick="logout()" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.4);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">Log out</button>
+          </div>
+        `;
+      } else {
+        el.innerHTML = `<span>Not logged in</span>`;
+      }
+    }
+
+    async function doSignUp() {
+      const full_name = document.getElementById("fullName").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      if (!email || !password) return toast("Email and password required");
+      const refCode = getReferralCodeFromURL();
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password, options: { data: { full_name } },
+      });
+      if (error) return toast(error.message);
+      if (refCode && data.user) {
+        const { data: refProfile } = await supabaseClient.from("profiles").select("id").eq("referral_code", refCode).single();
+        if (refProfile) {
+          await supabaseClient.from("profiles").update({ referred_by: refProfile.id }).eq("id", data.user.id);
+          await supabaseClient.from("referrals").insert({ referrer_id: refProfile.id, referred_id: data.user.id });
+        }
+      }
+      document.getElementById("authMsg").textContent = "Check your email to confirm, then log in.";
+    }
+
+    async function doSignIn() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) return toast(error.message);
+      window.location.href = "dashboard.html";
+    }
+
+    async function loadCampaigns() {
+      const listEl = document.getElementById("campaignsList");
+      
+      // Fetch all campaigns without filtering status strictly
+      const { data: campaigns, error } = await supabaseClient
+        .from("campaigns")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) { 
+        console.error("Error loading campaigns:", error);
+        listEl.innerHTML = `<p class="muted">Could not load campaigns.</p>`; 
+        return; 
+      }
+
+      if (!campaigns || !campaigns.length) { 
+        listEl.innerHTML = `<p class="muted">No campaigns right now — check back soon.</p>`; 
+        return; 
+      }
+
+      listEl.innerHTML = "";
+      for (const c of campaigns) {
+        const { data: invSum } = await supabaseClient
+          .from("investments")
+          .select("amount")
+          .eq("campaign_id", c.id)
+          .eq("status", "approved");
+
+        const funded = (invSum || []).reduce((s, i) => s + Number(i.amount), 0);
+        const targetVal = Number(c.target || 100000);
+        const pct = targetVal > 0 ? (funded / targetVal) * 100 : 0;
+
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="disp" style="font-size:20px;">${c.name}</div>
+              <div class="muted" style="margin-top:2px;">${c.rider_tag || ""}</div>
+              <div style="margin-top:10px;font-size:12.5px;">
+                <span class="mono" style="font-weight:600;">${typeof pkr === 'function' ? pkr(funded) : 'PKR ' + funded}</span>
+                <span class="muted"> raised of ${typeof pkr === 'function' ? pkr(targetVal) : 'PKR ' + targetVal} target</span>
+              </div>
+            </div>
+            <div class="gauge-wrap">${typeof gaugeSVG === 'function' ? gaugeSVG(pct) : pct.toFixed(0) + '%'}</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:14px;" onclick="startContribute('${c.id}','${c.name}',${targetVal},${funded})">
+            ${funded >= targetVal ? "Fully funded" : "Contribute"}
+          </button>
+        `;
+        listEl.appendChild(div);
+      }
+    }
+
+    function startContribute(id, name, target, funded) {
+      if (!currentSession) { document.getElementById("authBox").scrollIntoView({behavior:"smooth"}); toast("Log in or sign up first"); return; }
+      window.location.href = `dashboard.html?contribute=${id}`;
+    }
+
+    init();
+  </script>
+</body>
+</html>
