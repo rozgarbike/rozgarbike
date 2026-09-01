@@ -33,7 +33,7 @@ input,select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid va
 .progress-fill{height:100%;background:var(--mustard);}
 a{color:var(--petrol);}
 .app-download-btn {
-    display: none;
+    display: flex;
     justify-content: center;
     align-items: center;
     background: linear-gradient(135deg, #123D3D 0%, #206a6a 100%) !important;
