@@ -6,16 +6,15 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
+// Fetch handler kept minimal on purpose — we don't intercept/rewrite any
+// requests. Chrome just needs a registered fetch handler to count the site
+// as installable; not calling respondWith() lets every request go through
+// normally over the network, so nothing can break page loads.
 self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
+  // intentionally empty
 });
