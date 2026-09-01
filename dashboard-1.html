@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="ur">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RozgarBike — Dashboard</title>
+
+<link rel="stylesheet" href="assets/style.css">
+<!-- Supabase JS Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  font-family:system-ui,-apple-system,sans-serif;
+  background:#111827;
+  color:#f3f4f6;
+  margin:0;
+  padding-bottom:50px
+}
+.navbar{
+  background:#0b3c36;
+  color:#fff;
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-bottom:2px solid #e29d38
+}
+.logo-area{ font-weight:bold; font-size:20px; display:flex; align-items:center; gap:8px }
+.logo-box{ background:#e29d38; padding:4px 8px; border-radius:6px; color:#000 }
+.btn-dash{ background:#e29d38; color:#000; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:bold; text-decoration:none }
+
+.container{ max-width:850px; margin:auto; padding:15px }
+
+.card{
+  background:#1f2937;
+  border-radius:12px;
+  padding:18px;
+  margin-bottom:20px;
+  border:1px solid #374151;
+  box-shadow:0 4px 6px -1px rgba(0,0,0,.3)
+}
+.card-title{
+  font-size:16px;
+  font-weight:bold;
+  color:#e29d38;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px
+}
+
+.stats-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px;
+}
+.stat-box{
+  background:#111827;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #374151;
+}
+.stat-label{ font-size:12px; color:#9ca3af; margin-bottom:4px; }
+.stat-val{ font-size:18px; font-weight:bold; }
+
+.action-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-bottom:20px;
+}
+.btn-action{
+  padding:14px;
+  border:0;
+  border-radius:10px;
+  font-weight:bold;
+  font-size:14px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition: opacity 0.2s;
+}
+.btn-deposit{ background:#10b981; color:#fff; }
+.btn-withdraw{ background:#e29d38; color:#000; }
+.btn-copy{ background:#3b82f6; color:#fff; padding:8px 14px; border:0; border-radius:6px; cursor:pointer; font-weight:bold }
+
+/* MODAL STYLES */
+.modal{
+  display:none;
+  position:fixed;
+  top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.75);
+  z-index:999;
+  align-items:center;
+  justify-content:center;
+  padding:15px;
+}
+.modal.active{ display:flex; }
+.modal-content{
+  background:#1f2937;
+  border-radius:12px;
+  width:100%;
+  max-width:480px;
+  padding:20px;
+  border:1px solid #374151;
+  position:relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-close{
+  position:absolute;
+  top:12px; right:15px;
+  font-size:20px;
+  cursor:pointer;
+  color:#9ca3af;
+}
+
+.account-details-box {
+  background:#111827;
+  border:1px solid #e29d38;
+  border-radius:8px;
+  padding:12px;
+  margin-bottom:15px;
+  font-size:13px;
+}
+.account-item {
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid #374151;
+}
+.account-item:last-child {
+  margin-bottom:0;
+  padding-bottom:0;
+  border-bottom:none;
+}
+.acc-title { color:#e29d38; font-weight:bold; font-size:12px; text-transform:uppercase; }
+.acc-val { color:#fff; font-weight:bold; font-size:14px; }
+
+.input-box, select{
+  width:100%;
+  padding:10px;
+  background:#374151;
+  border:1px solid #4b5563;
+  color:#fff;
+  border-radius:6px;
+  margin-bottom:12px;
+  font-size:14px;
+  outline:none
+}
+
+.file-input{
+  width:100%;
+  padding:8px;
+  background:#374151;
+  border:1px dashed #e29d38;
+  color:#fff;
+  border-radius:6px;
+  margin-bottom:12px;
+  font-size:13px;
+  cursor:pointer;
+}
+
+.table-responsive{ overflow-x:auto }
+table{ width:100%; border-collapse:collapse; font-size:13px; text-align:left }
+th, td{ padding:10px; border-bottom:1px solid #374151; vertical-align:middle }
+th{ background:#111827; color:#9ca3af }
+.limit-badge {
+  background: rgba(226, 157, 56, 0.15);
+  border: 1px dashed #e29d38;
+  color: #e29d38;
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="navbar">
+  <div class="logo-area">
+    <div class="logo-box">🚲</div>
+    <span>RozgarBike</span>
+  </div>
+  <a href="admin.html" class="btn-dash">⚙️ Admin Panel</a>
+</div>
+
+<div class="container">
+
+  <!-- BALANCE CARDS WITH SEPARATE INVESTMENT, EARNINGS & WITHDRAWAL DISPLAY -->
+  <div class="card">
+    <div class="card-title">💰 Balance Overview</div>
+    
+    <div style="margin-bottom:10px; background:#111827; padding:12px; border-radius:8px; border:1px solid #10b981;">
+      <div style="font-size:12px; color:#10b981; font-weight:bold;">💵 Withdrawable Balance (قابلِ برداشت بیلنس)</div>
+      <div style="font-size:26px; font-weight:bold; color:#10b981;" id="withdrawableBalance">Rs 0</div>
+      <small style="font-size:11px; color:#9ca3af;">یہ بونس اور روزانہ ڈسٹریبیوشن سے حاصل شدہ رقم ہے جو آپ فوراً ودڈرال کر سکتے ہیں۔</small>
+    </div>
+
+    <!-- SEPARATE DISPLAY FOR INVESTMENTS AND WITHDRAWALS -->
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">💼 Active Investment (انویسٹمنٹ)</div>
+        <div class="stat-val" style="color:#3b82f6;" id="totalInvestment">Rs 0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">📤 Total Withdrawn (کل ودڈرال)</div>
+        <div class="stat-val" style="color:#e29d38;" id="totalWithdrawal">Rs 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="action-grid">
+    <button onclick="openDepositModal()" class="btn-action btn-deposit">📥 Deposit Funds</button>
+    <button onclick="openWithdrawModal()" class="btn-action btn-withdraw">📤 Withdraw Funds</button>
+  </div>
+
+  <!-- REFERRAL SYSTEM CARD -->
+  <div class="card">
+    <div class="card-title">👥 Refer & Earn (ریفرل سسٹم)</div>
+    <p style="font-size:13px;color:#9ca3af;margin-top:0;">اپنا ریفرل لنک کاپی کریں اور دوستوں کے ساتھ شیئر کر کے بونس کمائیں۔</p>
+    
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input id="refLinkInput" class="input-box" style="margin-bottom:0;" readonly value="Loading referral link...">
+      <button onclick="copyReferralLink()" class="btn-copy">Copy Link</button>
+    </div>
+    <small style="color:#10b981;" id="copySuccessMsg"></small>
+  </div>
+
+  <!-- RECENT TRANSACTIONS -->
+  <div class="card">
+    <div class="card-title">📊 Recent Transactions</div>
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="txHistoryBody">
+          <tr><td colspan="4">Loading transactions...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- DEPOSIT MODAL -->
+<div id="depositModal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeDepositModal()">&times;</span>
+    <h3 style="color:#e29d38;margin-top:0;">📥 Deposit Funds</h3>
+
+    <!-- OFFICIAL PAYMENT ACCOUNTS DISPLAY -->
+    <div class="account-details-box">
+      <div style="font-weight:bold;color:#10b981;margin-bottom:8px;border-bottom:1px solid #374151;padding-bottom:4px;">
+        📌 Payment Details (رقم بھیجنے کے لیے اکاؤنٹس):
+      </div>
+
+      <div class="account-item">
+        <div class="acc-title">JazzCash</div>
+        <div class="acc-val">03245380453</div>
+        <div style="font-size:11px;color:#9ca3af;">Title: Muhammad Safdar</div>
+      </div>
+
+      <div class="account-item">
+        <div class="acc-title">SadaPay</div>
+        <div class="acc-val">03245380453</div>
+        <div style="font-size:11px;color:#9ca3af;">Title: Muhammad Safdar</div>
+      </div>
+
+      <div class="account-item">
+        <div class="acc-title">Meezan Bank</div>
+        <div class="acc-val">00300113025971</div>
+        <div style="font-size:11px;color:#9ca3af;">Title: Naveed Ahmed</div>
+      </div>
+    </div>
+    
+    <label style="font-size:12px;color:#9ca3af">Deposit Amount (PKR):</label>
+    <input id="depAmount" type="number" class="input-box" placeholder="e.g. 1000">
+
+    <label style="font-size:12px;color:#9ca3af">Transaction ID (Trx ID):</label>
+    <input id="depTrx" class="input-box" placeholder="e.g. 8234910293">
+
+    <label style="font-size:12px;color:#9ca3af">Upload Payment Receipt / Slip Image (Choose File):</label>
+    <input id="depFile" type="file" accept="image/*" class="file-input">
+
+    <button onclick="submitDeposit()" class="btn-action btn-deposit" style="width:100%;margin-top:10px;">Submit Deposit</button>
+  </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div id="withdrawModal" class="modal">
+  <div class="modal-content">
+    <span class="modal-close" onclick="closeWithdrawModal()">&times;</span>
+    <h3 style="color:#e29d38;margin-top:0;">📤 Request Withdrawal</h3>
+
+    <div class="limit-badge">
+      ⚠️ <b>ودڈرال لمٹ Rules:</b><br>
+      • کم سے کم ودڈرال: <b>Rs 100</b><br>
+      • روزانہ زیادہ سے زیادہ لمٹ: <b>Rs 5,000</b>
+    </div>
+
+    <label style="font-size:12px;color:#9ca3af">Payment Method:</label>
+    <select id="witMethod" class="input-box">
+      <option value="JazzCash">JazzCash</option>
+      <option value="SadaPay">SadaPay</option>
+      <option value="EasyPaisa">EasyPaisa</option>
+      <option value="Bank Transfer">Bank Transfer</option>
+    </select>
+    
+    <label style="font-size:12px;color:#9ca3af">Withdraw Amount (PKR):</label>
+    <input id="witAmount" type="number" class="input-box" placeholder="Min 100 - Max 5000">
+
+    <label style="font-size:12px;color:#9ca3af">Account Title (Name):</label>
+    <input id="witTitle" class="input-box" placeholder="e.g. Ali Raza">
+
+    <label style="font-size:12px;color:#9ca3af">Account Number:</label>
+    <input id="witNum" class="input-box" placeholder="e.g. 03001234567">
+
+    <button onclick="submitWithdraw()" class="btn-action btn-withdraw" style="width:100%;margin-top:10px;">Submit Withdrawal</button>
+  </div>
+</div>
+
+<script src="assets/config.js"></script>
+
+<script>
+function getSupabase() {
+  return window.supabaseClient || window.supabase;
+}
+
+let currentUserId = null;
+let userWithdrawableBalance = 0;
+
+async function initDashboard() {
+  const db = getSupabase();
+  if(!db) {
+    alert("Supabase initialize nahi hua.");
+    return;
+  }
+
+  const { data: { session } } = await db.auth.getSession();
+  if(session && session.user) {
+    currentUserId = session.user.id;
+  } else {
+    currentUserId = localStorage.getItem("user_id") || "demo-user-id";
+  }
+
+  // Generate Referral Link
+  const currentOrigin = window.location.origin + window.location.pathname.replace("dashboard.html", "");
+  const refLink = `${currentOrigin}index.html?ref=${currentUserId}`;
+  document.getElementById("refLinkInput").value = refLink;
+
+  loadUserData();
+}
+
+// COPY REFERRAL LINK
+function copyReferralLink() {
+  const refInput = document.getElementById("refLinkInput");
+  refInput.select();
+  refInput.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(refInput.value);
+  
+  const msg = document.getElementById("copySuccessMsg");
+  msg.innerText = "✓ ریفرل لنک کاپی ہو گیا ہے!";
+  setTimeout(() => { msg.innerText = ""; }, 3000);
+}
+
+// MODAL CONTROLS
+function openDepositModal() {
+  document.getElementById("depositModal").classList.add("active");
+}
+function closeDepositModal() {
+  document.getElementById("depositModal").classList.remove("active");
+}
+
+function openWithdrawModal() {
+  document.getElementById("withdrawModal").classList.add("active");
+}
+function closeWithdrawModal() {
+  document.getElementById("withdrawModal").classList.remove("active");
+}
+
+// SUBMIT DEPOSIT
+async function submitDeposit() {
+  const db = getSupabase();
+  const amount = document.getElementById("depAmount").value;
+  const trx_id = document.getElementById("depTrx").value;
+  const fileInput = document.getElementById("depFile");
+
+  if(!amount || Number(amount) <= 0) return alert("برائے مہربانی درست رقم درج کریں۔");
+  if(!trx_id) return alert("برائے مہربانی Trx ID درج کریں۔");
+
+  let uploadedSlipUrl = null;
+
+  if (fileInput.files.length > 0) {
+    const file = fileInput.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    const { data: uploadData, error: uploadError } = await db.storage
+      .from('slips')
+      .upload(fileName, file);
+
+    if (uploadError) {
+      alert("تصویر اپلوڈ کرنے میں مسئلہ آیا: " + uploadError.message);
+      return;
+    }
+
+    const { data: urlData } = db.storage.from('slips').getPublicUrl(fileName);
+    uploadedSlipUrl = urlData.publicUrl;
+  }
+
+  let campaignId = null;
+  const { data: campData } = await db.from("campaigns").select("id").limit(1);
+  if (campData && campData.length > 0) {
+    campaignId = campData[0].id;
+  }
+
+  const payload = {
+    investor_id: currentUserId,
+    amount: Number(amount),
+    trx_id: trx_id,
+    slip_url: uploadedSlipUrl,
+    status: "pending"
+  };
+
+  if(campaignId) {
+    payload.campaign_id = campaignId;
+  }
+
+  const { error } = await db.from("investments").insert([payload]);
+
+  if(error) {
+    alert("ڈیپازٹ میں مسئلہ آیا: " + error.message);
+  } else {
+    alert("ڈیپازٹ کی درخواست کامیابی سے بھیج دی گئی ہے!");
+    closeDepositModal();
+    document.getElementById("depAmount").value = "";
+    document.getElementById("depTrx").value = "";
+    document.getElementById("depFile").value = "";
+    loadUserData();
+  }
+}
+
+// SUBMIT WITHDRAW
+async function submitWithdraw() {
+  const db = getSupabase();
+  const payment_method = document.getElementById("witMethod").value;
+  const amountVal = document.getElementById("witAmount").value;
+  const account_title = document.getElementById("witTitle").value;
+  const account_number = document.getElementById("witNum").value;
+
+  const amount = Number(amountVal);
+
+  // 1. Basic Validations
+  if(!amount || amount <= 0) return alert("برائے مہربانی درست رقم درج کریں۔");
+  if(amount < 100) return alert("کم از کم ودڈرال کی رقم Rs 100 ہے۔");
+  if(amount > 5000) return alert("ایک وقت میں زیادہ سے زیادہ Rs 5,000 ودڈرال کر سکتے ہیں۔");
+  if(amount > userWithdrawableBalance) return alert("آپ کے ودڈرال ایبل بیلنس میں اتنی رقم موجود نہیں ہے۔");
+  if(!account_title || !account_number) return alert("اکاؤنٹ کی تفصیلات (نام اور نمبر) مکمل درج کریں۔");
+
+  // 2. Daily Withdrawal Limit Check (Rs 5000 Per Day)
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const { data: todayWits, error: limitErr } = await db
+    .from("withdrawals")
+    .select("amount")
+    .eq("investor_id", currentUserId)
+    .neq("status", "rejected")
+    .gte("created_at", today.toISOString());
+
+  if(!limitErr && todayWits) {
+    const totalTodayWithdrawn = todayWits.reduce((acc, curr) => acc + Number(curr.amount), 0);
+    if(totalTodayWithdrawn + amount > 5000) {
+      const remainingLimit = 5000 - totalTodayWithdrawn;
+      if(remainingLimit <= 0) {
+        return alert("آپ کی آج کی روزانہ Rs 5,000 کی ودڈرال لمٹ پوری ہو چکی ہے۔ کل دوبارہ کوشش کریں۔");
+      } else {
+        return alert(`آپ آج صرف Rs ${remainingLimit.toLocaleString()} مزید ودڈرال کر سکتے ہیں۔`);
+      }
+    }
+  }
+
+  // 3. Payload
+  const payload = {
+    investor_id: currentUserId,
+    amount: amount,
+    payment_method: payment_method,
+    bank_name: payment_method,
+    account_title: account_title,
+    account_name: account_title,
+    account_number: account_number,
+    status: "pending"
+  };
+
+  let { error } = await db.from("withdrawals").insert([payload]);
+
+  if(error) {
+    if(error.message.includes("bank_name")) delete payload.bank_name;
+    if(error.message.includes("payment_method")) delete payload.payment_method;
+    if(error.message.includes("account_name")) delete payload.account_name;
+    if(error.message.includes("account_title")) delete payload.account_title;
+
+    const retry = await db.from("withdrawals").insert([payload]);
+    error = retry.error;
+  }
+
+  if(error) {
+    alert("ودڈرال درخواست میں مسئلہ آیا: " + error.message);
+  } else {
+    alert("ودڈرال درخواست کامیابی سے بھیج دی گئی ہے!");
+    closeWithdrawModal();
+    document.getElementById("witAmount").value = "";
+    document.getElementById("witTitle").value = "";
+    document.getElementById("witNum").value = "";
+    loadUserData();
+  }
+}
+
+
+      // LOAD TRANSACTIONS & CALCULATE BALANCE
+    async function loadUserData() {
+      try {
+        const db = getSupabase();
+        const tbody = document.getElementById("txHistoryBody");
+
+        // Ensure currentUserId is loaded
+        if (!currentUserId) {
+          const { data: session } = await db.auth.getSession();
+          if (session && session.user) {
+            currentUserId = session.user.id;
+          } else {
+            currentUserId = localStorage.getItem("user_id");
+          }
+        }
+
+        if (!currentUserId) return;
+
+        const { data: invs } = await db.from("investments").select("*").eq("investor_id", currentUserId);
+        const { data: wits } = await db.from("withdrawals").select("*").eq("investor_id", currentUserId);
+        
+        
+        // Fetch wallet transactions specifically for this user's ID
+        const { data: walletTxs } = await db.from("wallet_transactions").select("*").eq("investor_id", currentUserId);
+
+        let allTx = [];
+        let totalApprovedDeposit = 0;
+        let totalApprovedWithdraw = 0;
+        let totalWalletEarnings = 0;
+
+        if (invs) {
+          invs.forEach(i => {
+            allTx.push({ type: 'Deposit', amount: i.amount, status: i.status, date: i.created_at });
+            if (i.status === 'approved') totalApprovedDeposit += Number(i.amount);
+          });
+        }
+
+        if (wits) {
+          wits.forEach(w => {
+            allTx.push({ type: 'Withdraw', amount: w.amount, status: w.status, date: w.created_at });
+            if (w.status === 'approved' || w.status === 'paid') totalApprovedWithdraw += Number(w.amount);
+          });
+        }
+
+        if (walletTxs) {
+          walletTxs.forEach(t => {
+            allTx.push({ type: t.description || 'Bonus/Profit', amount: t.amount, status: 'approved', date: t.created_at });
+            totalWalletEarnings += Number(t.amount);
+          });
+        }
+
+        userWithdrawableBalance = totalWalletEarnings - totalApprovedWithdraw;
+        if (userWithdrawableBalance < 0) userWithdrawableBalance = 0;
+
+        // Display On Interface
+        document.getElementById("withdrawableBalance").innerText = 'Rs ' + userWithdrawableBalance.toLocaleString();
+        document.getElementById("totalInvestment").innerText = 'Rs ' + totalApprovedDeposit.toLocaleString();
+        document.getElementById("totalWithdrawal").innerText = 'Rs ' + totalApprovedWithdraw.toLocaleString();
+
+        if (allTx.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9ca3af;">کوئی ٹرانزیکشن موجود نہیں ہے۔</td></tr>';
+          return;
+        }
+
+        allTx.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        tbody.innerHTML = allTx.map(t => `
+          <tr>
+            <td><b>${t.type}</b></td>
+            <td>Rs ${Number(t.amount).toLocaleString()}</td>
+            <td><span style="color:${t.status === 'approved' ? '#10b981' : (t.status === 'rejected' ? '#ef4444' : '#f59e0b')}">${t.status}</span></td>
+            <td>${new Date(t.date).toLocaleDateString()}</td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.log("Error loading data: ", err);
+      }
+    }
+  
+
+window.addEventListener("DOMContentLoaded", initDashboard);
+</script>
+</body>
+</html>
