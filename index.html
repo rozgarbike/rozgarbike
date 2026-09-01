@@ -209,7 +209,10 @@
     });
 
     document.getElementById("appDownloadBtn")?.addEventListener("click", async () => {
-      if (!deferredInstallPrompt) return;
+      if (!deferredInstallPrompt) {
+        toast("App pehle se install ho sakta hai, ya browser install support nahi karta. Chrome menu (⋮) mein 'Add to Home screen' try karein.");
+        return;
+      }
       deferredInstallPrompt.prompt();
       await deferredInstallPrompt.userChoice;
       deferredInstallPrompt = null;
@@ -365,4 +368,4 @@
     init();
   </script>
 </body>
-</html>
+  </html>
