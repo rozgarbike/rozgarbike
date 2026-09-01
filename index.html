@@ -200,6 +200,13 @@
     let currentSession = null;
     let deferredInstallPrompt = null;
 
+    // Register service worker (required for "Add to Home Screen" to work)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch((err) => console.error("SW registration failed:", err));
+      });
+    }
+
     // PWA Install prompt handling
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
@@ -368,4 +375,4 @@
     init();
   </script>
 </body>
-  </html>
+</html>
